@@ -1,0 +1,1008 @@
+local addonName, ns = ...
+ns.API = ns.API or {}
+
+local function readable(value)
+	if value == nil then
+		return false
+	end
+	if issecretvalue and issecretvalue(value) then
+		return false
+	end
+	if canaccessvalue and not canaccessvalue(value) then
+		return false
+	end
+	return true
+end
+
+local function safe(value, fallback)
+	if readable(value) then
+		return value
+	end
+	return fallback
+end
+
+function ns.API.SpellInfo(spellID)
+	if not spellID or not C_Spell or not C_Spell.GetSpellInfo then
+		return nil
+	end
+	local ok, info = pcall(C_Spell.GetSpellInfo, spellID)
+	if ok and type(info) == "table" then
+		return info
+	end
+	return nil
+end
+
+local function junkSpellName(name)
+	if type(name) ~= "string" then
+		return true
+	end
+	local upper = name:upper()
+	return upper:find("TEST", 1, true)
+		or upper:find("(OLD)", 1, true)
+		or upper:find("(PT)", 1, true)
+end
+
+local function spellIdFromName(name)
+	name = safe(name, nil)
+	if type(name) ~= "string" or name == "" or junkSpellName(name) then
+		return nil
+	end
+	if C_Spell and C_Spell.GetSpellInfo then
+		local ok, info = pcall(C_Spell.GetSpellInfo, name)
+		if ok and type(info) == "table" then
+			local id = safe(info.spellID, nil)
+			local got = safe(info.name, nil)
+			if type(id) == "number" and (not got or got == name) and not junkSpellName(got or name) then
+				return id
+			end
+		end
+	end
+	if GetSpellInfo then
+		local ok, gotName, _, _, _, _, id = pcall(GetSpellInfo, name)
+		if ok and type(id) == "number" and readable(id) and (not gotName or gotName == name) then
+			return id
+		end
+	end
+	return nil
+end
+
+local function bookBanks()
+	local banks = {}
+	if Enum and Enum.SpellBookSpellBank then
+		banks[#banks + 1] = Enum.SpellBookSpellBank.Player
+		banks[#banks + 1] = Enum.SpellBookSpellBank.Pet
+	end
+	if BOOKTYPE_SPELL then
+		banks[#banks + 1] = BOOKTYPE_SPELL
+	end
+	if BOOKTYPE_PET then
+		banks[#banks + 1] = BOOKTYPE_PET
+	end
+	banks[#banks + 1] = 0
+	banks[#banks + 1] = 1
+	banks[#banks + 1] = "spell"
+	banks[#banks + 1] = "pet"
+	return banks
+end
+
+local function readBookItem(index, bank)
+	if index == nil or bank == nil then
+		return nil, nil
+	end
+	if C_SpellBook and C_SpellBook.GetSpellBookItemInfo then
+		local ok, info = pcall(C_SpellBook.GetSpellBookItemInfo, index, bank)
+		if ok and type(info) == "table" then
+			return safe(info.name, nil), safe(info.spellID, nil)
+		end
+	end
+	if C_SpellBook and C_SpellBook.GetSpellBookItemName then
+		local ok, name = pcall(C_SpellBook.GetSpellBookItemName, index, bank)
+		if ok then
+			return safe(name, nil), nil
+		end
+	end
+	if GetSpellBookItemName then
+		local ok, name = pcall(GetSpellBookItemName, index, bank)
+		if ok then
+			return safe(name, nil), nil
+		end
+	end
+	return nil, nil
+end
+
+local function findPlayerSpellByName(name)
+	name = safe(name, nil)
+	if type(name) ~= "string" or name == "" then
+		return nil
+	end
+	if C_SpellBook and C_SpellBook.GetNumSpellBookSkillLines then
+		local okNum, num = pcall(C_SpellBook.GetNumSpellBookSkillLines)
+		if okNum and type(num) == "number" then
+			for line = 1, num do
+				local okLine, lineInfo = pcall(C_SpellBook.GetSpellBookSkillLineInfo, line)
+				if okLine and type(lineInfo) == "table" then
+					local off = tonumber(lineInfo.itemIndexOffset) or 0
+					local count = tonumber(lineInfo.numSpellBookItems) or 0
+					for i = off + 1, off + count do
+						for _, bank in ipairs(bookBanks()) do
+							local bookName, bookId = readBookItem(i, bank)
+							if bookName == name and type(bookId) == "number" and not junkSpellName(bookName) then
+								return bookId
+							end
+						end
+					end
+				end
+			end
+		end
+	end
+	for i = 1, 400 do
+		for _, bank in ipairs(bookBanks()) do
+			local bookName, bookId = readBookItem(i, bank)
+			if bookName == name and type(bookId) == "number" and not junkSpellName(bookName) then
+				return bookId
+			end
+		end
+	end
+	return nil
+end
+
+local function acceptSpellId(id, expectedName)
+	if type(id) ~= "number" or not readable(id) or junkSpellName(ns.API.SpellName(id) or "") then
+		return nil
+	end
+	if expectedName then
+		local got = ns.API.SpellName(id)
+		if got and got ~= expectedName then
+			return nil
+		end
+	end
+	return id
+end
+
+function ns.API.CursorSpell()
+	if not GetCursorInfo then
+		return nil
+	end
+	local ok, kind, arg1, arg2 = pcall(GetCursorInfo)
+	if not ok then
+		return nil
+	end
+	local kindText = safe(kind, nil)
+	if type(kindText) == "string" then
+		kindText = kindText:lower()
+	end
+	if kindText and kindText ~= "spell" and kindText ~= "spellid" then
+		return nil
+	end
+
+	local name, slotId
+	local banks = bookBanks()
+	if arg2 ~= nil then
+		table.insert(banks, 1, arg2)
+	end
+	for _, bank in ipairs(banks) do
+		local bookName, bookId = readBookItem(arg1, bank)
+		if bookName or bookId then
+			name = bookName or name
+			slotId = acceptSpellId(bookId, bookName) or slotId
+			if name then
+				break
+			end
+		end
+	end
+
+	if name then
+		return findPlayerSpellByName(name) or slotId or spellIdFromName(name)
+	end
+
+	if type(arg1) == "number" and readable(arg1) then
+		local guessed = ns.API.SpellName(arg1)
+		if guessed and not junkSpellName(guessed) then
+			if IsPlayerSpell then
+				local okKnown, known = pcall(IsPlayerSpell, arg1)
+				if okKnown and known then
+					return arg1
+				end
+			end
+			return findPlayerSpellByName(guessed) or arg1
+		end
+	end
+
+	local info = ns.API.SpellInfo(arg1)
+	if info then
+		local infoName = safe(info.name, nil)
+		if infoName then
+			return findPlayerSpellByName(infoName) or acceptSpellId(safe(info.spellID, nil), infoName)
+		end
+	end
+	return nil
+end
+
+function ns.API.EnemyCount()
+	local count = 0
+	local function hostile(unit)
+		local okEx, exists = pcall(UnitExists, unit)
+		if not okEx or not exists then
+			return false
+		end
+		local okDead, dead = pcall(UnitIsDead, unit)
+		if okDead and dead then
+			return false
+		end
+		local okAtk, atk = pcall(UnitCanAttack, "player", unit)
+		if okAtk and atk then
+			return true
+		end
+		local okR, react = pcall(UnitReaction, "player", unit)
+		return okR and type(react) == "number" and react <= 4
+	end
+	local function inFight(unit)
+		local okC, combat = pcall(UnitAffectingCombat, unit)
+		if okC and combat then
+			return true
+		end
+		local okP, pcombat = pcall(UnitAffectingCombat, "player")
+		return not (okP and pcombat)
+	end
+	for i = 1, 40 do
+		local unit = "nameplate" .. i
+		if hostile(unit) and inFight(unit) then
+			count = count + 1
+		end
+	end
+	if count < 1 and hostile("target") then
+		count = 1
+	end
+	return count
+end
+
+function ns.API.SpellName(spellID)
+	local info = ns.API.SpellInfo(spellID)
+	return info and safe(info.name, nil)
+end
+
+function ns.API.SpellIcon(spellID)
+	local info = ns.API.SpellInfo(spellID)
+	if not info then
+		return nil
+	end
+	local icon = info.originalIconID or info.iconID or info.icon
+	if readable(icon) then
+		return icon
+	end
+	return nil
+end
+
+local resolveCache = {}
+local healNames
+
+function ns.API.InvalidateSpells()
+	wipe(resolveCache)
+	healNames = nil
+end
+
+local function playerKnows(id)
+	if not id then
+		return false
+	end
+	if IsPlayerSpell then
+		local ok, known = pcall(IsPlayerSpell, id)
+		if ok and known then
+			return true
+		end
+	end
+	if IsSpellKnownOrOverridesKnown then
+		local ok, known = pcall(IsSpellKnownOrOverridesKnown, id)
+		if ok and known then
+			return true
+		end
+	end
+	if IsSpellKnown then
+		local ok, known = pcall(IsSpellKnown, id)
+		if ok and known then
+			return true
+		end
+	end
+	if C_SpellBook then
+		if C_SpellBook.IsSpellInSpellBook then
+			local ok, known = pcall(C_SpellBook.IsSpellInSpellBook, id)
+			if ok and known then
+				return true
+			end
+		end
+		if C_SpellBook.FindSpellBookSlotForSpell then
+			local ok, slot = pcall(C_SpellBook.FindSpellBookSlotForSpell, id)
+			if ok and slot then
+				return true
+			end
+		end
+	end
+	return false
+end
+
+function ns.API.Resolve(spellID)
+	if not spellID then
+		return nil
+	end
+	local cached = resolveCache[spellID]
+	if cached ~= nil then
+		return cached or nil
+	end
+	local id = spellID
+	if C_Spell and C_Spell.GetOverrideSpell then
+		local ok, over = pcall(C_Spell.GetOverrideSpell, spellID)
+		if ok and type(over) == "number" and readable(over) then
+			id = over
+		end
+	end
+	if playerKnows(id) then
+		resolveCache[spellID] = id
+		return id
+	end
+	if id ~= spellID and playerKnows(spellID) then
+		resolveCache[spellID] = spellID
+		return spellID
+	end
+	local name = ns.API.SpellName(id) or ns.API.SpellName(spellID)
+	if name then
+		local fromName = spellIdFromName(name)
+		if fromName and playerKnows(fromName) then
+			resolveCache[spellID] = fromName
+			return fromName
+		end
+		local bookId = findPlayerSpellByName(name)
+		if bookId then
+			resolveCache[spellID] = bookId
+			return bookId
+		end
+	end
+	resolveCache[spellID] = false
+	return nil
+end
+
+function ns.API.Known(spellID)
+	return ns.API.Resolve(spellID) ~= nil
+end
+
+function ns.API.Cooldown(spellID)
+	spellID = ns.API.Resolve(spellID) or spellID
+	if not spellID or not C_Spell or not C_Spell.GetSpellCooldown then
+		return 0, 0
+	end
+	local ok, info = pcall(C_Spell.GetSpellCooldown, spellID)
+	if not ok or type(info) ~= "table" then
+		return 0, 0
+	end
+	local start = tonumber(safe(info.startTime or info.start, 0)) or 0
+	local duration = tonumber(safe(info.duration, 0)) or 0
+	local remain = duration - (GetTime() - start)
+	if remain < 0 then
+		remain = 0
+	end
+	return remain, duration
+end
+
+local function unitExists(unit)
+	if not unit then
+		return false
+	end
+	local ok, exists = pcall(UnitExists, unit)
+	return ok and exists and true or false
+end
+
+local function unitFriendly(unit)
+	if not unitExists(unit) then
+		return false
+	end
+	local okDead, dead = pcall(UnitIsDead, unit)
+	if okDead and dead then
+		return false
+	end
+	local okAtk, atk = pcall(UnitCanAttack, "player", unit)
+	if okAtk and atk then
+		return false
+	end
+	return true
+end
+
+local function healNameSet()
+	if healNames and next(healNames) then
+		return healNames
+	end
+	healNames = {}
+	for id in pairs(ns.HEAL_SPELL_IDS or {}) do
+		local name = ns.API.SpellName(id)
+		if name then
+			healNames[name] = true
+		end
+	end
+	return healNames
+end
+
+function ns.API.IsHelpful(spellID, opt)
+	if opt and opt.heal then
+		return true
+	end
+	local id = ns.API.Resolve(spellID) or spellID
+	if ns.HEAL_SPELL_IDS and ((id and ns.HEAL_SPELL_IDS[id]) or (spellID and ns.HEAL_SPELL_IDS[spellID])) then
+		return true
+	end
+	local name = ns.API.SpellName(id) or ns.API.SpellName(spellID)
+	if name and healNameSet()[name] then
+		return true
+	end
+	if C_Spell and C_Spell.IsSpellHelpful then
+		local ok, helpful = pcall(C_Spell.IsSpellHelpful, id)
+		if ok and helpful == true then
+			return true
+		end
+	end
+	if IsHelpfulSpell then
+		local ok, helpful = pcall(IsHelpfulSpell, id)
+		if ok and helpful == true then
+			return true
+		end
+	end
+	return false
+end
+
+function ns.API.IsHealSpell(spellID, opt)
+	if opt and opt.heal then
+		return true
+	end
+	if not spellID then
+		return false
+	end
+	if ns.IsMaintenanceBuff and ns.IsMaintenanceBuff(spellID) then
+		return false
+	end
+	if ns.IsWeaponBuff and ns.IsWeaponBuff(spellID) then
+		return false
+	end
+	local id = ns.API.Resolve(spellID) or spellID
+	if ns.HEAL_SPELL_IDS and ((id and ns.HEAL_SPELL_IDS[id]) or ns.HEAL_SPELL_IDS[spellID]) then
+		return true
+	end
+	local name = ns.API.SpellName(id) or ns.API.SpellName(spellID)
+	if name and healNameSet()[name] then
+		return true
+	end
+	return false
+end
+
+function ns.API.IsHarmful(spellID)
+	local id = ns.API.Resolve(spellID) or spellID
+	if C_Spell and C_Spell.IsSpellHarmful then
+		local ok, harmful = pcall(C_Spell.IsSpellHarmful, id)
+		if ok and harmful == true then
+			return true
+		end
+	end
+	if IsHarmfulSpell then
+		local ok, harmful = pcall(IsHarmfulSpell, id)
+		if ok and harmful == true then
+			return true
+		end
+	end
+	return false
+end
+
+function ns.API.HealUnit(opt)
+	opt = opt or {}
+	if opt.unit and unitExists(opt.unit) then
+		return opt.unit
+	end
+	for _, unit in ipairs({ "mouseover", "target", "focus", "targettarget" }) do
+		if unitFriendly(unit) then
+			return unit
+		end
+	end
+	return "player"
+end
+
+function ns.API.HealHealth(opt)
+	opt = opt or {}
+	if opt.unit and unitExists(opt.unit) then
+		return ns.API.Health(opt.unit)
+	end
+	for _, unit in ipairs({ "mouseover", "target", "focus" }) do
+		if unitFriendly(unit) then
+			return ns.API.Health(unit)
+		end
+	end
+	local _, hp = ns.API.LowestFriendly()
+	return hp
+end
+
+function ns.API.LowestFriendly()
+	local best, bestHp = "player", ns.API.Health("player")
+	local units = {
+		"player",
+		"mouseover",
+		"target",
+		"focus",
+		"targettarget",
+		"pet",
+		"party1",
+		"party2",
+		"party3",
+		"party4",
+	}
+	for _, unit in ipairs(units) do
+		if unitFriendly(unit) then
+			local hp = ns.API.Health(unit)
+			if hp < bestHp then
+				best, bestHp = unit, hp
+			end
+		end
+	end
+	return best, bestHp
+end
+
+local function hasResources(id)
+	if C_Spell and C_Spell.GetSpellPowerCost then
+		local ok, costs = pcall(C_Spell.GetSpellPowerCost, id)
+		if ok and type(costs) == "table" then
+			for _, cost in ipairs(costs) do
+				if type(cost) == "table" then
+					local needed = tonumber(safe(cost.cost, nil))
+					local ptype = tonumber(safe(cost.type, nil)) or 0
+					if needed and needed > 0 then
+						local cur = safe(UnitPower("player", ptype), nil)
+						if type(cur) == "number" and cur < needed then
+							return false
+						end
+					end
+				end
+			end
+		end
+	end
+	return true
+end
+
+local function readUsable(fn, id)
+	if not fn then
+		return nil, nil
+	end
+	local ok, usable, noMana = pcall(fn, id)
+	if not ok then
+		return nil, nil
+	end
+	return safe(usable, nil), safe(noMana, nil)
+end
+
+function ns.API.Ready(spellID, opt)
+	local id = ns.API.Resolve(spellID)
+	if not id then
+		return false
+	end
+	local remain = ns.API.Cooldown(id)
+	if remain > 0.2 then
+		return false
+	end
+	local helpfulOnly = ns.API.IsHelpful(id, opt) and not ns.API.IsHarmful(id)
+	local usable, noMana = readUsable(C_Spell and C_Spell.IsSpellUsable, id)
+	if usable == nil and noMana == nil then
+		usable, noMana = readUsable(IsUsableSpell, id)
+	end
+	if noMana == true then
+		return false
+	end
+	if usable == true then
+		return true
+	end
+	if helpfulOnly then
+		return hasResources(id)
+	end
+	if usable == false then
+		return false
+	end
+	return hasResources(id)
+end
+
+function ns.API.StepOk(spellID, opt)
+	spellID = ns.API.Resolve(spellID) or spellID
+	if not spellID or not ns.API.Known(spellID) then
+		return false
+	end
+	opt = opt or {}
+	if opt.hostile and not ns.API.Hostile() then
+		return false
+	end
+	local helpful = ns.API.IsHelpful(spellID, opt)
+	local auraUnit = helpful and ns.API.HealUnit(opt) or "player"
+	if opt.nobuff and ns.API.HasAura(spellID, auraUnit, "HELPFUL") then
+		return false
+	end
+	if opt.nodebuff then
+		local debuff = opt.nodebuff == true and spellID or opt.nodebuff
+		local debuffUnit = opt.unit or (helpful and auraUnit or "target")
+		if ns.API.HasAura(debuff, debuffUnit, "HARMFUL") then
+			return false
+		end
+	end
+	local needHp = opt.hp
+	if not needHp and (opt.heal or ns.API.IsHealSpell(spellID, opt)) then
+		needHp = 99
+	end
+	if needHp then
+		local hp
+		if opt.unit then
+			hp = ns.API.Health(opt.unit)
+		elseif helpful or opt.heal then
+			hp = ns.API.HealHealth(opt)
+		else
+			hp = ns.API.Health("player")
+		end
+		if hp > needHp then
+			return false
+		end
+	end
+	if opt.form and not ns.API.Form(opt.form) then
+		return false
+	end
+	if opt.noform and ns.API.Form(opt.noform) then
+		return false
+	end
+	if opt.combat and not ns.API.InCombat() then
+		return false
+	end
+	if opt.comboMin and ns.API.Combo() < opt.comboMin then
+		return false
+	end
+	if opt.pet and not unitExists("pet") then
+		return false
+	end
+	if opt.nopet and unitExists("pet") then
+		return false
+	end
+	if opt.anybuff then
+		for _, other in ipairs(opt.anybuff) do
+			if ns.API.HasAura(other, "player", "HELPFUL") then
+				return false
+			end
+		end
+	end
+	if opt.ready == false then
+		return true
+	end
+	return ns.API.Ready(spellID, opt) or opt.filler == true
+end
+
+local function auraRemain(aura)
+	if not aura then
+		return 0
+	end
+	local exp = safe(aura.expirationTime, nil)
+	if exp and exp > 0 then
+		local remain = exp - GetTime()
+		if remain < 0 then
+			remain = 0
+		end
+		return remain
+	end
+	return 9999
+end
+
+function ns.API.HasAura(spellID, unit, filter)
+	local found, remain = ns.API.FindAura(spellID, unit, filter)
+	return found, remain
+end
+
+function ns.API.FindAura(spellID, unit, filter)
+	if not spellID then
+		return false, 0
+	end
+	unit = unit or "player"
+	filter = filter or "HELPFUL"
+	local resolved = ns.API.Resolve(spellID)
+	if C_UnitAuras and C_UnitAuras.GetPlayerAuraBySpellID and unit == "player" then
+		for _, id in ipairs({ resolved, spellID }) do
+			if id then
+				local ok, aura = pcall(C_UnitAuras.GetPlayerAuraBySpellID, id)
+				if ok and type(aura) == "table" then
+					return true, auraRemain(aura)
+				end
+			end
+		end
+	end
+	if not C_UnitAuras or not C_UnitAuras.GetAuraDataByIndex then
+		return false, 0
+	end
+	local wantName = ns.API.SpellName(resolved or spellID) or ns.API.SpellName(spellID)
+	for i = 1, 40 do
+		local ok, aura = pcall(C_UnitAuras.GetAuraDataByIndex, unit, i, filter)
+		if not ok or not aura then
+			break
+		end
+		local auraID = safe(aura.spellId, nil)
+		local auraName = safe(aura.name, nil)
+		if auraID == spellID or (resolved and auraID == resolved) or (wantName and auraName == wantName) then
+			return true, auraRemain(aura)
+		end
+	end
+	return false, 0
+end
+
+function ns.API.HasWeaponBuff(entry)
+	if not entry then
+		return false, 0
+	end
+	local ids = { entry.id }
+	if entry.ranks then
+		for _, id in ipairs(entry.ranks) do
+			ids[#ids + 1] = id
+		end
+	end
+	local names = {}
+	for _, id in ipairs(ids) do
+		local found, remain = ns.API.FindAura(id, "player", "HELPFUL")
+		if found then
+			return true, remain
+		end
+		local name = ns.API.SpellName(id)
+		if name then
+			names[strlower(name)] = true
+		end
+	end
+	if not C_UnitAuras or not C_UnitAuras.GetAuraDataByIndex then
+		return false, 0
+	end
+	for i = 1, 40 do
+		local ok, aura = pcall(C_UnitAuras.GetAuraDataByIndex, "player", i, "HELPFUL")
+		if not ok or not aura then
+			break
+		end
+		local auraID = safe(aura.spellId, nil)
+		if auraID and ns.WEAPON_BUFF_IDS and ns.WEAPON_BUFF_IDS[auraID] == entry then
+			return true, auraRemain(aura)
+		end
+		local auraName = safe(aura.name, nil)
+		if auraName then
+			local lower = strlower(auraName)
+			if names[lower] then
+				return true, auraRemain(aura)
+			end
+			if entry.match then
+				for _, token in ipairs(entry.match) do
+					if lower:find(token, 1, true) then
+						return true, auraRemain(aura)
+					end
+				end
+			end
+		end
+	end
+	return false, 0
+end
+
+function ns.API.Hostile()
+	if not UnitExists("target") then
+		return false
+	end
+	local dead = UnitIsDead("target")
+	if readable(dead) and dead then
+		return false
+	end
+	local reaction = UnitReaction("player", "target")
+	if not readable(reaction) then
+		return true
+	end
+	return reaction <= 4
+end
+
+function ns.API.Health(unit)
+	unit = unit or "player"
+	local health = safe(UnitHealth(unit), nil)
+	local max = safe(UnitHealthMax(unit), nil)
+	if not health or not max or max <= 0 then
+		return 100
+	end
+	return (health / max) * 100
+end
+
+function ns.API.InCombat()
+	local ok, combat = pcall(UnitAffectingCombat, "player")
+	if ok and readable(combat) then
+		return combat and true or false
+	end
+	return ok and combat and true or false
+end
+
+function ns.API.TargetCasting()
+	if not UnitExists("target") then
+		return false
+	end
+	local function peek(fn)
+		if not fn then
+			return false, nil
+		end
+		local ok, name, _, _, _, _, extraA, extraB = pcall(fn, "target")
+		if not ok or name == nil then
+			return false, nil
+		end
+		local notKick = extraB
+		if fn == UnitChannelInfo then
+			notKick = extraA
+		end
+		if readable(notKick) and notKick then
+			return false, true
+		end
+		return true, false
+	end
+	local casting = peek(UnitCastingInfo)
+	if casting then
+		return true
+	end
+	casting = peek(UnitChannelInfo)
+	if casting then
+		return true
+	end
+	return ns.API.castTarget == true
+end
+
+function ns.API.Purgable(stealableOnly)
+	if not UnitExists("target") or not C_UnitAuras or not C_UnitAuras.GetAuraDataByIndex then
+		return false
+	end
+	for i = 1, 40 do
+		local ok, aura = pcall(C_UnitAuras.GetAuraDataByIndex, "target", i, "HELPFUL")
+		if not ok or not aura then
+			break
+		end
+		if stealableOnly then
+			if readable(aura.isStealable) and aura.isStealable then
+				return true
+			end
+		else
+			if readable(aura.isStealable) and aura.isStealable then
+				return true
+			end
+			local dispel = safe(aura.dispelName, nil)
+			if dispel == "Magic" then
+				return true
+			end
+		end
+	end
+	return false
+end
+
+function ns.API.HasDebuffType(types, unit)
+	if not types or not C_UnitAuras or not C_UnitAuras.GetAuraDataByIndex then
+		return false
+	end
+	unit = unit or "player"
+	local want = {}
+	for _, name in ipairs(types) do
+		want[name] = true
+	end
+	for i = 1, 40 do
+		local ok, aura = pcall(C_UnitAuras.GetAuraDataByIndex, unit, i, "HARMFUL")
+		if not ok or not aura then
+			break
+		end
+		local dispel = safe(aura.dispelName, nil)
+		if dispel and want[dispel] then
+			return true
+		end
+	end
+	return false
+end
+
+local function asNumber(value)
+	if readable(value) and type(value) == "number" then
+		return value
+	end
+	local ok, n = pcall(tonumber, value)
+	if ok and type(n) == "number" then
+		return n
+	end
+	return nil
+end
+
+local function readWeaponEnchant()
+	local src
+	if C_Item and C_Item.GetWeaponEnchantInfo then
+		local ok, a, b, c, d, e, f, g, h = pcall(C_Item.GetWeaponEnchantInfo)
+		if ok then
+			src = { a, b, c, d, e, f, g, h }
+		end
+	end
+	if not src and GetWeaponEnchantInfo then
+		local ok, a, b, c, d, e, f, g, h = pcall(GetWeaponEnchantInfo)
+		if ok then
+			src = { a, b, c, d, e, f, g, h }
+		end
+	end
+	if not src then
+		return nil, 0, nil
+	end
+	local has = src[1]
+	local remain = asNumber(src[2])
+	local enchId = asNumber(src[4])
+	if remain then
+		remain = remain / 1000
+	else
+		remain = 0
+	end
+	if enchId and enchId > 0 then
+		return true, remain > 0 and remain or 9999, enchId
+	end
+	if readable(has) then
+		if has then
+			return true, remain > 0 and remain or 9999, enchId
+		end
+		return false, 0, 0
+	end
+	return nil, 0, nil
+end
+
+function ns.API.WeaponEnchant(offhand)
+	return readWeaponEnchant(offhand)
+end
+
+function ns.API.WeaponTooltipHas(tokens)
+	if not tokens or #tokens == 0 then
+		return false
+	end
+	local texts = {}
+	if C_TooltipInfo and C_TooltipInfo.GetInventoryItem then
+		local ok, data = pcall(C_TooltipInfo.GetInventoryItem, "player", 16)
+		if ok and type(data) == "table" and data.lines then
+			for _, line in ipairs(data.lines) do
+				local text = safe(line.leftText, nil)
+				if text then
+					texts[#texts + 1] = strlower(text)
+				end
+			end
+		end
+	end
+	if #texts == 0 then
+		return false
+	end
+	for _, text in ipairs(texts) do
+		for _, token in ipairs(tokens) do
+			if text:find(token, 1, true) then
+				return true
+			end
+		end
+	end
+	return false
+end
+
+function ns.API.Form(spellID)
+	return ns.API.HasAura(spellID, "player", "HELPFUL")
+end
+
+function ns.API.Combo()
+	if not GetComboPoints then
+		return 0
+	end
+	local ok, points = pcall(GetComboPoints, "player", "target")
+	if ok and type(points) == "number" then
+		return points
+	end
+	return 0
+end
+
+function ns.API.Power(kind)
+	local map = { Mana = 0, Rage = 1, Focus = 2, Energy = 3 }
+	local token = map[kind] or 0
+	local current = safe(UnitPower("player", token), 0) or 0
+	local max = safe(UnitPowerMax("player", token), 1) or 1
+	return current, max
+end
+
+function ns.API.Add(queue, spellID, opt)
+	spellID = ns.API.Resolve(spellID) or spellID
+	if not spellID or #queue >= 3 then
+		return
+	end
+	for i = 1, #queue do
+		if queue[i] == spellID then
+			return
+		end
+	end
+	if ns.API.StepOk(spellID, opt) then
+		queue[#queue + 1] = spellID
+	end
+end
