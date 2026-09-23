@@ -251,7 +251,7 @@ Options (`WoWForeverRotOptions`, 500×560, dans `UISpecialFrames`) :
 
 Minimap : angle `ns.db.minimapAngle` (défaut 210). Clic gauche options, clic droit verrou, drag pour tourner autour de la minimap.
 
-Textures dans `images/` : `skull`, éclairs, cercle de purge, cadenas, boutons, rôles, `minimap.tga`. Le bouton minimap est créé dans `Options.lua`.
+Textures dans `images/` : `skull`, éclairs, cercle de purge, cadenas, boutons, rôles, `minimap.tga`, `logo.tga` (icône du gestionnaire d'addons, logo officiel). Le bouton minimap est créé dans `Options.lua`.
 
 ## Surlignage (`Glow.lua`)
 
