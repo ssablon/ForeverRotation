@@ -2,7 +2,7 @@
 
 Addon d'aide à la rotation pour **WoW Forever** (combat Classic Era, client camelot, interface `16001`). Il affiche les prochains sorts et surligne les boutons. Il ne lance aucun sort.
 
-Version actuelle : **1.4.9**. Auteur : Vohnka — https://wow-forever.fr  
+Version actuelle : **1.5.0**. Auteur : Vohnka — https://wow-forever.fr  
 Dépôt : https://github.com/ssablon/WoWForeverRot (privé, branche `main`).
 
 La carte complète du code est dans [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md). Ce fichier dit seulement par où commencer.
@@ -23,7 +23,7 @@ Les deux TOC chargent les mêmes fichiers, dans cet ordre :
 
 `Credits.lua` → `Locale.lua` → `API.lua` → `Data.lua` → `Lists.lua` → `APL.lua` → `UI.lua` → `Options.lua` → `Glow.lua` → `Rotations.lua` → `Core.lua`
 
-Tout l'état partagé vit dans la table `ns` (deuxième valeur de `...`). `Core.lua` branche les événements et appelle `ns.Tick` toutes les 0,2 s.
+Tout l'état partagé vit dans la table `ns` (deuxième valeur de `...`). `Core.lua` branche les événements et appelle `ns.Tick` toutes les 0,05 s.
 
 ## Où modifier quoi
 
@@ -46,6 +46,8 @@ Tout l'état partagé vit dans la table `ns` (deuxième valeur de `...`). `Core.
 - Rejeter les noms `TEST`, `(OLD)`, `(PT)` (`junkSpellName`).
 - Les buffs de `ns.MAINTENANCE_BUFF_IDS` sont retirés des listes de combat au chargement (`stripMaintFromApl`) et refusés par `AddAPL`.
 - Un sort avec un temps de recharge propre ne reste pas affiché : `NoteSpellCast` le retire jusqu'à la fin du CD, puis le pas suivant est testé. Le GCD ne compte pas. Ne pas court-circuiter `ns.API.Cooldown` avec `filler`.
+- Fulgurance, Revanche, Riposte, Contre-attaque et Morsure de la mangouste utilisent `opt.proc` (journal de combat, fenêtre 5 s). Ne pas les laisser sans cette condition : ils resteraient proposés hors fenêtre.
+- `listVersion` est à 4 : au prochain login les listes sauvées sont remplacées par l'ordre ConROC Classic.
 - Le mode `auto` utilise la liste mono (`APLDefaults`) tant que `ns.API.EnemyCount()` est sous `autoEnemies` (défaut 3, minimum 2). Au-dessus, il utilise la liste `aoe`.
 - Le bouton HUD druide `hybrid` n'est pas une clé de liste. `ns.ActiveSpec()` choisit `cat`, `bear`, `heal`, `tank` ou `damage`.
 - `ns.ResetCurrentProfile` n'efface que le profil actif (`base`, `pve`, `pvp`, `custom`).

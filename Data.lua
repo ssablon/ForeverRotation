@@ -81,13 +81,13 @@ ns.CLASS_SPELL = {
 -- 96 = Éolide sculpte-vents (Horde) — vue céleste
 ns.RACIALS = {
 	{ key = "Perception", id = 20600, races = { 1 }, opt = { combat = true } },
-	{ key = "BloodFury", id = 20572, races = { 2 }, opt = { hostile = true } },
+	{ key = "BloodFury", id = 20572, races = { 2 }, opt = { hostile = true }, on = true },
 	{ key = "Stoneform", id = 20594, races = { 3 }, opt = { combat = true, hp = 70 }, defensive = true },
 	{ key = "Shadowmeld", id = 20580, races = { 4 }, opt = { nobuff = true }, defensive = true },
 	{ key = "WilloftheForsaken", id = 7744, races = { 5 }, defensive = true },
 	{ key = "WarStomp", id = 20549, races = { 6 }, opt = { hostile = true } },
 	{ key = "EscapeArtist", id = 20589, races = { 7 }, defensive = true },
-	{ key = "Berserking", id = 20554, races = { 8 }, opt = { hostile = true } },
+	{ key = "Berserking", id = 20554, races = { 8 }, opt = { hostile = true }, on = true },
 	{ key = "LeyLine", id = 1259705, races = { 95 }, factions = { "Alliance" }, opt = { hostile = true }, defensive = true },
 	{ key = "SkyView", id = 1259686, races = { 96 }, factions = { "Horde" } },
 }

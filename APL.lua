@@ -114,7 +114,7 @@ function ns.RacialSteps(defensiveOnly)
 				key = "racial_" .. racial.key,
 				id = racial.id,
 				opt = racial.opt or {},
-				on = false,
+				on = racial.on and true or false,
 				racial = true,
 			}
 		end

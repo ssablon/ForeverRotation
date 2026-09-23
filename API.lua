@@ -484,6 +484,9 @@ local function markCooldown(spellID, seconds)
 	end
 end
 
+local procUntil = { dodge = 0, revenge = 0, mongoose = 0, parry = 0 }
+local PROC_WINDOW = 5
+
 function ns.API.NoteSpellCast(spellID)
 	if spellID == nil or (issecretvalue and issecretvalue(spellID)) then
 		return
@@ -497,6 +500,62 @@ function ns.API.NoteSpellCast(spellID)
 		seconds = fallbackSeconds(spellID)
 	end
 	markCooldown(spellID, seconds)
+	local S = ns.Spell
+	local procBySpell = {
+		[S.Warrior.Overpower] = "dodge",
+		[S.Warrior.Revenge] = "revenge",
+		[S.Hunter.MongooseBite] = "mongoose",
+		[S.Hunter.Counterattack] = "parry",
+		[S.Rogue.Riposte] = "parry",
+	}
+	local kind = procBySpell[spellID] or procBySpell[ns.API.Resolve and ns.API.Resolve(spellID)]
+	if kind then
+		procUntil[kind] = 0
+	end
+end
+
+function ns.API.ProcOpen(kind)
+	return GetTime() < (procUntil[kind] or 0)
+end
+
+function ns.API.NoteCombatLog()
+	if not CombatLogGetCurrentEventInfo then
+		return
+	end
+	local ok, _, subevent, _, sourceGUID, _, _, _, destGUID, _, _, _, a, _, _, d = pcall(CombatLogGetCurrentEventInfo)
+	if not ok or not readable(subevent) or type(subevent) ~= "string" then
+		return
+	end
+	local missType
+	if subevent == "SWING_MISSED" then
+		missType = a
+	elseif subevent == "SPELL_MISSED" or subevent == "RANGE_MISSED" then
+		missType = d
+	else
+		return
+	end
+	if not readable(missType) or type(missType) ~= "string" then
+		return
+	end
+	local meOk, me = pcall(UnitGUID, "player")
+	if not meOk or not readable(me) or not readable(sourceGUID) or not readable(destGUID) then
+		return
+	end
+	local untilAt = GetTime() + PROC_WINDOW
+	if sourceGUID == me and destGUID ~= me and missType == "DODGE" then
+		procUntil.dodge = untilAt
+	end
+	if destGUID == me and sourceGUID ~= me then
+		if missType == "DODGE" or missType == "BLOCK" or missType == "PARRY" then
+			procUntil.revenge = untilAt
+		end
+		if missType == "DODGE" then
+			procUntil.mongoose = untilAt
+		end
+		if missType == "PARRY" then
+			procUntil.parry = untilAt
+		end
+	end
 end
 
 local function trackedRemain(spellID)
@@ -850,9 +909,65 @@ function ns.API.StepOk(spellID, opt, timeShift)
 	if opt.nopet and unitExists("pet") then
 		return false
 	end
+	if opt.nocombat and ns.API.InCombat() then
+		return false
+	end
+	if opt.needbuff and not ns.API.HasAura(opt.needbuff, "player", "HELPFUL") then
+		return false
+	end
+	if opt.proc and not ns.API.ProcOpen(opt.proc) then
+		return false
+	end
+	if opt.require and not ns.API.Known(opt.require) then
+		return false
+	end
+	if opt.requireAny then
+		local knownSchool = false
+		for _, id in ipairs(opt.requireAny) do
+			if ns.API.Known(id) then
+				knownSchool = true
+				break
+			end
+		end
+		if not knownSchool then
+			return false
+		end
+	end
+	if opt.needdebuff and not ns.API.HasAura(opt.needdebuff, opt.unit or "target", "HARMFUL") then
+		return false
+	end
+	if opt.usable then
+		local usable = readUsable(C_Spell and C_Spell.IsSpellUsable, spellID)
+		if usable == nil then
+			usable = readUsable(IsUsableSpell, spellID)
+		end
+		if usable ~= true then
+			return false
+		end
+	end
+	if opt.manaMax then
+		local okCur, current = pcall(UnitPower, "player", 0)
+		local okMax, maxp = pcall(UnitPowerMax, "player", 0)
+		if not okCur or not okMax or not readable(current) or not readable(maxp) or maxp <= 0 or (current / maxp) * 100 > opt.manaMax then
+			return false
+		end
+	end
+	if opt.hpMin then
+		local hp = ns.API.Health(opt.unit or "player")
+		if hp < opt.hpMin then
+			return false
+		end
+	end
 	if opt.anybuff then
 		for _, other in ipairs(opt.anybuff) do
 			if ns.API.HasAura(other, "player", "HELPFUL") then
+				return false
+			end
+		end
+	end
+	if opt.anydebuff then
+		for _, other in ipairs(opt.anydebuff) do
+			if ns.API.HasAura(other, opt.unit or "target", "HARMFUL") then
 				return false
 			end
 		end

@@ -134,10 +134,21 @@ Les listes viennent d'un noyau Era type ConROC Classic, niveaux 1–60. Pas de S
 | `pet` / `nopet` | Familier présent ou absent. |
 | `ready = false` | Accepte le pas sans tester le cooldown ni l'utilisabilité. |
 | `filler` | Sort de spam sans temps de recharge propre (Colère, Frappe héroïque, Attaque pernicieuse…). Ignoré seulement par un vrai cooldown, pas par le GCD. |
+| `nocombat` | Refus si le joueur est en combat (Charge, Camouflage, Proie). |
+| `needbuff` | ID d'aura utile exigée sur le joueur (Garrot et Embuscade exigent Camouflage). |
+| `needdebuff` | ID de débuff exigé sur la cible (Conflagration exige Immolation). |
+| `proc` | `"dodge"`, `"revenge"`, `"mongoose"` ou `"parry"`. Fenêtre de 5 s ouverte par le journal de combat. |
+| `usable` | Le client doit répondre que le sort est utilisable (Exorcisme, Colère divine, Attaque sournoise dans le dos). Si la réponse est masquée, le pas est sauté. |
+| `manaMax` | Refus si le pourcentage de mana du joueur est au-dessus de ce seuil (Connexion). |
+| `hpMin` | Refus si la vie (joueur, ou `unit`) est sous ce pourcentage. |
+| `require` / `requireAny` | Le sort (ou l'un des sorts) doit être connu. Sert à choisir Éclair de givre ou Projectiles des arcanes selon les talents. |
+| `anydebuff` | Liste d'IDs. Si la cible a **l'un** d'eux, le pas est refusé. Une seule piqûre, une seule malédiction. |
 
 `ns.API.Ready` : sort résolu, pas de cooldown propre en cours, pas de `noMana`. Le GCD (environ 1,5 s) ne retire pas le sort de la file : il reste le prochain bouton à presser. Un cooldown plus long (Jugement, Horion, Visée, Déflagration…) le retire jusqu'à la fin, et le pas suivant de la liste est testé. Ça vaut pour toutes les classes, les raciaux et la défense.
 
 Le client camelot masque souvent `GetSpellCooldown` en combat. Au lancement réussi, `ns.API.NoteSpellCast` démarre le temps de recharge de base du sort (`GetSpellBaseCooldown`, sinon `ns.COOLDOWNS`). Les trois horions du chaman partagent ce temps (`ns.COOLDOWN_GROUPS`). Un proc qui rend le sort disponible plus tôt peut attendre la fin de ce délai, parce que le jeu ne laisse pas lire le temps restant.
+
+Fulgurance, Revanche, Riposte, Contre-attaque et Morsure de la mangouste ne dépendent pas de `IsSpellUsable` (souvent masqué). `COMBAT_LOG_EVENT_UNFILTERED` ouvre une fenêtre de 5 secondes : esquive de la cible pour Fulgurance, blocage / esquive / parade subie pour Revanche, esquive subie pour la mangouste, parade subie pour Riposte et Contre-attaque. Le lancement du sort ferme la fenêtre.
 
 Un sort seulement utile (`IsHelpful` et pas `IsHarmful`) peut passer via le coût de puissance si `IsSpellUsable` est faux ou absent. Un sort nuisible avec `usable == false` est refusé.
 
@@ -214,7 +225,7 @@ Le profil actif est recopié dans `ns.db.profiles[key]` par `FlushProfile` (à c
 Migrations dans `defaults()` :
 
 - `uiVersion ~= 6` : oublie les positions `toolbar` et `defense`.
-- `listVersion ~= 3` : efface `apl`, `aplDrop`, `def`, `defDrop` globaux **et** ceux de chaque profil.
+- `listVersion ~= 4` : efface `apl`, `aplDrop`, `def`, `defDrop` globaux **et** ceux de chaque profil.
 
 Bumper `listVersion` seulement quand les anciennes sauvegardes doivent être jetées. Les joueurs perdent alors leurs réordonnancements.
 
@@ -323,7 +334,7 @@ Soins — unité : `opt.unit` s'il existe, sinon `mouseover`, `target`, `focus`,
 
 ```
 uiVersion            = 6
-listVersion          = 3
+listVersion          = 4
 profile              = "base" | "pve" | "pvp" | "custom"
 locked               = bool
 glow, showRotation, showDefense, showInterrupt, showPurge,

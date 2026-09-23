@@ -72,7 +72,7 @@ function ns.BuildQueue()
 		if not id or used[id] or used[step.key] then
 			return false
 		end
-		local group = step.opt and step.opt.anybuff
+		local group = step.opt and (step.opt.anybuff or step.opt.anydebuff)
 		if group and blocked[group] then
 			return false
 		end
