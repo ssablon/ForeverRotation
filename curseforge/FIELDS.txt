@@ -1,0 +1,26 @@
+À coller dans le formulaire CurseForge (Create Project)
+
+Game:                 World of Warcraft
+Project name:         WoW Forever Rot
+Slug (si demandé):    wow-forever-rot
+Logo:                 curseforge/logo-512.png
+Summary (FR):         HUD des 3 prochains sorts + flash tête de mort pour WoW Forever (combat Classic).
+Summary (EN):         Next-3-ability HUD and skull spellflash for WoW Forever Classic combat.
+Class:                Addon
+Main category:        Combat
+Additional:           Buffs & Debuffs, Class
+Allow comments:       Oui
+Experimental:         Non (sauf si la modération refuse le client Forever)
+Description:          curseforge/DESCRIPTION.html  (mode WYSIWYG → coller le HTML)
+License:              Custom
+License text:         All Rights Reserved. © Vohnka — https://wow-forever.fr
+Website:              https://wow-forever.fr
+Source:               dépôt privé GitHub (ne pas rendre public si tu veux le garder privé)
+Issues:               laisser vide, ou ton Discord / wow-forever.fr
+
+Fichier à uploader:   F:\Github\addons\wow\WoWForeverRot-1.5.7.zip
+Display name:         WoWForeverRot 1.5.7
+Release type:         Release
+Changelog:            curseforge/CHANGELOG.md
+Supported versions:   1.60.1  (API id 17053, type 88568)
+                      C’est la version Forever / camelot déjà listée par CurseForge.
