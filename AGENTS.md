@@ -1,0 +1,51 @@
+# WoW Forever Rot — guide agent
+
+Addon d'aide à la rotation pour **WoW Forever** (combat Classic Era, client camelot, interface `16001`). Il affiche les prochains sorts et surligne les boutons. Il ne lance aucun sort.
+
+Version actuelle : **1.4.6**. Auteur : Vohnka — https://wow-forever.fr  
+Dépôt : https://github.com/ssablon/WoWForeverRot (privé, branche `main`).
+
+La carte complète du code est dans [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md). Ce fichier dit seulement par où commencer.
+
+## Source de vérité
+
+Éditer **ce dépôt**. La copie jouée est :
+
+`C:\Program Files (x86)\World of Warcraft\_classic_beta_\Interface\AddOns\WoWForeverRot`
+
+Si les deux divergent, le dépôt gagne : recopier le dépôt vers AddOns. Ne pas écraser GitHub avec le dossier du jeu. `LISEZMOI.txt` peut exister seulement dans AddOns ; il n'est pas versionné.
+
+Après chaque changement demandé : recopier les fichiers touchés dans AddOns, commiter, puis `git push origin HEAD`.
+
+## Ordre de chargement
+
+Les deux TOC chargent les mêmes fichiers, dans cet ordre :
+
+`Credits.lua` → `Locale.lua` → `API.lua` → `Data.lua` → `Lists.lua` → `APL.lua` → `UI.lua` → `Options.lua` → `Glow.lua` → `Rotations.lua` → `Core.lua`
+
+Tout l'état partagé vit dans la table `ns` (deuxième valeur de `...`). `Core.lua` branche les événements et appelle `ns.Tick` toutes les 0,2 s.
+
+## Où modifier quoi
+
+| Besoin | Fichier |
+| --- | --- |
+| Nouveau sort, racial, interrupt, purge, cleanse, enchant d'arme | `Data.lua` (`ns.Spell`, puis les tables dérivées) |
+| Ordre par défaut mono / AoE / burst / défense | `Lists.lua` |
+| Sauvegarde, fusion, ajout, retrait d'un sort | `APL.lua` |
+| Conditions « le sort est proposé » | `API.lua` (`StepOk`, `Ready`, `Resolve`) |
+| File HUD, défense, interrupt, arme | `Rotations.lua` |
+| Fenêtres, toolbar | `UI.lua` |
+| Options, glisser un sort | `Options.lua` |
+| Tête de mort sur les barres | `Glow.lua` |
+| Profils, slash, migrations | `Core.lua` |
+| Texte joueur | `Locale.lua` (`ns.T`) |
+
+## Pièges qui cassent Forever
+
+- Résoudre un sort par **nom + grimoire** (`ns.API.Resolve`). Un ID Classic peut être remappé.
+- Rejeter les noms `TEST`, `(OLD)`, `(PT)` (`junkSpellName`).
+- Les buffs de `ns.MAINTENANCE_BUFF_IDS` sont retirés des listes de combat au chargement (`stripMaintFromApl`) et refusés par `AddAPL`.
+- Le mode `auto` utilise la liste mono (`APLDefaults`) tant que `ns.API.EnemyCount()` est sous `autoEnemies` (défaut 3, minimum 2). Au-dessus, il utilise la liste `aoe`.
+- Le bouton HUD druide `hybrid` n'est pas une clé de liste. `ns.ActiveSpec()` choisit `cat`, `bear`, `heal`, `tank` ou `damage`.
+- `ns.ResetCurrentProfile` n'efface que le profil actif (`base`, `pve`, `pvp`, `custom`).
+- Incrémenter la version dans **les deux** TOC.

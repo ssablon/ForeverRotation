@@ -141,6 +141,12 @@ Saved variables: `WoWForeverRotDB`, `WoWForeverSharedDB` (credit line shared wit
 - While dead, mounted, or eating, the HUD may still update.
 - Do not overwrite Blizzard spell APIs from other add-ons; this one reads `C_Spell` / `C_SpellBook` and never patches them.
 
+## For agents and contributors
+
+The player guide above is not the implementation map. Before changing code, read [AGENTS.md](AGENTS.md) and [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md).
+
+The git repository is the source of truth. The copy under `World of Warcraft\_classic_beta_\Interface\AddOns\WoWForeverRot` must be refreshed from this repo. Do not replace this repo with files taken from the game folder.
+
 ## License
 
 Private repository. © Vohnka / [wow-forever.fr](https://wow-forever.fr). All rights reserved.

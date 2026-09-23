@@ -1,0 +1,22 @@
+---
+description: Après chaque changement, recopier l'addon installé depuis le dépôt puis pousser sur GitHub
+alwaysApply: true
+---
+
+# Pousser sur GitHub
+
+Le dépôt `ssablon/WoWForeverRot` est la source de vérité. Ne jamais remplacer ses fichiers par la copie du dossier AddOns.
+
+Après une modification demandée par l'utilisateur :
+
+1. Recopier les fichiers changés vers  
+   `C:\Program Files (x86)\World of Warcraft\_classic_beta_\Interface\AddOns\WoWForeverRot`
+2. Commiter dans ce dépôt.
+3. Pousser : `git push origin HEAD`
+
+Ne pas force-push `main`. Ne pas commiter de secrets, de SavedVariables, ni de fichiers `.env`.
+
+```powershell
+Copy-Item -LiteralPath ".\API.lua" -Destination "C:\Program Files (x86)\World of Warcraft\_classic_beta_\Interface\AddOns\WoWForeverRot\API.lua" -Force
+git push origin HEAD
+```

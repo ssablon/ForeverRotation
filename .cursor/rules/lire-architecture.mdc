@@ -1,0 +1,14 @@
+---
+description: Lire l'architecture de WoW Forever Rot avant de modifier l'addon
+alwaysApply: true
+---
+
+# Lire avant de coder
+
+Avant tout changement Lua, TOC ou liste de sorts, lire `AGENTS.md` puis `docs/ARCHITECTURE.md`.
+
+- Garder les deux TOC identiques (`WoWForeverRot.toc` et `WoWForeverRot_Camelot.toc`).
+- Résoudre les sorts avec `ns.API.Resolve` (nom + grimoire). Les IDs Forever ne sont pas ceux de Classic.
+- Ne pas écraser `C_Spell` ni `C_SpellBook`. Protéger chaque appel Blizzard par `pcall`, et ignorer les secret values (`issecretvalue`, `canaccessvalue`).
+- Buffs longs : `ns.MAINTENANCE_BUFF_IDS`, liste Défense seulement. Pas la file de combat.
+- Une nouvelle liste par défaut qui doit remplacer une sauvegarde joueur exige un bump de `ns.db.listVersion` dans `Core.lua`.
