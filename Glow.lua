@@ -341,6 +341,9 @@ local function buttonsFor(spellID)
 	if name then
 		take(spellsByName[name])
 	end
+	if #out > 0 then
+		return out
+	end
 	if C_ActionBar and C_ActionBar.FindSpellActionButtons then
 		local ok, slots = pcall(C_ActionBar.FindSpellActionButtons, spellID)
 		if ok and type(slots) == "table" then
@@ -398,14 +401,7 @@ local function apply(spellID, isDef)
 	if not isDef and spellID == lastSpell and lastSpellHeal == heal and next(damageGlowing) then
 		return
 	end
-	if lastFetch == 0 or GetTime() - lastFetch > 5 then
-		ns.GlowFetch()
-	end
 	local list = buttonsFor(spellID)
-	if #list == 0 then
-		ns.GlowFetch()
-		list = buttonsFor(spellID)
-	end
 	if isDef then
 		ns.GlowClearDef()
 		lastDef = spellID
@@ -447,14 +443,7 @@ local function applyExtra(spellID, lastKey, glowing, show, clear)
 	if lastKey[1] == spellID and next(glowing) then
 		return
 	end
-	if lastFetch == 0 or GetTime() - lastFetch > 5 then
-		ns.GlowFetch()
-	end
 	local list = buttonsFor(spellID)
-	if #list == 0 then
-		ns.GlowFetch()
-		list = buttonsFor(spellID)
-	end
 	clear()
 	lastKey[1] = spellID
 	for _, button in ipairs(list) do
@@ -642,17 +631,32 @@ function ns.RangeClear()
 	wipe(rangeOn)
 end
 
-function ns.RangeUpdate()
-	if lastFetch == 0 then
-		ns.GlowFetch()
+local function collectGlowing(seen)
+	local function take(set)
+		for button in pairs(set) do
+			if button then
+				seen[button] = true
+			end
+		end
 	end
+	take(damageGlowing)
+	take(defenseGlowing)
+	take(kickGlowing)
+	take(purgeGlowing)
+	take(cleanseGlowing)
+	take(weaponGlowing)
+end
+
+function ns.RangeUpdate()
 	if not hasUnitTarget() then
 		ns.RangeClear()
 		return
 	end
+	local glowing = {}
+	collectGlowing(glowing)
 	local seen = {}
-	for button in pairs(rangeButtons) do
-		if button and button.IsShown and button:IsShown() then
+	for button in pairs(glowing) do
+		if button.IsShown and button:IsShown() then
 			seen[button] = true
 			local flag = actionInRange(button)
 			local filter = ensureRangeFilter(button)

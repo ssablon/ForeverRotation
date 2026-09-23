@@ -26,7 +26,7 @@ Au `PLAYER_LOGIN` et `PLAYER_ENTERING_WORLD` :
 4. `ns.CreateMinimap()` et `ns.GlowFetch()`.
 5. `ns.Tick()`.
 
-`ns.Tick` (aussi toutes les 0,2 s, et sur cible, cast, équipement, barres, sorts appris) :
+`ns.Tick` (timer `C_Timer` toutes les 0,2 s comme ConROC, plus cible) :
 
 ```
 BuildQueue → BuildDefense → BuildInterrupt → BuildPurge → BuildCleanse → BuildWeapon
@@ -279,7 +279,7 @@ Overlays `button.WFROverlays`, blend `ADD`, tête de mort :
 
 `ns.db.glow == false` coupe les têtes de mort de rotation et de défense. Interrupt, purge, cleanse et arme ont leur propre `Glow*` appelé depuis `Tick` sans retester `glow` dans ces fonctions : ils suivent surtout `showInterrupt` / `showPurge` / `showCleanse` / `showWeapon`, qui court-circuitent le builder.
 
-`ns.RangeUpdate` teinte en rouge les boutons hors de portée (`IsActionInRange` / équivalent selon le slot). Coupé par `showRange == false`.
+`ns.RangeUpdate` teinte en rouge seulement les boutons déjà surlignés (comme ConROC, qui ne scanne pas toute la barre). Coupé par `showRange == false`.
 
 ## Résolution d'un sort
 

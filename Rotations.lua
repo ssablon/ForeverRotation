@@ -108,8 +108,8 @@ function ns.BuildQueue()
 	local function consider(step)
 		return ns.IsStepEnabled(step) and step.id and not ns.IsWeaponBuff(step.id) and not ns.IsMaintenanceBuff(step.id)
 	end
-	-- Comme ConROC : le sort prêt maintenant, puis ceux qui le seront au GCD suivant.
-	for _, shift in ipairs({ 0.2, 1.5, 3 }) do
+	-- Comme ConROC : un passage maintenant, un second pour le GCD suivant.
+	for _, shift in ipairs({ 0.2, 1.5 }) do
 		if #q >= 3 then
 			break
 		end
@@ -118,16 +118,6 @@ function ns.BuildQueue()
 				break
 			end
 			if consider(step) and not used[step.key] and API.StepOk(step.id, step.opt, shift) then
-				take(step)
-			end
-		end
-	end
-	if #q < 3 then
-		for _, step in ipairs(apl) do
-			if #q >= 3 then
-				break
-			end
-			if consider(step) and not used[step.key] and API.StepOk(step.id, step.opt, 999) then
 				take(step)
 			end
 		end

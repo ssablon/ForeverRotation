@@ -430,20 +430,45 @@ frame:RegisterEvent("UNIT_SPELLCAST_SUCCEEDED")
 frame:RegisterEvent("UPDATE_SHAPESHIFT_FORM")
 frame:RegisterEvent("ACTIONBAR_SLOT_CHANGED")
 frame:RegisterEvent("ACTIONBAR_PAGE_CHANGED")
-frame:RegisterEvent("UNIT_SPELLCAST_START")
-frame:RegisterEvent("UNIT_SPELLCAST_STOP")
-frame:RegisterEvent("UNIT_SPELLCAST_FAILED")
-frame:RegisterEvent("UNIT_SPELLCAST_INTERRUPTED")
-frame:RegisterEvent("UNIT_SPELLCAST_CHANNEL_START")
-frame:RegisterEvent("UNIT_SPELLCAST_CHANNEL_STOP")
 frame:RegisterEvent("PLAYER_EQUIPMENT_CHANGED")
 pcall(frame.RegisterEvent, frame, "WEAPON_ENCHANT_CHANGED")
-pcall(frame.RegisterEvent, frame, "SPELLS_CHANGED")
 pcall(frame.RegisterEvent, frame, "LEARNED_SPELL_IN_TAB")
 pcall(frame.RegisterEvent, frame, "PLAYER_TALENT_UPDATE")
 pcall(frame.RegisterEvent, frame, "PLAYER_LOGOUT")
+
+local ticker
+local booted
 local spellsPending
 local barsPending
+
+local function startTicker()
+	if ticker then
+		return
+	end
+	if C_Timer and C_Timer.NewTicker then
+		ticker = C_Timer.NewTicker(0.2, function()
+			ns.Tick()
+		end)
+		return
+	end
+	frame:SetScript("OnUpdate", function(self, elapsed)
+		self.acc = (self.acc or 0) + elapsed
+		if self.acc < 0.2 then
+			return
+		end
+		self.acc = 0
+		ns.Tick()
+	end)
+end
+
+local function stopTicker()
+	if ticker then
+		ticker:Cancel()
+		ticker = nil
+	end
+	frame:SetScript("OnUpdate", nil)
+end
+
 local function flushSpells()
 	spellsPending = nil
 	if ns.API and ns.API.InvalidateSpells then
@@ -451,6 +476,7 @@ local function flushSpells()
 	end
 	ns.Tick()
 end
+
 local function flushBars()
 	barsPending = nil
 	if ns.GlowFetch then
@@ -459,16 +485,14 @@ local function flushBars()
 	if ns.GlowInvalidate then
 		ns.GlowInvalidate()
 	end
-	ns.Tick()
 end
+
 frame:SetScript("OnEvent", function(_, event, unit, _, spellID)
 	if event == "PLAYER_LOGOUT" then
+		stopTicker()
 		if ns.FlushProfile then
 			ns.FlushProfile()
 		end
-		return
-	end
-	if event == "SPELLS_CHANGED" then
 		return
 	end
 	if event == "LEARNED_SPELL_IN_TAB" or event == "PLAYER_TALENT_UPDATE" then
@@ -485,37 +509,29 @@ frame:SetScript("OnEvent", function(_, event, unit, _, spellID)
 	end
 	if event == "PLAYER_LOGIN" or event == "PLAYER_ENTERING_WORLD" then
 		defaults()
-		if ns.API and ns.API.InvalidateSpells then
-			ns.API.InvalidateSpells()
+		if not booted then
+			booted = true
+			if ns.API and ns.API.InvalidateSpells then
+				ns.API.InvalidateSpells()
+			end
+			ns.UI.Create()
+			if ns.CreateMinimap then
+				ns.CreateMinimap()
+			end
+			if ns.GlowFetch then
+				ns.GlowFetch(true)
+			end
+			startTicker()
 		end
-		ns.UI.Create()
-		local token, _, localized = ns.ClassToken()
 		if event == "PLAYER_LOGIN" then
+			local token, _, localized = ns.ClassToken()
 			print("|cff66ccffWoW Forever Rot|r: " .. ns.T("INIT"))
 			print("|cff66ccffWoW Forever Rot|r: " .. format(ns.T("MODULE"), localized or token or "?"))
-		end
-		if ns.CreateMinimap then
-			ns.CreateMinimap()
-		end
-		if ns.GlowFetch then
-			ns.GlowFetch()
 		end
 		ns.Tick()
 	elseif event == "PLAYER_TARGET_CHANGED" then
 		ns.API.castTarget = false
 		ns.Tick()
-	elseif event == "UNIT_SPELLCAST_START" or event == "UNIT_SPELLCAST_CHANNEL_START" then
-		local ok, same = pcall(UnitIsUnit, unit, "target")
-		if unit == "target" or (ok and same) then
-			ns.API.castTarget = true
-			ns.Tick()
-		end
-	elseif event == "UNIT_SPELLCAST_STOP" or event == "UNIT_SPELLCAST_FAILED" or event == "UNIT_SPELLCAST_INTERRUPTED" or event == "UNIT_SPELLCAST_CHANNEL_STOP" then
-		local ok, same = pcall(UnitIsUnit, unit, "target")
-		if unit == "target" or (ok and same) then
-			ns.API.castTarget = false
-			ns.Tick()
-		end
 	elseif event == "UNIT_SPELLCAST_SUCCEEDED" then
 		if unit == "player" then
 			if ns.API and ns.API.NoteSelfBuff then
@@ -527,7 +543,6 @@ frame:SetScript("OnEvent", function(_, event, unit, _, spellID)
 			if ns.NoteWeaponCast then
 				ns.NoteWeaponCast(spellID)
 			end
-			ns.Tick()
 		end
 	elseif event == "PLAYER_EQUIPMENT_CHANGED" or event == "WEAPON_ENCHANT_CHANGED" then
 		if event == "PLAYER_EQUIPMENT_CHANGED" and ns.ClearWeaponMemory then
@@ -535,29 +550,17 @@ frame:SetScript("OnEvent", function(_, event, unit, _, spellID)
 		elseif event == "WEAPON_ENCHANT_CHANGED" then
 			ns.weaponSeenUntil = 0
 		end
-		ns.Tick()
-	elseif event == "ACTIONBAR_SLOT_CHANGED" or event == "ACTIONBAR_PAGE_CHANGED" then
+	elseif event == "ACTIONBAR_SLOT_CHANGED" or event == "ACTIONBAR_PAGE_CHANGED" or event == "UPDATE_SHAPESHIFT_FORM" then
 		if barsPending then
 			return
 		end
 		barsPending = true
 		if C_Timer and C_Timer.After then
-			C_Timer.After(0.25, flushBars)
+			C_Timer.After(0.5, flushBars)
 		else
 			flushBars()
 		end
-	else
-		ns.Tick()
 	end
-end)
-
-frame:SetScript("OnUpdate", function(self, elapsed)
-	self.acc = (self.acc or 0) + elapsed
-	if self.acc < 0.2 then
-		return
-	end
-	self.acc = 0
-	ns.Tick()
 end)
 
 SLASH_WFR1 = "/wfr"
