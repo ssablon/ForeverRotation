@@ -4,7 +4,7 @@ Rotation helper for **WoW Forever** (Classic Era combat on the camelot / Midnigh
 
 It shows the next abilities on a small HUD and flashes the matching action-bar buttons. It does **not** cast spells for you.
 
-Author: [Vohnka](https://wow-forever.fr) · Current version: **1.5.3**
+Author: [Vohnka](https://wow-forever.fr) · Current version: **1.5.4**
 
 ## Requirements
 
@@ -100,7 +100,7 @@ Per class: damage, tank, heal, and the extra Classic styles (hunter range/melee,
 | `base` / `jce` / `jcj` / `custom` | Jump to that profile |
 | `menu` / `options` | Open the configuration window |
 
-Right-click the HUD to open options. There is also a minimap button.
+Open options with `/wfr options` or a left-click on the minimap button. Right-click on the HUD does not open them. The minimap button's right-click still locks or unlocks the windows.
 
 ## Options
 

@@ -53,7 +53,6 @@ end
 local function bindTip(frame, titleKey, descKey)
 	frame.tipTitle = ns.T(titleKey)
 	frame.tipDesc = ns.T(descKey)
-	frame.tipHint = ns.T("TIP_RCLICK")
 	frame:SetScript("OnEnter", showTip)
 	frame:SetScript("OnLeave", hideTip)
 end
@@ -73,11 +72,6 @@ local function makeMovable(frame, key, dragFrame)
 	frame:SetScript("OnDragStop", function()
 		dragFrame:StopMovingOrSizing()
 		savePoint(dragFrame, key)
-	end)
-	frame:SetScript("OnMouseUp", function(_, button)
-		if button == "RightButton" and ns.ToggleSpellMenu then
-			ns.ToggleSpellMenu()
-		end
 	end)
 end
 
@@ -259,14 +253,8 @@ function ns.UI.Create()
 
 	local lock = makeIconButton("WoWForeverRotLock", UIParent, 22)
 	lock:SetPoint("TOP", root, "BOTTOM", 0, -4)
-	lock:RegisterForClicks("LeftButtonUp", "RightButtonUp")
-	lock:SetScript("OnClick", function(_, button)
-		if button == "RightButton" then
-			if ns.ToggleSpellMenu then
-				ns.ToggleSpellMenu()
-			end
-			return
-		end
+	lock:RegisterForClicks("LeftButtonUp")
+	lock:SetScript("OnClick", function()
 		ns.UI.SetLocked(not ns.db.locked)
 	end)
 	makeMovable(lock, "queue", root)
@@ -306,7 +294,7 @@ function ns.UI.Create()
 		local btn = CreateFrame("Button", name, bar)
 		btn:SetSize(width, 16)
 		btn:SetNormalFontObject("GameFontHighlightSmall")
-		btn:RegisterForClicks("LeftButtonUp", "RightButtonUp")
+		btn:RegisterForClicks("LeftButtonUp")
 		local ntex = btn:CreateTexture(nil, "BACKGROUND")
 		ntex:SetTexture(IMG .. "buttonUp")
 		ntex:SetTexCoord(0, 0.625, 0, 0.6875)
@@ -348,13 +336,7 @@ function ns.UI.Create()
 			end
 		end
 		btn:SetActive(false)
-		btn:SetScript("OnClick", function(self, button)
-			if button == "RightButton" then
-				if ns.ToggleSpellMenu then
-					ns.ToggleSpellMenu()
-				end
-				return
-			end
+		btn:SetScript("OnClick", function(self)
 			onClick(self)
 		end)
 		btn:SetScript("OnEnter", showTip)
