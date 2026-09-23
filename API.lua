@@ -399,10 +399,20 @@ local function unitFriendly(unit)
 		return false
 	end
 	local okAtk, atk = pcall(UnitCanAttack, "player", unit)
-	if okAtk and atk then
+	if okAtk and readable(atk) and atk then
 		return false
 	end
-	return true
+	if okAtk and not readable(atk) then
+		return false
+	end
+	local okR, react = pcall(UnitReaction, "player", unit)
+	if okR and readable(react) and type(react) == "number" then
+		return react > 4
+	end
+	if okAtk and readable(atk) and not atk then
+		return true
+	end
+	return false
 end
 
 local function healNameSet()
@@ -611,8 +621,14 @@ function ns.API.StepOk(spellID, opt)
 	end
 	local helpful = ns.API.IsHelpful(spellID, opt)
 	local auraUnit = helpful and ns.API.HealUnit(opt) or "player"
-	if opt.nobuff and ns.API.HasAura(spellID, auraUnit, "HELPFUL") then
-		return false
+	if opt.nobuff then
+		local buffUnit = "player"
+		if opt.heal then
+			buffUnit = opt.unit or auraUnit
+		end
+		if ns.API.HasAura(spellID, buffUnit, "HELPFUL") then
+			return false
+		end
 	end
 	if opt.nodebuff then
 		local debuff = opt.nodebuff == true and spellID or opt.nodebuff
@@ -684,44 +700,248 @@ local function auraRemain(aura)
 	return 9999
 end
 
+-- Familles de buffs exclusifs. Un sceau actif (quel que soit son ID de rang)
+-- compte pour tous les sceaux : le client Forever masque souvent l'ID d'aura
+-- dès qu'une cible est sélectionnée.
+local AURA_FAMILIES = {
+	{ key = "seal", tokens = { "sceau", "seal", "siegel", "sello", "sigillo", "печать" } },
+	{ key = "blessing", tokens = { "bénédiction", "benediction", "blessing", "segen", "bendición", "benedizione", "bênção", "благословен" } },
+	{ key = "palaura", tokens = { "aura" } },
+	{ key = "aspect", tokens = { "aspect" } },
+	{ key = "magearmor", tokens = { "ice armor", "frost armor", "mage armor", "armure de givre", "armure de glace", "armure du mage", "eisrüstung", "frostrüstung", "magierrüstung" } },
+	{ key = "lockarmor", tokens = { "demon skin", "demon armor", "peau de démon", "armure démoniaque", "dämonenhaut", "dämonenrüstung" } },
+}
+
+local heldNames = {}
+local heldFamilies = {}
+local scanCache
+
+local function normName(name)
+	local n = strlower(name)
+	n = n:gsub("%s*%([^%)]*%)", "")
+	n = strtrim(n)
+	return n
+end
+
+local function familyOf(name)
+	if type(name) ~= "string" or name == "" then
+		return nil
+	end
+	local n = normName(name)
+	for _, family in ipairs(AURA_FAMILIES) do
+		for _, token in ipairs(family.tokens) do
+			if n:find(token, 1, true) then
+				return family.key
+			end
+		end
+	end
+end
+
+local function auraIdentity(aura)
+	if type(aura) ~= "table" then
+		return nil, nil, false
+	end
+	local auraID = safe(aura.spellId, nil)
+	local auraName = safe(aura.name, nil)
+	local hidden = (aura.spellId ~= nil and auraID == nil) or (aura.name ~= nil and auraName == nil)
+	if not hidden and auraID == nil and auraName == nil then
+		hidden = true
+	end
+	return auraID, auraName, hidden
+end
+
+local function rememberAura(spellID, auraName)
+	local now = GetTime()
+	local name = auraName or ns.API.SpellName(spellID)
+	if type(name) == "string" and name ~= "" then
+		local key = normName(name)
+		heldNames[key] = now
+		local family = familyOf(name)
+		if family then
+			heldFamilies[family] = now
+		end
+	end
+end
+
+function ns.API.NoteSelfBuff(spellID)
+	if spellID == nil or (issecretvalue and issecretvalue(spellID)) then
+		return
+	end
+	rememberAura(spellID)
+end
+
+local function heldAura(spellID, wantName)
+	local name = wantName or ns.API.SpellName(spellID)
+	if type(name) ~= "string" or name == "" then
+		return false
+	end
+	if heldNames[normName(name)] then
+		return true
+	end
+	local family = familyOf(name)
+	return family and heldFamilies[family] and true or false
+end
+
+local function releaseAura(spellID, wantName, familiesSeen)
+	local name = wantName or ns.API.SpellName(spellID)
+	if type(name) ~= "string" or name == "" then
+		return
+	end
+	local key = normName(name)
+	local seen = heldNames[key]
+	if not seen or (GetTime() - seen) > 1 then
+		heldNames[key] = nil
+	end
+	local family = familyOf(name)
+	if family and not (familiesSeen and familiesSeen[family]) then
+		local marked = heldFamilies[family]
+		if not marked or (GetTime() - marked) > 1 then
+			heldFamilies[family] = nil
+		end
+	end
+end
+
+local function scanUnitAuras(unit, filter)
+	local now = GetTime()
+	if scanCache and scanCache.t == now and scanCache.unit == unit and scanCache.filter == filter then
+		return scanCache
+	end
+	local scan = {
+		t = now,
+		unit = unit,
+		filter = filter,
+		names = {},
+		ids = {},
+		families = {},
+		unreadable = false,
+	}
+	scanCache = scan
+	if not C_UnitAuras or not C_UnitAuras.GetAuraDataByIndex then
+		scan.unreadable = true
+		return scan
+	end
+	for i = 1, 40 do
+		local ok, aura = pcall(C_UnitAuras.GetAuraDataByIndex, unit, i, filter)
+		if not ok then
+			scan.unreadable = true
+			break
+		end
+		if not aura then
+			if i == 1 and (next(heldNames) or next(heldFamilies)) then
+				local busy = ns.API.InCombat and ns.API.InCombat()
+				if not busy then
+					local okE, exists = pcall(UnitExists, "target")
+					busy = okE and exists and true or false
+				end
+				if busy then
+					scan.unreadable = true
+				end
+			end
+			break
+		end
+		local auraID, auraName, hidden = auraIdentity(aura)
+		if hidden then
+			scan.unreadable = true
+		else
+			if auraID then
+				scan.ids[auraID] = aura
+			end
+			if auraName then
+				scan.names[normName(auraName)] = aura
+				local family = familyOf(auraName)
+				if family then
+					scan.families[family] = aura
+				end
+			end
+		end
+	end
+	return scan
+end
+
+local function auraBySpellName(unit, name, filter)
+	if type(name) ~= "string" or name == "" or not C_UnitAuras then
+		return nil
+	end
+	if C_UnitAuras.GetAuraDataBySpellName then
+		local ok, aura = pcall(C_UnitAuras.GetAuraDataBySpellName, unit, name, filter)
+		if ok and type(aura) == "table" then
+			return aura
+		end
+	end
+	if AuraUtil and AuraUtil.FindAuraByName then
+		local ok, auraName, _, _, _, _, _, _, _, auraID = pcall(AuraUtil.FindAuraByName, name, unit, filter)
+		if ok and (auraName or auraID) then
+			return { name = auraName, spellId = auraID }
+		end
+	end
+end
+
 function ns.API.HasAura(spellID, unit, filter)
-	local found, remain = ns.API.FindAura(spellID, unit, filter)
-	return found, remain
+	local found, remain, unreadable, familiesSeen = ns.API.FindAura(spellID, unit, filter)
+	unit = unit or "player"
+	filter = filter or "HELPFUL"
+	local selfBuff = unit == "player" and filter == "HELPFUL"
+	if found then
+		if selfBuff then
+			rememberAura(spellID)
+		end
+		return true, remain
+	end
+	if selfBuff and unreadable and heldAura(spellID) then
+		return true, 9999
+	end
+	if selfBuff and not unreadable then
+		releaseAura(spellID, nil, familiesSeen)
+	end
+	return false, 0
 end
 
 function ns.API.FindAura(spellID, unit, filter)
 	if not spellID then
-		return false, 0
+		return false, 0, false, nil
 	end
 	unit = unit or "player"
 	filter = filter or "HELPFUL"
 	local resolved = ns.API.Resolve(spellID)
+	local wantName = ns.API.SpellName(resolved or spellID) or ns.API.SpellName(spellID)
+	local wantKey = type(wantName) == "string" and normName(wantName) or nil
+	local wantFamily = familyOf(wantName)
+
 	if C_UnitAuras and C_UnitAuras.GetPlayerAuraBySpellID and unit == "player" then
 		for _, id in ipairs({ resolved, spellID }) do
 			if id then
 				local ok, aura = pcall(C_UnitAuras.GetPlayerAuraBySpellID, id)
 				if ok and type(aura) == "table" then
-					return true, auraRemain(aura)
+					return true, auraRemain(aura), false, nil
 				end
 			end
 		end
 	end
-	if not C_UnitAuras or not C_UnitAuras.GetAuraDataByIndex then
-		return false, 0
-	end
-	local wantName = ns.API.SpellName(resolved or spellID) or ns.API.SpellName(spellID)
-	for i = 1, 40 do
-		local ok, aura = pcall(C_UnitAuras.GetAuraDataByIndex, unit, i, filter)
-		if not ok or not aura then
-			break
-		end
-		local auraID = safe(aura.spellId, nil)
-		local auraName = safe(aura.name, nil)
-		if auraID == spellID or (resolved and auraID == resolved) or (wantName and auraName == wantName) then
-			return true, auraRemain(aura)
+
+	if wantName then
+		local named = auraBySpellName(unit, wantName, filter)
+		if named then
+			local _, _, hidden = auraIdentity(named)
+			if not hidden then
+				return true, auraRemain(named), false, nil
+			end
 		end
 	end
-	return false, 0
+
+	local scan = scanUnitAuras(unit, filter)
+	if wantKey and scan.names[wantKey] then
+		return true, auraRemain(scan.names[wantKey]), false, scan.families
+	end
+	if resolved and scan.ids[resolved] then
+		return true, auraRemain(scan.ids[resolved]), false, scan.families
+	end
+	if spellID and scan.ids[spellID] then
+		return true, auraRemain(scan.ids[spellID]), false, scan.families
+	end
+	if wantFamily and scan.families[wantFamily] then
+		return true, auraRemain(scan.families[wantFamily]), false, scan.families
+	end
+	return false, 0, scan.unreadable, scan.families
 end
 
 function ns.API.HasWeaponBuff(entry)

@@ -463,6 +463,9 @@ frame:SetScript("OnEvent", function(_, event, unit, _, spellID)
 		end
 	elseif event == "UNIT_SPELLCAST_SUCCEEDED" then
 		if unit == "player" then
+			if ns.API and ns.API.NoteSelfBuff then
+				ns.API.NoteSelfBuff(spellID)
+			end
 			if ns.NoteWeaponCast then
 				ns.NoteWeaponCast(spellID)
 			end

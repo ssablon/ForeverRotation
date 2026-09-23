@@ -284,7 +284,11 @@ Overlays `button.WFROverlays`, blend `ADD`, tête de mort :
 
 `CursorSpell` lit `GetCursorInfo`. Il exige un type `spell` ou `spellid` lorsqu'un type est présent, puis retrouve le sort du grimoire par nom. Un ID curseur dont le joueur ne connaît pas le nom est rejeté.
 
-Auras : `C_UnitAuras.GetPlayerAuraBySpellID` pour le joueur, sinon `GetAuraDataByIndex` jusqu'à 40, filtre `HELPFUL` ou `HARMFUL`, comparaison ID résolu **ou** nom.
+Auras : `C_UnitAuras.GetPlayerAuraBySpellID` pour le joueur, puis `GetAuraDataBySpellName`, sinon `GetAuraDataByIndex` jusqu'à 40. Comparaison par ID résolu, nom normalisé (sans « Rang »), ou famille (`sceau` / `seal`, bénédiction, aura, aspect, armure).
+
+Un buff perso (`nobuff` sans `heal`) est toujours lu sur le joueur. Le sceau est un buff utile : le chercher sur la cible hostile le fait réapparaître dans la file.
+
+Sur le client camelot, choisir une cible peut rendre les auras illisibles (*secret values*). Une lecture qui échoue n'est pas une absence. `ns.API.NoteSelfBuff` (cast réussi) et la dernière lecture réussie sont conservées tant que la liste d'auras n'est pas à nouveau lisible et vide de ce buff. Les soins (`opt.heal`) continuent de regarder l'allié à soigner.
 
 Soins — unité : `opt.unit` s'il existe, sinon `mouseover`, `target`, `focus`, `targettarget`, sinon `player`. `HealHealth` utilise `LowestFriendly` (joueur, mouseover, target, focus, targettarget, pet, party1–4) quand aucun de mouseover/target/focus n'est allié. Unité morte ou attaquable = pas alliée.
 
