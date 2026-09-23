@@ -176,12 +176,10 @@ Un sort seulement utile (`IsHelpful` et pas `IsHarmful`) peut passer via le coû
 `ns.BuildWeapon` renvoie `spellID, remain, need`.
 
 1. Enchant choisi : `ns.db.weaponBuff`, sinon le premier connu, sinon le premier de la liste.
-2. Détection : ID d'enchant, aura joueur (`HasWeaponBuff`), tokens du tooltip d'arme (slot 16), ou `has == true` sans ID.
-3. Présent et `remain <= 30` → rappel (bientôt fini). Présent sinon → pas de rappel.
-4. Absent mais `ns.WeaponBuffRemembered()` (timestamp posé par `NoteWeaponCast` au `UNIT_SPELLCAST_SUCCEEDED` joueur) → pas de rappel, pour éviter le clignotement avant que l'aura existe.
-5. `has == false` et enchant 0 / nil → rappel « manquant ».
-
-`ns.ClearWeaponMemory` existe mais n'est pas appelé par le tick.
+2. `GetWeaponEnchantInfo` est la source. `has == false` → rappel rouge tout de suite, mémoire effacée. Un ID d'enchant qui n'est pas celui choisi compte aussi comme absent.
+3. Présent et `remain` entre 0 et 30 s → rappel (bientôt fini). Présent sinon → pas de rappel. L'expiration lue est mémorisée (`weaponSeenUntil`) pour les instants où le client masque la réponse.
+4. Réponse illisible : 5 s de grâce après le lancement (`NoteWeaponCast`), sinon l'expiration déjà vue, sinon rappel rouge. Le tooltip ne sert que si un enchant est confirmé sans ID. L'aura joueur n'est pas utilisée.
+5. Changer d'arme efface la mémoire. `WEAPON_ENCHANT_CHANGED` oublie l'expiration vue et relit l'arme au tick suivant. Pas de `/reload`.
 
 ## Fusion des listes (`APL.lua`)
 

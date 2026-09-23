@@ -239,29 +239,14 @@ function ns.NoteWeaponCast(spellID)
 	if not ns.IsWeaponBuff(spellID) then
 		return
 	end
-	local entry = ns.WEAPON_BUFF_IDS and ns.WEAPON_BUFF_IDS[spellID]
-	if not entry then
-		local name = API.SpellName(spellID)
-		for _, list in pairs(ns.WEAPON_BUFFS or {}) do
-			for _, row in ipairs(list) do
-				if API.SpellName(row.id) == name then
-					entry = row
-					break
-				end
-			end
-		end
-	end
-	ns.weaponUntil = GetTime() + ((entry and entry.duration) or 300)
-	ns.weaponDirty = false
+	-- Le sort vient d'être lancé : courte grâce, le temps que l'enchant apparaisse.
+	-- La durée réelle vient de GetWeaponEnchantInfo, pas de ce lancement.
+	ns.weaponGrace = GetTime() + 5
 end
 
 function ns.ClearWeaponMemory()
-	ns.weaponUntil = 0
-	ns.weaponDirty = false
-end
-
-function ns.WeaponBuffRemembered()
-	return GetTime() < (ns.weaponUntil or 0)
+	ns.weaponGrace = 0
+	ns.weaponSeenUntil = 0
 end
 
 local function entryHasEnchant(entry, enchId)
@@ -281,25 +266,26 @@ local function entryHasEnchant(entry, enchId)
 	return false
 end
 
-local function detectEntry(entry)
-	if not entry then
-		return false, 0
-	end
+local function detectSelected(entry)
 	local has, remain, enchId = API.WeaponEnchant(false)
-	if enchId and entryHasEnchant(entry, enchId) then
-		return true, remain
+	if has == false then
+		return "missing", 0
 	end
-	local auraHas, auraRemain = API.HasWeaponBuff(entry)
-	if auraHas then
-		return true, auraRemain
+	if has == true then
+		if enchId and enchId > 0 then
+			if entryHasEnchant(entry, enchId) then
+				return "up", remain
+			end
+			if ns.WEAPON_ENCHANT_IDS and ns.WEAPON_ENCHANT_IDS[enchId] then
+				return "missing", 0
+			end
+		end
+		if API.WeaponTooltipHas(entry.match) then
+			return "up", remain > 0 and remain or 9999
+		end
+		return "missing", 0
 	end
-	if API.WeaponTooltipHas(entry.match) then
-		return true, remain > 0 and remain or 9999
-	end
-	if has == true and not enchId then
-		return true, remain
-	end
-	return false, 0
+	return "unknown", 0
 end
 
 function ns.BuildWeapon()
@@ -307,24 +293,28 @@ function ns.BuildWeapon()
 	if not entry or not spellID then
 		return
 	end
-	local found, remain = false, 0
-	for _, choice in ipairs(ns.WeaponChoices()) do
-		local ok, left = detectEntry(choice)
-		if ok then
-			found = true
-			remain = left
-			if choice == entry then
-				break
-			end
+	local status, remain = detectSelected(entry)
+	if status == "up" then
+		local hold = remain
+		if not hold or hold <= 0 or hold >= 9000 then
+			hold = 15
 		end
+		ns.weaponSeenUntil = GetTime() + hold
+		ns.weaponGrace = 0
+		return spellID, remain, remain > 0 and remain < 9000 and remain <= 30
 	end
-	if found then
-		return spellID, remain, remain > 0 and remain <= 30
+	if status == "missing" then
+		ns.weaponSeenUntil = 0
+		ns.weaponGrace = 0
+		return spellID, 0, true
 	end
-	if ns.WeaponBuffRemembered() then
-		return spellID, remain, false
+	if GetTime() < (ns.weaponGrace or 0) then
+		return spellID, 0, false
 	end
-	local has, _, enchId = API.WeaponEnchant(false)
-	local sureMissing = has == false and (enchId == 0 or enchId == nil)
-	return spellID, remain, sureMissing
+	local seen = ns.weaponSeenUntil or 0
+	if GetTime() < seen then
+		local left = seen - GetTime()
+		return spellID, left, left <= 30
+	end
+	return spellID, 0, true
 end

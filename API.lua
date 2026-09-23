@@ -1389,18 +1389,32 @@ local function asNumber(value)
 	return nil
 end
 
+local function enchantFields(a, b, c, d)
+	if type(a) == "table" then
+		local t = a
+		local function pick(key, index)
+			if t[key] ~= nil then
+				return t[key]
+			end
+			return t[index]
+		end
+		return pick("hasMainHandEnchant", 1), pick("mainHandExpiration", 2), pick("mainHandCharges", 3), pick("mainHandEnchantID", 4)
+	end
+	return a, b, c, d
+end
+
 local function readWeaponEnchant()
 	local src
 	if C_Item and C_Item.GetWeaponEnchantInfo then
-		local ok, a, b, c, d, e, f, g, h = pcall(C_Item.GetWeaponEnchantInfo)
+		local ok, a, b, c, d = pcall(C_Item.GetWeaponEnchantInfo)
 		if ok then
-			src = { a, b, c, d, e, f, g, h }
+			src = { enchantFields(a, b, c, d) }
 		end
 	end
 	if not src and GetWeaponEnchantInfo then
-		local ok, a, b, c, d, e, f, g, h = pcall(GetWeaponEnchantInfo)
+		local ok, a, b, c, d = pcall(GetWeaponEnchantInfo)
 		if ok then
-			src = { a, b, c, d, e, f, g, h }
+			src = { enchantFields(a, b, c, d) }
 		end
 	end
 	if not src then
@@ -1409,6 +1423,9 @@ local function readWeaponEnchant()
 	local has = src[1]
 	local remain = asNumber(src[2])
 	local enchId = asNumber(src[4])
+	if type(has) == "table" then
+		return nil, 0, nil
+	end
 	if remain then
 		remain = remain / 1000
 	else
@@ -1419,7 +1436,7 @@ local function readWeaponEnchant()
 	end
 	if readable(has) then
 		if has then
-			return true, remain > 0 and remain or 9999, enchId
+			return true, remain > 0 and remain or 9999, nil
 		end
 		return false, 0, 0
 	end

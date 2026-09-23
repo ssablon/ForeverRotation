@@ -475,6 +475,11 @@ frame:SetScript("OnEvent", function(_, event, unit, _, spellID)
 			ns.Tick()
 		end
 	elseif event == "PLAYER_EQUIPMENT_CHANGED" or event == "WEAPON_ENCHANT_CHANGED" then
+		if event == "PLAYER_EQUIPMENT_CHANGED" and ns.ClearWeaponMemory then
+			ns.ClearWeaponMemory()
+		elseif event == "WEAPON_ENCHANT_CHANGED" then
+			ns.weaponSeenUntil = 0
+		end
 		ns.Tick()
 	elseif event == "ACTIONBAR_SLOT_CHANGED" or event == "ACTIONBAR_PAGE_CHANGED" then
 		if ns.GlowFetch then
