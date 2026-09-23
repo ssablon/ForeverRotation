@@ -1389,50 +1389,37 @@ local function asNumber(value)
 	return nil
 end
 
-local function enchantFields(a, b, c, d)
-	if type(a) == "table" then
-		local t = a
-		local function pick(key, index)
-			if t[key] ~= nil then
-				return t[key]
-			end
-			return t[index]
-		end
-		return pick("hasMainHandEnchant", 1), pick("mainHandExpiration", 2), pick("mainHandCharges", 3), pick("mainHandEnchantID", 4)
+local function pickField(t, key, index)
+	if type(t) ~= "table" then
+		return nil
 	end
-	return a, b, c, d
+	if t[key] ~= nil then
+		return t[key]
+	end
+	return t[index]
 end
 
-local function readWeaponEnchant()
-	local src
-	if C_Item and C_Item.GetWeaponEnchantInfo then
-		local ok, a, b, c, d = pcall(C_Item.GetWeaponEnchantInfo)
-		if ok then
-			src = { enchantFields(a, b, c, d) }
-		end
-	end
-	if not src and GetWeaponEnchantInfo then
-		local ok, a, b, c, d = pcall(GetWeaponEnchantInfo)
-		if ok then
-			src = { enchantFields(a, b, c, d) }
-		end
-	end
-	if not src then
-		return nil, 0, nil
-	end
-	local has = src[1]
-	local remain = asNumber(src[2])
-	local enchId = asNumber(src[4])
+local function interpretEnchant(has, remainRaw, enchRaw)
 	if type(has) == "table" then
-		return nil, 0, nil
+		local t = has
+		has = pickField(t, "hasMainHandEnchant", 1)
+		remainRaw = pickField(t, "mainHandExpiration", 2)
+		enchRaw = pickField(t, "mainHandEnchantID", 4)
 	end
+	local remain = asNumber(remainRaw)
+	local enchId = asNumber(enchRaw)
 	if remain then
-		remain = remain / 1000
+		if remain > 10000 then
+			remain = remain / 1000
+		end
 	else
 		remain = 0
 	end
 	if enchId and enchId > 0 then
 		return true, remain > 0 and remain or 9999, enchId
+	end
+	if type(has) == "table" then
+		return nil, 0, nil
 	end
 	if readable(has) then
 		if has then
@@ -1443,8 +1430,52 @@ local function readWeaponEnchant()
 	return nil, 0, nil
 end
 
+local function readWeaponEnchant(offhand)
+	local packs = {}
+	local function push(ok, a, b, c, d, e, f, g, h)
+		if ok then
+			packs[#packs + 1] = { a, b, c, d, e, f, g, h }
+		end
+	end
+	if C_Item and C_Item.GetWeaponEnchantInfo then
+		push(pcall(C_Item.GetWeaponEnchantInfo))
+	end
+	if GetWeaponEnchantInfo then
+		push(pcall(GetWeaponEnchantInfo))
+	end
+	local bestHas, bestRemain, bestId
+	local sawFalse = false
+	for _, src in ipairs(packs) do
+		local has, remain, enchId
+		if type(src[1]) == "table" then
+			local t = src[1]
+			if offhand then
+				has, remain, enchId = interpretEnchant(pickField(t, "hasOffHandEnchant", 5), pickField(t, "offHandExpiration", 6), pickField(t, "offHandEnchantID", 8))
+			else
+				has, remain, enchId = interpretEnchant(t)
+			end
+		elseif offhand then
+			has, remain, enchId = interpretEnchant(src[5], src[6], src[8])
+		else
+			has, remain, enchId = interpretEnchant(src[1], src[2], src[4])
+		end
+		if has == true then
+			return true, remain, enchId
+		end
+		if has == false then
+			sawFalse = true
+		elseif bestHas == nil then
+			bestHas, bestRemain, bestId = has, remain, enchId
+		end
+	end
+	if sawFalse then
+		return false, 0, 0
+	end
+	return bestHas, bestRemain or 0, bestId
+end
+
 function ns.API.WeaponEnchant(offhand)
-	return readWeaponEnchant(offhand)
+	return readWeaponEnchant(offhand and true or false)
 end
 
 function ns.API.WeaponTooltipHas(tokens)
@@ -1452,8 +1483,11 @@ function ns.API.WeaponTooltipHas(tokens)
 		return false
 	end
 	local texts = {}
-	if C_TooltipInfo and C_TooltipInfo.GetInventoryItem then
-		local ok, data = pcall(C_TooltipInfo.GetInventoryItem, "player", 16)
+	local function readSlot(slot)
+		if not C_TooltipInfo or not C_TooltipInfo.GetInventoryItem then
+			return
+		end
+		local ok, data = pcall(C_TooltipInfo.GetInventoryItem, "player", slot)
 		if ok and type(data) == "table" and data.lines then
 			for _, line in ipairs(data.lines) do
 				local text = safe(line.leftText, nil)
@@ -1463,6 +1497,8 @@ function ns.API.WeaponTooltipHas(tokens)
 			end
 		end
 	end
+	readSlot(16)
+	readSlot(17)
 	if #texts == 0 then
 		return false
 	end

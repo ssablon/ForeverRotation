@@ -266,23 +266,40 @@ local function entryHasEnchant(entry, enchId)
 	return false
 end
 
-local function detectSelected(entry)
-	local has, remain, enchId = API.WeaponEnchant(false)
+local function handState(entry, offhand)
+	local has, remain, enchId = API.WeaponEnchant(offhand)
+	if has == true then
+		if enchId and enchId > 0 and ns.WEAPON_ENCHANT_IDS and ns.WEAPON_ENCHANT_IDS[enchId] and not entryHasEnchant(entry, enchId) then
+			return "other", 0
+		end
+		return "up", remain
+	end
 	if has == false then
+		return "no", 0
+	end
+	return "unknown", 0
+end
+
+local function detectSelected(entry)
+	local auraOn, auraRemain = API.HasWeaponBuff(entry)
+	if auraOn then
+		return "up", auraRemain
+	end
+	local main, mainLeft = handState(entry, false)
+	local off, offLeft = handState(entry, true)
+	if main == "up" or off == "up" then
+		return "up", main == "up" and mainLeft or offLeft
+	end
+	if API.WeaponTooltipHas(entry.match) then
+		return "up", 9999
+	end
+	if main == "no" and (off == "no" or off == "other") then
 		return "missing", 0
 	end
-	if has == true then
-		if enchId and enchId > 0 then
-			if entryHasEnchant(entry, enchId) then
-				return "up", remain
-			end
-			if ns.WEAPON_ENCHANT_IDS and ns.WEAPON_ENCHANT_IDS[enchId] then
-				return "missing", 0
-			end
-		end
-		if API.WeaponTooltipHas(entry.match) then
-			return "up", remain > 0 and remain or 9999
-		end
+	if off == "no" and (main == "no" or main == "other") then
+		return "missing", 0
+	end
+	if (main == "other" or off == "other") and main ~= "unknown" and off ~= "unknown" then
 		return "missing", 0
 	end
 	return "unknown", 0

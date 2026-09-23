@@ -176,10 +176,9 @@ Un sort seulement utile (`IsHelpful` et pas `IsHarmful`) peut passer via le coû
 `ns.BuildWeapon` renvoie `spellID, remain, need`.
 
 1. Enchant choisi : `ns.db.weaponBuff`, sinon le premier connu, sinon le premier de la liste.
-2. `GetWeaponEnchantInfo` est la source. `has == false` → rappel rouge tout de suite, mémoire effacée. Un ID d'enchant qui n'est pas celui choisi compte aussi comme absent.
-3. Présent et `remain` entre 0 et 30 s → rappel (bientôt fini). Présent sinon → pas de rappel. L'expiration lue est mémorisée (`weaponSeenUntil`) pour les instants où le client masque la réponse.
-4. Réponse illisible : 5 s de grâce après le lancement (`NoteWeaponCast`), sinon l'expiration déjà vue, sinon rappel rouge. Le tooltip ne sert que si un enchant est confirmé sans ID. L'aura joueur n'est pas utilisée.
-5. Changer d'arme efface la mémoire. `WEAPON_ENCHANT_CHANGED` oublie l'expiration vue et relit l'arme au tick suivant. Pas de `/reload`.
+2. Présent si l'aura du buff est sur le joueur, si une main a un enchant temporaire (même si l'ID Forever n'est pas dans la liste), ou si le tooltip de l'arme contient le nom. Un ID connu d'un autre buff ne compte pas.
+3. Absent seulement si les deux mains répondent « pas d'enchant », sans aura et sans tooltip : rappel rouge tout de suite. `has == false` seul ne suffit pas, Forever expose souvent le buff par l'aura ou le tooltip.
+4. Réponse illisible : 5 s de grâce après le lancement, sinon la dernière expiration vue, sinon rappel rouge. Changer d'arme efface la mémoire. Pas de mémorisation de 30 ou 60 minutes après le lancement.
 
 ## Fusion des listes (`APL.lua`)
 
