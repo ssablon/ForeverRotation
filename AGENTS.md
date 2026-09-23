@@ -2,7 +2,7 @@
 
 Addon d'aide à la rotation pour **WoW Forever** (combat Classic Era, client camelot, interface `16001`). Il affiche les prochains sorts et surligne les boutons. Il ne lance aucun sort.
 
-Version actuelle : **1.4.7**. Auteur : Vohnka — https://wow-forever.fr  
+Version actuelle : **1.4.8**. Auteur : Vohnka — https://wow-forever.fr  
 Dépôt : https://github.com/ssablon/WoWForeverRot (privé, branche `main`).
 
 La carte complète du code est dans [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md). Ce fichier dit seulement par où commencer.
@@ -45,6 +45,7 @@ Tout l'état partagé vit dans la table `ns` (deuxième valeur de `...`). `Core.
 - Résoudre un sort par **nom + grimoire** (`ns.API.Resolve`). Un ID Classic peut être remappé.
 - Rejeter les noms `TEST`, `(OLD)`, `(PT)` (`junkSpellName`).
 - Les buffs de `ns.MAINTENANCE_BUFF_IDS` sont retirés des listes de combat au chargement (`stripMaintFromApl`) et refusés par `AddAPL`.
+- Un sort avec un temps de recharge propre ne reste pas affiché : `NoteSpellCast` le retire jusqu'à la fin du CD, puis le pas suivant est testé. Le GCD ne compte pas. Ne pas court-circuiter `ns.API.Cooldown` avec `filler`.
 - Le mode `auto` utilise la liste mono (`APLDefaults`) tant que `ns.API.EnemyCount()` est sous `autoEnemies` (défaut 3, minimum 2). Au-dessus, il utilise la liste `aoe`.
 - Le bouton HUD druide `hybrid` n'est pas une clé de liste. `ns.ActiveSpec()` choisit `cat`, `bear`, `heal`, `tank` ou `damage`.
 - `ns.ResetCurrentProfile` n'efface que le profil actif (`base`, `pve`, `pvp`, `custom`).

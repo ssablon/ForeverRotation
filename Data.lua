@@ -541,3 +541,111 @@ do
 		end
 	end
 end
+
+-- Secours si GetSpellBaseCooldown ne renvoie rien. Le client prime dès qu'il répond.
+-- Valeurs Classic Era (secondes). Les horions partagent un seul temps de recharge.
+do
+	local P = ns.Spell.Paladin
+	local W = ns.Spell.Warrior
+	local H = ns.Spell.Hunter
+	local R = ns.Spell.Rogue
+	local Pr = ns.Spell.Priest
+	local Sh = ns.Spell.Shaman
+	local M = ns.Spell.Mage
+	local L = ns.Spell.Warlock
+	local D = ns.Spell.Druid
+	ns.COOLDOWNS = {
+		[P.Judgement] = 8,
+		[P.HammerofJustice] = 60,
+		[P.HammerofWrath] = 6,
+		[P.Exorcism] = 15,
+		[P.Consecration] = 8,
+		[P.HolyShock] = 15,
+		[P.HolyWrath] = 60,
+		[P.CrusaderStrike] = 6,
+		[P.LayonHands] = 3600,
+		[P.DivineShield] = 300,
+		[P.DivineProtection] = 300,
+		[W.MortalStrike] = 6,
+		[W.Bloodthirst] = 6,
+		[W.Whirlwind] = 10,
+		[W.Revenge] = 5,
+		[W.ShieldSlam] = 6,
+		[W.ThunderClap] = 4,
+		[W.ShieldBlock] = 5,
+		[W.Pummel] = 10,
+		[W.ShieldBash] = 12,
+		[W.Intercept] = 30,
+		[W.Bloodrage] = 60,
+		[W.BerserkerRage] = 30,
+		[W.SweepingStrikes] = 30,
+		[W.DeathWish] = 180,
+		[W.Taunt] = 10,
+		[W.MockingBlow] = 120,
+		[W.Disarm] = 60,
+		[W.Retaliation] = 1800,
+		[W.Recklessness] = 1800,
+		[W.ShieldWall] = 1800,
+		[W.LastStand] = 480,
+		[H.AimedShot] = 6,
+		[H.MultiShot] = 10,
+		[H.ArcaneShot] = 6,
+		[H.ConcussiveShot] = 12,
+		[H.Counterattack] = 5,
+		[H.Intimidation] = 60,
+		[H.FeignDeath] = 30,
+		[H.RapidFire] = 300,
+		[H.BestialWrath] = 120,
+		[H.Deterrence] = 300,
+		[H.WyvernSting] = 120,
+		[R.Kick] = 10,
+		[R.Gouge] = 10,
+		[R.Riposte] = 6,
+		[R.GhostlyStrike] = 20,
+		[R.BladeFlurry] = 120,
+		[R.AdrenalineRush] = 300,
+		[R.Evasion] = 300,
+		[R.Sprint] = 300,
+		[R.Vanish] = 300,
+		[Pr.MindBlast] = 8,
+		[Pr.PsychicScream] = 30,
+		[Pr.Fade] = 30,
+		[Pr.Silence] = 45,
+		[Pr.InnerFocus] = 180,
+		[Pr.PowerInfusion] = 180,
+		[Sh.EarthShock] = 6,
+		[Sh.FlameShock] = 6,
+		[Sh.FrostShock] = 6,
+		[Sh.ChainLightning] = 6,
+		[Sh.Stormstrike] = 20,
+		[Sh.ElementalMastery] = 180,
+		[Sh.NaturesSwiftness] = 180,
+		[M.FireBlast] = 8,
+		[M.ConeofCold] = 10,
+		[M.BlastWave] = 30,
+		[M.FrostNova] = 25,
+		[M.Counterspell] = 30,
+		[M.Blink] = 15,
+		[M.Combustion] = 180,
+		[M.PresenceofMind] = 180,
+		[M.ArcanePower] = 180,
+		[M.Evocation] = 480,
+		[M.IceBlock] = 300,
+		[L.Conflagrate] = 10,
+		[L.Shadowburn] = 15,
+		[L.DeathCoil] = 120,
+		[L.HowlofTerror] = 40,
+		[D.Swiftmend] = 15,
+		[D.Bash] = 60,
+		[D.Barkskin] = 60,
+		[D.FeralCharge] = 15,
+		[D.Enrage] = 60,
+		[D.FrenziedRegen] = 180,
+		[D.NaturesSwiftness] = 180,
+		[D.Innervate] = 360,
+		[D.Tranquility] = 300,
+	}
+	ns.COOLDOWN_GROUPS = {
+		{ seconds = 6, ids = { Sh.EarthShock, Sh.FlameShock, Sh.FrostShock } },
+	}
+end

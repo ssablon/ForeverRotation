@@ -364,22 +364,198 @@ function ns.API.Known(spellID)
 	return ns.API.Resolve(spellID) ~= nil
 end
 
-function ns.API.Cooldown(spellID)
-	spellID = ns.API.Resolve(spellID) or spellID
+local cdUntil = {}
+local cdKnown = {}
+
+local function cdKey(spellID)
+	local name = ns.API.SpellName(spellID)
+	if type(name) == "string" and name ~= "" then
+		local n = strlower(name)
+		n = n:gsub("%s*%([^%)]*%)", "")
+		if strtrim then
+			n = strtrim(n)
+		end
+		if n ~= "" then
+			return n
+		end
+	end
+	return "id:" .. tostring(spellID)
+end
+
+local function parseBaseCooldown(cd, gcd)
+	cd = tonumber(safe(cd, nil))
+	gcd = tonumber(safe(gcd, nil))
+	if not cd or cd <= 0 then
+		return 0
+	end
+	if cd < 500 then
+		local gcdSec = gcd and gcd < 500 and gcd or 1.5
+		if cd <= gcdSec + 0.05 or cd <= 1.5 then
+			return 0
+		end
+		return cd
+	end
+	local gcdMs = gcd or 1500
+	if cd <= gcdMs + 50 then
+		return 0
+	end
+	return cd / 1000
+end
+
+local function baseCooldownSec(spellID)
+	if GetSpellBaseCooldown then
+		local ok, cd, gcd = pcall(GetSpellBaseCooldown, spellID)
+		if ok then
+			local sec = parseBaseCooldown(cd, gcd)
+			if sec > 0 then
+				return sec
+			end
+		end
+	end
+	if C_Spell and C_Spell.GetSpellBaseCooldown then
+		local ok, cd, gcd = pcall(C_Spell.GetSpellBaseCooldown, spellID)
+		if ok then
+			if type(cd) == "table" then
+				local sec = parseBaseCooldown(cd.duration or cd.cooldown, cd.gcd)
+				if sec > 0 then
+					return sec
+				end
+			else
+				local sec = parseBaseCooldown(cd, gcd)
+				if sec > 0 then
+					return sec
+				end
+			end
+		end
+	end
+	return 0
+end
+
+local function groupOf(spellID)
+	local groups = ns.COOLDOWN_GROUPS
+	if not groups then
+		return nil
+	end
+	local castName = ns.API.SpellName(spellID)
+	for _, group in ipairs(groups) do
+		for _, id in ipairs(group.ids) do
+			if id == spellID or (castName and ns.API.SpellName(id) == castName) then
+				return group
+			end
+		end
+	end
+end
+
+local function fallbackSeconds(spellID)
+	local map = ns.COOLDOWNS
+	if map and map[spellID] then
+		return map[spellID]
+	end
+	local group = groupOf(spellID)
+	if group and group.seconds then
+		return group.seconds
+	end
+	local name = ns.API.SpellName(spellID)
+	if map and name then
+		for id, seconds in pairs(map) do
+			if ns.API.SpellName(id) == name then
+				return seconds
+			end
+		end
+	end
+	return 0
+end
+
+local function markCooldown(spellID, seconds)
+	if not seconds or seconds <= 0.2 then
+		return
+	end
+	local exp = GetTime() + seconds
+	cdUntil[cdKey(spellID)] = exp
+	cdUntil["id:" .. tostring(spellID)] = exp
+	local group = groupOf(spellID)
+	if not group then
+		return
+	end
+	local groupExp = GetTime() + math.max(seconds, group.seconds or 0)
+	for _, id in ipairs(group.ids) do
+		cdUntil[cdKey(id)] = groupExp
+		cdUntil["id:" .. tostring(id)] = groupExp
+	end
+end
+
+function ns.API.NoteSpellCast(spellID)
+	if spellID == nil or (issecretvalue and issecretvalue(spellID)) then
+		return
+	end
+	local key = cdKey(spellID)
+	local seconds = baseCooldownSec(spellID)
+	if seconds <= 0 and cdKnown[key] and cdKnown[key] > 1.5 then
+		seconds = cdKnown[key]
+	end
+	if seconds <= 0 then
+		seconds = fallbackSeconds(spellID)
+	end
+	markCooldown(spellID, seconds)
+end
+
+local function trackedRemain(spellID)
+	local exp = cdUntil[cdKey(spellID)] or cdUntil["id:" .. tostring(spellID)]
+	if not exp then
+		return 0
+	end
+	local remain = exp - GetTime()
+	if remain <= 0 then
+		cdUntil[cdKey(spellID)] = nil
+		cdUntil["id:" .. tostring(spellID)] = nil
+		return 0
+	end
+	return remain
+end
+
+local function readSpellCooldown(spellID)
 	if not spellID or not C_Spell or not C_Spell.GetSpellCooldown then
-		return 0, 0
+		return 0, 0, true
 	end
 	local ok, info = pcall(C_Spell.GetSpellCooldown, spellID)
 	if not ok or type(info) ~= "table" then
-		return 0, 0
+		return 0, 0, true
 	end
-	local start = tonumber(safe(info.startTime or info.start, 0)) or 0
-	local duration = tonumber(safe(info.duration, 0)) or 0
+	local start = info.startTime or info.start
+	local duration = info.duration
+	if (start ~= nil and not readable(start)) or (duration ~= nil and not readable(duration)) then
+		return 0, 0, true
+	end
+	start = tonumber(start) or 0
+	duration = tonumber(duration) or 0
 	local remain = duration - (GetTime() - start)
 	if remain < 0 then
 		remain = 0
 	end
-	return remain, duration
+	if duration > 0 and duration <= 1.51 then
+		return 0, duration, false
+	end
+	return remain, duration, false
+end
+
+function ns.API.Cooldown(spellID)
+	spellID = ns.API.Resolve(spellID) or spellID
+	if not spellID then
+		return 0, 0
+	end
+	local apiRemain, apiDuration, secret = readSpellCooldown(spellID)
+	local key = cdKey(spellID)
+	if not secret and apiDuration and apiDuration > 1.51 then
+		cdKnown[key] = apiDuration
+	end
+	local tracked = trackedRemain(spellID)
+	if tracked > 0.2 then
+		return tracked, apiDuration > 0 and apiDuration or tracked
+	end
+	if secret then
+		return 0, 0
+	end
+	return apiRemain, apiDuration
 end
 
 local function unitExists(unit)
@@ -678,6 +854,9 @@ function ns.API.StepOk(spellID, opt)
 				return false
 			end
 		end
+	end
+	if ns.API.Cooldown(spellID) > 0.2 then
+		return false
 	end
 	if opt.ready == false then
 		return true

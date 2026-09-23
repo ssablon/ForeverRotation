@@ -133,9 +133,13 @@ Les listes viennent d'un noyau Era type ConROC Classic, niveaux 1–60. Pas de S
 | `comboMin` | Points de combo joueur/cible minimum. |
 | `pet` / `nopet` | Familier présent ou absent. |
 | `ready = false` | Accepte le pas sans tester le cooldown ni l'utilisabilité. |
-| `filler` | Si les tests précédents passent, le pas est accepté même quand `Ready` est faux. |
+| `filler` | Sort de spam sans temps de recharge propre (Colère, Frappe héroïque, Attaque pernicieuse…). Ignoré seulement par un vrai cooldown, pas par le GCD. |
 
-`ns.API.Ready` : sort résolu, cooldown restant ≤ 0,2 s, pas de `noMana`. Un sort seulement utile (`IsHelpful` et pas `IsHarmful`) peut passer via le coût de puissance si `IsSpellUsable` est faux ou absent. Un sort nuisible avec `usable == false` est refusé.
+`ns.API.Ready` : sort résolu, pas de cooldown propre en cours, pas de `noMana`. Le GCD (environ 1,5 s) ne retire pas le sort de la file : il reste le prochain bouton à presser. Un cooldown plus long (Jugement, Horion, Visée, Déflagration…) le retire jusqu'à la fin, et le pas suivant de la liste est testé. Ça vaut pour toutes les classes, les raciaux et la défense.
+
+Le client camelot masque souvent `GetSpellCooldown` en combat. Au lancement réussi, `ns.API.NoteSpellCast` démarre le temps de recharge de base du sort (`GetSpellBaseCooldown`, sinon `ns.COOLDOWNS`). Les trois horions du chaman partagent ce temps (`ns.COOLDOWN_GROUPS`). Un proc qui rend le sort disponible plus tôt peut attendre la fin de ce délai, parce que le jeu ne laisse pas lire le temps restant.
+
+Un sort seulement utile (`IsHelpful` et pas `IsHarmful`) peut passer via le coût de puissance si `IsSpellUsable` est faux ou absent. Un sort nuisible avec `usable == false` est refusé.
 
 `ns.API.Add` empile au plus 3 IDs **déjà résolus**, sans doublon, et seulement si `StepOk`.
 
