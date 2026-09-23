@@ -137,7 +137,7 @@ Les listes viennent d'un noyau Era type ConROC Classic, niveaux 1–60. Pas de S
 | `nocombat` | Refus si le joueur est en combat (Charge, Camouflage, Proie). |
 | `needbuff` | ID d'aura utile exigée sur le joueur (Garrot et Embuscade exigent Camouflage). |
 | `needdebuff` | ID de débuff exigé sur la cible (Conflagration exige Immolation). |
-| `proc` | `"dodge"`, `"revenge"`, `"mongoose"` ou `"parry"`. Fenêtre de 5 s ouverte par le journal de combat. |
+| `proc` | Le client doit répondre que le sort est utilisable. Sert à Fulgurance, Revanche, Riposte, Contre-attaque et Morsure de la mangouste. Si la réponse est masquée, le pas est sauté. Ne pas lire le journal de combat : cet appel est réservé à l'interface Blizzard et bloque l'addon. |
 | `usable` | Le client doit répondre que le sort est utilisable (Exorcisme, Colère divine, Attaque sournoise dans le dos). Si la réponse est masquée, le pas est sauté. |
 | `manaMax` | Refus si le pourcentage de mana du joueur est au-dessus de ce seuil (Connexion). |
 | `hpMin` | Refus si la vie (joueur, ou `unit`) est sous ce pourcentage. |
@@ -148,7 +148,7 @@ Les listes viennent d'un noyau Era type ConROC Classic, niveaux 1–60. Pas de S
 
 Le client camelot masque souvent `GetSpellCooldown` en combat. Au lancement réussi, `ns.API.NoteSpellCast` démarre le temps de recharge de base du sort (`GetSpellBaseCooldown`, sinon `ns.COOLDOWNS`). Les trois horions du chaman partagent ce temps (`ns.COOLDOWN_GROUPS`). Un proc qui rend le sort disponible plus tôt peut attendre la fin de ce délai, parce que le jeu ne laisse pas lire le temps restant.
 
-Fulgurance, Revanche, Riposte, Contre-attaque et Morsure de la mangouste ne dépendent pas de `IsSpellUsable` (souvent masqué). `COMBAT_LOG_EVENT_UNFILTERED` ouvre une fenêtre de 5 secondes : esquive de la cible pour Fulgurance, blocage / esquive / parade subie pour Revanche, esquive subie pour la mangouste, parade subie pour Riposte et Contre-attaque. Le lancement du sort ferme la fenêtre.
+Fulgurance, Revanche, Riposte, Contre-attaque et Morsure de la mangouste (`opt.proc`) ne sont proposés que si `IsSpellUsable` répond vrai. Une réponse masquée saute le pas. Le journal de combat n'est pas lu.
 
 Un sort seulement utile (`IsHelpful` et pas `IsHarmful`) peut passer via le coût de puissance si `IsSpellUsable` est faux ou absent. Un sort nuisible avec `usable == false` est refusé.
 

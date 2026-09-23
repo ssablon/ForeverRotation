@@ -419,20 +419,13 @@ frame:RegisterEvent("PLAYER_EQUIPMENT_CHANGED")
 pcall(frame.RegisterEvent, frame, "WEAPON_ENCHANT_CHANGED")
 pcall(frame.RegisterEvent, frame, "SPELLS_CHANGED")
 pcall(frame.RegisterEvent, frame, "LEARNED_SPELL_IN_TAB")
-	pcall(frame.RegisterEvent, frame, "PLAYER_TALENT_UPDATE")
-	pcall(frame.RegisterEvent, frame, "COMBAT_LOG_EVENT_UNFILTERED")
+pcall(frame.RegisterEvent, frame, "PLAYER_TALENT_UPDATE")
 frame:SetScript("OnEvent", function(_, event, unit, _, spellID)
 	if event == "SPELLS_CHANGED" or event == "LEARNED_SPELL_IN_TAB" or event == "PLAYER_TALENT_UPDATE" then
 		if ns.API and ns.API.InvalidateSpells then
 			ns.API.InvalidateSpells()
 		end
 		ns.Tick()
-		return
-	end
-	if event == "COMBAT_LOG_EVENT_UNFILTERED" then
-		if ns.API and ns.API.NoteCombatLog then
-			ns.API.NoteCombatLog()
-		end
 		return
 	end
 	if event == "PLAYER_LOGIN" or event == "PLAYER_ENTERING_WORLD" then
