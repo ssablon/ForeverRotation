@@ -438,18 +438,40 @@ local function packRows(steps)
 	return rows
 end
 
+local aplMemo, aplMemoKey, aplMemoAt
+
+local defMemo, defMemoKey, defMemoAt
+
+function ns.InvalidateAPLCache()
+	aplMemo = nil
+	aplMemoKey = nil
+	aplMemoAt = nil
+	defMemo = nil
+	defMemoKey = nil
+	defMemoAt = nil
+end
+
 function ns.GetAPL(classFile, spec, mode)
 	classFile = classFile or (ns.ClassToken and ns.ClassToken()) or ""
 	spec = spec or ns.ActiveSpec()
 	mode = validMode(mode) or ns.ResolveCombatMode()
+	local key = classFile .. "\0" .. spec .. "\0" .. mode
+	local now = GetTime()
+	if aplMemo and aplMemoKey == key and aplMemoAt and (now - aplMemoAt) < 0.25 then
+		return aplMemo
+	end
 	local defaults = defaultsFor(classFile, spec, mode)
 	local savedRoot = ns.db.apl and ns.db.apl[classFile] and ns.db.apl[classFile][spec]
 	local saved = savedForMode(savedRoot, mode)
 	local dropped = dropMap("apl", classFile, spec, mode)
+	local list
 	if not saved and not (dropped and next(dropped)) then
-		return defaults
+		list = defaults
+	else
+		list = mergeSteps(defaults, saved, dropped, true)
 	end
-	return mergeSteps(defaults, saved, dropped, true)
+	aplMemo, aplMemoKey, aplMemoAt = list, key, now
+	return list
 end
 
 function ns.SaveAPL(steps, classFile, spec, mode)
@@ -461,6 +483,9 @@ function ns.SaveAPL(steps, classFile, spec, mode)
 	end
 	local bucket = ensureModeBucket(classFile, spec)
 	bucket[mode] = packRows(steps)
+	if ns.InvalidateAPLCache then
+		ns.InvalidateAPLCache()
+	end
 	if ns.Tick then
 		ns.Tick()
 	end
@@ -486,6 +511,9 @@ function ns.ResetAPL(classFile, spec, mode)
 		ns.db.apl[classFile][spec] = nil
 	end
 	clearDropped("apl", classFile, spec, mode)
+	if ns.InvalidateAPLCache then
+		ns.InvalidateAPLCache()
+	end
 	if ns.Tick then
 		ns.Tick()
 	end
@@ -609,12 +637,21 @@ end
 function ns.GetDef(classFile, spec)
 	classFile = classFile or (ns.ClassToken and ns.ClassToken()) or ""
 	spec = spec or ns.ActiveSpec()
+	local key = classFile .. "\0" .. spec
+	local now = GetTime()
+	if defMemo and defMemoKey == key and defMemoAt and (now - defMemoAt) < 0.25 then
+		return defMemo
+	end
 	local saved = ns.db.def and ns.db.def[classFile] and ns.db.def[classFile][spec]
 	local dropped = dropMap("def", classFile, spec)
+	local list
 	if not saved and not (dropped and next(dropped)) then
-		return defDefaultsFor(classFile, spec)
+		list = defDefaultsFor(classFile, spec)
+	else
+		list = mergeSteps(defDefaultsFor(classFile, spec), saved, dropped)
 	end
-	return mergeSteps(defDefaultsFor(classFile, spec), saved, dropped)
+	defMemo, defMemoKey, defMemoAt = list, key, now
+	return list
 end
 
 function ns.SaveDef(steps, classFile, spec)
@@ -623,6 +660,9 @@ function ns.SaveDef(steps, classFile, spec)
 	ns.db.def = ns.db.def or {}
 	ns.db.def[classFile] = ns.db.def[classFile] or {}
 	ns.db.def[classFile][spec] = packRows(steps)
+	if ns.InvalidateAPLCache then
+		ns.InvalidateAPLCache()
+	end
 	if ns.Tick then
 		ns.Tick()
 	end
@@ -635,6 +675,9 @@ function ns.ResetDef(classFile, spec)
 		ns.db.def[classFile][spec] = nil
 	end
 	clearDropped("def", classFile, spec)
+	if ns.InvalidateAPLCache then
+		ns.InvalidateAPLCache()
+	end
 	if ns.Tick then
 		ns.Tick()
 	end

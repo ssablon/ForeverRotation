@@ -218,7 +218,13 @@ function ns.API.CursorSpell()
 	return nil
 end
 
+local enemyCountAt, enemyCountVal = 0, 0
+
 function ns.API.EnemyCount()
+	local now = GetTime()
+	if enemyCountAt > 0 and (now - enemyCountAt) < 0.3 then
+		return enemyCountVal
+	end
 	local count = 0
 	local function hostile(unit)
 		local okEx, exists = pcall(UnitExists, unit)
@@ -253,6 +259,8 @@ function ns.API.EnemyCount()
 	if count < 1 and hostile("target") then
 		count = 1
 	end
+	enemyCountAt = now
+	enemyCountVal = count
 	return count
 end
 
@@ -279,6 +287,12 @@ local healNames
 function ns.API.InvalidateSpells()
 	wipe(resolveCache)
 	healNames = nil
+	if ns.InvalidateBuffCaches then
+		ns.InvalidateBuffCaches()
+	end
+	if ns.InvalidateAPLCache then
+		ns.InvalidateAPLCache()
+	end
 end
 
 local function playerKnows(id)
@@ -956,7 +970,7 @@ local AURA_FAMILIES = {
 local heldNames = {}
 local heldFamilies = {}
 local buffCastAt = {}
-local scanCache
+local auraScans = {}
 
 local FAMILY_SECONDS = {
 	seal = 30,
@@ -1073,8 +1087,10 @@ end
 
 local function scanUnitAuras(unit, filter)
 	local now = GetTime()
-	if scanCache and scanCache.t == now and scanCache.unit == unit and scanCache.filter == filter then
-		return scanCache
+	local key = (unit or "") .. "\0" .. (filter or "")
+	local hit = auraScans[key]
+	if hit and (now - hit.t) < 0.2 then
+		return hit
 	end
 	local scan = {
 		t = now,
@@ -1085,7 +1101,7 @@ local function scanUnitAuras(unit, filter)
 		families = {},
 		unreadable = false,
 	}
-	scanCache = scan
+	auraScans[key] = scan
 	if not C_UnitAuras or not C_UnitAuras.GetAuraDataByIndex then
 		scan.unreadable = true
 		return scan

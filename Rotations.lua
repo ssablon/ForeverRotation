@@ -1,6 +1,44 @@
 local addonName, ns = ...
 local API = ns.API
 
+local maintNames
+local weaponNames
+
+function ns.InvalidateBuffCaches()
+	maintNames = nil
+	weaponNames = nil
+end
+
+local function maintNameSet()
+	if maintNames and next(maintNames) then
+		return maintNames
+	end
+	maintNames = {}
+	for id in pairs(ns.MAINTENANCE_BUFF_IDS or {}) do
+		local name = API.SpellName(id)
+		if name then
+			maintNames[name] = true
+		end
+	end
+	return maintNames
+end
+
+local function weaponNameSet()
+	if weaponNames and next(weaponNames) then
+		return weaponNames
+	end
+	weaponNames = {}
+	for _, list in pairs(ns.WEAPON_BUFFS or {}) do
+		for _, entry in ipairs(list) do
+			local name = API.SpellName(entry.id)
+			if name then
+				weaponNames[name] = true
+			end
+		end
+	end
+	return weaponNames
+end
+
 local function stepReady(id, opt)
 	if opt and opt.role and (ns.db.role or "damage") ~= opt.role then
 		return false
@@ -16,15 +54,7 @@ function ns.IsMaintenanceBuff(spellID)
 		return true
 	end
 	local name = API.SpellName(spellID)
-	if not name then
-		return false
-	end
-	for id in pairs(ns.MAINTENANCE_BUFF_IDS or {}) do
-		if API.SpellName(id) == name then
-			return true
-		end
-	end
-	return false
+	return name and maintNameSet()[name] or false
 end
 
 function ns.IsWeaponBuff(spellID)
@@ -35,17 +65,7 @@ function ns.IsWeaponBuff(spellID)
 		return true
 	end
 	local name = API.SpellName(spellID)
-	if not name then
-		return false
-	end
-	for _, list in pairs(ns.WEAPON_BUFFS or {}) do
-		for _, entry in ipairs(list) do
-			if API.SpellName(entry.id) == name then
-				return true
-			end
-		end
-	end
-	return false
+	return name and weaponNameSet()[name] or false
 end
 
 function ns.BuildQueue()

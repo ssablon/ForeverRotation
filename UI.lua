@@ -241,14 +241,15 @@ function ns.UI.Create()
 	weapon.texture:SetVertexColor(1, 1, 1, 0.45)
 	makeMovable(weapon, "queue", root)
 	bindTip(weapon, "TIP_WEAPON", "TIP_WEAPON_DESC")
-	weapon:SetScript("OnUpdate", function(self, elapsed)
+	weapon.pulseTick = function(self, elapsed)
 		if not self.needRefresh then
 			self:SetAlpha(1)
+			self:SetScript("OnUpdate", nil)
 			return
 		end
 		self.pulse = (self.pulse or 0) + elapsed
 		self:SetAlpha(0.4 + 0.6 * math.abs(math.sin(GetTime() * 5)))
-	end)
+	end
 	ns.UI.weapon = weapon
 
 	local lock = makeIconButton("WoWForeverRotLock", UIParent, 22)
@@ -667,6 +668,12 @@ function ns.UI.Update(queue, defenseID, interruptID, purgeID, cleanseID, weaponI
 		ns.UI.weapon.texture:SetTexture(icon)
 		ns.UI.weapon.texture:SetTexCoord(0.08, 0.92, 0.08, 0.92)
 		ns.UI.weapon.needRefresh = hasWeapon and weaponNeed and true or false
+		if ns.UI.weapon.needRefresh then
+			ns.UI.weapon:SetScript("OnUpdate", ns.UI.weapon.pulseTick)
+		else
+			ns.UI.weapon:SetScript("OnUpdate", nil)
+			ns.UI.weapon:SetAlpha(1)
+		end
 		if hasWeapon and weaponNeed then
 			ns.UI.weapon.texture:SetVertexColor(1, 1, 1, 1)
 			if ns.UI.weapon.filter then

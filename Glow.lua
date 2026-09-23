@@ -30,15 +30,21 @@ local lastDefHeal
 local lastKick
 local lastPurge
 local lastFetch = 0
+local addonCache = {}
 
 local function addonLoaded(name)
+	if addonCache[name] ~= nil then
+		return addonCache[name]
+	end
+	local loaded = false
 	if C_AddOns and C_AddOns.IsAddOnLoaded then
-		local ok, loaded = pcall(C_AddOns.IsAddOnLoaded, name)
+		local ok, value = pcall(C_AddOns.IsAddOnLoaded, name)
 		if ok then
-			return loaded
+			loaded = value and true or false
 		end
 	end
-	return false
+	addonCache[name] = loaded
+	return loaded
 end
 
 local function spellName(spellID)
@@ -266,7 +272,7 @@ function ns.GlowInvalidate()
 end
 
 function ns.GlowFetch(force)
-	if not force and lastFetch > 0 and (GetTime() - lastFetch) < 0.4 then
+	if not force and lastFetch > 0 and (GetTime() - lastFetch) < 2 then
 		return
 	end
 	wipe(spells)

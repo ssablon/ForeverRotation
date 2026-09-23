@@ -271,6 +271,9 @@ local function ensureOptions()
 	autoLess:SetScript("OnClick", function()
 		local n = tonumber(ns.db.autoEnemies) or 3
 		ns.db.autoEnemies = math.max(2, n - 1)
+		if ns.FlushProfile then
+			ns.FlushProfile()
+		end
 		ns.RefreshOptions()
 		if ns.Tick then
 			ns.Tick()
@@ -285,6 +288,9 @@ local function ensureOptions()
 	autoMore:SetScript("OnClick", function()
 		local n = tonumber(ns.db.autoEnemies) or 3
 		ns.db.autoEnemies = math.min(8, n + 1)
+		if ns.FlushProfile then
+			ns.FlushProfile()
+		end
 		ns.RefreshOptions()
 		if ns.Tick then
 			ns.Tick()
@@ -568,6 +574,9 @@ function ns.RefreshOptions()
 				box:SetScript("OnClick", function(self)
 					if self.wepKey then
 						ns.db.weaponBuff = self.wepKey
+						if ns.FlushProfile then
+							ns.FlushProfile()
+						end
 						ns.RefreshOptions()
 						if ns.Tick then
 							ns.Tick()

@@ -167,6 +167,9 @@ function ns.SetProfile(key)
 	ns.FlushProfile()
 	ns.db.profile = key
 	ns.BindProfile()
+	if ns.InvalidateAPLCache then
+		ns.InvalidateAPLCache()
+	end
 	if ns.UI and ns.UI.RefreshRoles then
 		ns.UI.RefreshRoles()
 	end
@@ -205,6 +208,9 @@ function ns.ResetCurrentProfile()
 	ns.db.role = ns.NormalizeRole(nil)
 	ns.FlushProfile()
 	ns.BindProfile()
+	if ns.InvalidateAPLCache then
+		ns.InvalidateAPLCache()
+	end
 	if ns.UI and ns.UI.RefreshRoles then
 		ns.UI.RefreshRoles()
 	end
@@ -296,6 +302,9 @@ function ns.SetRole(role)
 		return
 	end
 	ns.db.role = role
+	if ns.FlushProfile then
+		ns.FlushProfile()
+	end
 	if ns.UI and ns.UI.RefreshRoles then
 		ns.UI.RefreshRoles()
 	end
@@ -310,6 +319,12 @@ function ns.SetCombatMode(mode)
 		ns.db.lastManualMode = mode
 	end
 	ns.db.combatMode = mode
+	if ns.FlushProfile then
+		ns.FlushProfile()
+	end
+	if ns.InvalidateAPLCache then
+		ns.InvalidateAPLCache()
+	end
 	if ns.UI and ns.UI.RefreshModes then
 		ns.UI.RefreshModes()
 	end
@@ -357,6 +372,9 @@ function ns.CycleRole()
 	ns.SetRole(nextRole)
 end
 
+local lastTickSig
+local lastRangeAt = 0
+
 function ns.Tick()
 	if not ns.UI or not ns.UI.root then
 		return
@@ -370,34 +388,37 @@ function ns.Tick()
 	if ns.db.showWeapon ~= false then
 		weapon, _, weaponNeed = ns.BuildWeapon()
 	end
-	ns.UI.Update(queue, defense, interrupt, purge, cleanse, weapon, weaponNeed)
-	if ns.GlowSpell then
-		ns.GlowSpell(ns.db.showRotation ~= false and queue[1] or nil)
+	local sig = (queue[1] or 0) .. ":" .. (queue[2] or 0) .. ":" .. (queue[3] or 0) .. ":" .. (defense or 0) .. ":" .. (interrupt or 0) .. ":" .. (purge or 0) .. ":" .. (cleanse or 0) .. ":" .. (weapon or 0) .. ":" .. (weaponNeed and 1 or 0)
+	if sig ~= lastTickSig then
+		lastTickSig = sig
+		ns.UI.Update(queue, defense, interrupt, purge, cleanse, weapon, weaponNeed)
+		if ns.GlowSpell then
+			ns.GlowSpell(ns.db.showRotation ~= false and queue[1] or nil)
+		end
+		if ns.GlowDef then
+			ns.GlowDef(defense)
+		end
+		if ns.GlowInterrupt then
+			ns.GlowInterrupt(interrupt)
+		end
+		if ns.GlowPurge then
+			ns.GlowPurge(purge)
+		end
+		if ns.GlowCleanse then
+			ns.GlowCleanse(cleanse)
+		end
+		if ns.GlowWeapon then
+			ns.GlowWeapon(weaponNeed and weapon or nil)
+		end
 	end
-	if ns.GlowDef then
-		ns.GlowDef(defense)
-	end
-	if ns.GlowInterrupt then
-		ns.GlowInterrupt(interrupt)
-	end
-	if ns.GlowPurge then
-		ns.GlowPurge(purge)
-	end
-	if ns.GlowCleanse then
-		ns.GlowCleanse(cleanse)
-	end
-	if ns.GlowWeapon then
-		ns.GlowWeapon(weaponNeed and weapon or nil)
-	end
+	local now = GetTime()
 	if ns.db.showRange ~= false then
-		if ns.RangeUpdate then
+		if now - lastRangeAt >= 0.25 and ns.RangeUpdate then
+			lastRangeAt = now
 			ns.RangeUpdate()
 		end
 	elseif ns.RangeClear then
 		ns.RangeClear()
-	end
-	if ns.FlushProfile then
-		ns.FlushProfile()
 	end
 end
 
@@ -420,12 +441,46 @@ pcall(frame.RegisterEvent, frame, "WEAPON_ENCHANT_CHANGED")
 pcall(frame.RegisterEvent, frame, "SPELLS_CHANGED")
 pcall(frame.RegisterEvent, frame, "LEARNED_SPELL_IN_TAB")
 pcall(frame.RegisterEvent, frame, "PLAYER_TALENT_UPDATE")
+pcall(frame.RegisterEvent, frame, "PLAYER_LOGOUT")
+local spellsPending
+local barsPending
+local function flushSpells()
+	spellsPending = nil
+	if ns.API and ns.API.InvalidateSpells then
+		ns.API.InvalidateSpells()
+	end
+	ns.Tick()
+end
+local function flushBars()
+	barsPending = nil
+	if ns.GlowFetch then
+		ns.GlowFetch(true)
+	end
+	if ns.GlowInvalidate then
+		ns.GlowInvalidate()
+	end
+	ns.Tick()
+end
 frame:SetScript("OnEvent", function(_, event, unit, _, spellID)
-	if event == "SPELLS_CHANGED" or event == "LEARNED_SPELL_IN_TAB" or event == "PLAYER_TALENT_UPDATE" then
-		if ns.API and ns.API.InvalidateSpells then
-			ns.API.InvalidateSpells()
+	if event == "PLAYER_LOGOUT" then
+		if ns.FlushProfile then
+			ns.FlushProfile()
 		end
-		ns.Tick()
+		return
+	end
+	if event == "SPELLS_CHANGED" then
+		return
+	end
+	if event == "LEARNED_SPELL_IN_TAB" or event == "PLAYER_TALENT_UPDATE" then
+		if spellsPending then
+			return
+		end
+		spellsPending = true
+		if C_Timer and C_Timer.After then
+			C_Timer.After(0.5, flushSpells)
+		else
+			flushSpells()
+		end
 		return
 	end
 	if event == "PLAYER_LOGIN" or event == "PLAYER_ENTERING_WORLD" then
@@ -482,13 +537,15 @@ frame:SetScript("OnEvent", function(_, event, unit, _, spellID)
 		end
 		ns.Tick()
 	elseif event == "ACTIONBAR_SLOT_CHANGED" or event == "ACTIONBAR_PAGE_CHANGED" then
-		if ns.GlowFetch then
-			ns.GlowFetch()
+		if barsPending then
+			return
 		end
-		if ns.GlowInvalidate then
-			ns.GlowInvalidate()
+		barsPending = true
+		if C_Timer and C_Timer.After then
+			C_Timer.After(0.25, flushBars)
+		else
+			flushBars()
 		end
-		ns.Tick()
 	else
 		ns.Tick()
 	end
@@ -496,7 +553,7 @@ end)
 
 frame:SetScript("OnUpdate", function(self, elapsed)
 	self.acc = (self.acc or 0) + elapsed
-	if self.acc < 0.05 then
+	if self.acc < 0.2 then
 		return
 	end
 	self.acc = 0

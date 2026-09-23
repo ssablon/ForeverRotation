@@ -30,10 +30,8 @@ Au `PLAYER_LOGIN` et `PLAYER_ENTERING_WORLD` :
 
 ```
 BuildQueue → BuildDefense → BuildInterrupt → BuildPurge → BuildCleanse → BuildWeapon
-→ ns.UI.Update
-→ GlowSpell / GlowDef / GlowInterrupt / GlowPurge / GlowCleanse / GlowWeapon
-→ RangeUpdate ou RangeClear
-→ FlushProfile
+→ ns.UI.Update + glows seulement si la file a changé
+→ RangeUpdate (toutes les 0,25 s) ou RangeClear
 ```
 
 Chaque builder respecte son interrupteur `ns.db.show*`. `show*` absent vaut affiché (`~= false`).
@@ -215,7 +213,7 @@ Modes de combat (`ns.COMBAT_MODES`) : `auto`, `single`, `aoe`, `burst`.
 
 `ns.PROFILE_ORDER = { "base", "pve", "pvp", "custom" }`.
 
-Le profil actif est recopié dans `ns.db.profiles[key]` par `FlushProfile` (à chaque tick) et rechargé par `BindProfile`. Champs de profil : `apl`, `aplDrop`, `def`, `defDrop`, `role`, `combatMode`, `lastManualMode`, `autoEnemies`, `weaponBuff`.
+Le profil actif est recopié dans `ns.db.profiles[key]` par `FlushProfile` (changement de profil, options, logout) et rechargé par `BindProfile`. Champs de profil : `apl`, `aplDrop`, `def`, `defDrop`, `role`, `combatMode`, `lastManualMode`, `autoEnemies`, `weaponBuff`.
 
 `ns.ResetCurrentProfile` vide ces listes pour le profil courant, remet `autoEnemies = 3`, `lastManualMode = single`, `combatMode = auto`, rôle normalisé. Les autres profils restent. `ns.ResetAll` appelle la même fonction.
 
@@ -257,7 +255,7 @@ Textures dans `images/` : `skull`, éclairs, cercle de purge, cadenas, boutons, 
 
 ## Surlignage (`Glow.lua`)
 
-`ns.GlowFetch` (au plus toutes les 0,4 s, ou forcé) scanne :
+`ns.GlowFetch` (au plus toutes les 2 s, ou forcé) scanne :
 
 - `ActionButton1-12`, `MultiBarBottomLeft/BottomRight/Right/Left`, `MultiBar5-7` ;
 - `StanceButton` ;
@@ -285,7 +283,7 @@ Overlays `button.WFROverlays`, blend `ADD`, tête de mort :
 
 ## Résolution d'un sort
 
-`ns.API.Resolve(spellID)` cache dans `resolveCache` (vidé par `InvalidateSpells` au login, `SPELLS_CHANGED`, `LEARNED_SPELL_IN_TAB`, `PLAYER_TALENT_UPDATE`).
+`ns.API.Resolve(spellID)` cache dans `resolveCache` (vidé par `InvalidateSpells` au login, `LEARNED_SPELL_IN_TAB`, `PLAYER_TALENT_UPDATE`). `SPELLS_CHANGED` est ignoré : le client camelot le déclenche trop souvent.
 
 1. Override `C_Spell.GetOverrideSpell` si c'est un nombre lisible.
 2. Si le joueur connaît cet ID, le garder.

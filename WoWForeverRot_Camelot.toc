@@ -12,7 +12,7 @@
 ## Notes-koKR: WoW Forever 순환 도우미.
 ## Notes-zhCN: WoW Forever 循环助手。
 ## Notes-zhTW: WoW Forever 循環助手。
-## Version: 1.5.4
+## Version: 1.5.5
 ## Author: Vohnka
 ## Category: WoW Forever
 ## SavedVariables: WoWForeverRotDB, WoWForeverSharedDB
