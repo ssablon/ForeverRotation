@@ -491,7 +491,7 @@ end)
 
 frame:SetScript("OnUpdate", function(self, elapsed)
 	self.acc = (self.acc or 0) + elapsed
-	if self.acc < 0.2 then
+	if self.acc < 0.05 then
 		return
 	end
 	self.acc = 0

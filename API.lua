@@ -757,14 +757,16 @@ local function readUsable(fn, id)
 	return safe(usable, nil), safe(noMana, nil)
 end
 
-function ns.API.Ready(spellID, opt)
+function ns.API.Ready(spellID, opt, ignoreCooldown)
 	local id = ns.API.Resolve(spellID)
 	if not id then
 		return false
 	end
-	local remain = ns.API.Cooldown(id)
-	if remain > 0.2 then
-		return false
+	if not ignoreCooldown then
+		local remain = ns.API.Cooldown(id)
+		if remain > 0.2 then
+			return false
+		end
 	end
 	local helpfulOnly = ns.API.IsHelpful(id, opt) and not ns.API.IsHarmful(id)
 	local usable, noMana = readUsable(C_Spell and C_Spell.IsSpellUsable, id)
@@ -786,7 +788,7 @@ function ns.API.Ready(spellID, opt)
 	return hasResources(id)
 end
 
-function ns.API.StepOk(spellID, opt)
+function ns.API.StepOk(spellID, opt, timeShift)
 	spellID = ns.API.Resolve(spellID) or spellID
 	if not spellID or not ns.API.Known(spellID) then
 		return false
@@ -855,13 +857,20 @@ function ns.API.StepOk(spellID, opt)
 			end
 		end
 	end
-	if ns.API.Cooldown(spellID) > 0.2 then
+	local gate = tonumber(timeShift) or 0.2
+	if gate < 0.2 then
+		gate = 0.2
+	end
+	if ns.API.Cooldown(spellID) > gate then
 		return false
 	end
 	if opt.ready == false then
 		return true
 	end
-	return ns.API.Ready(spellID, opt) or opt.filler == true
+	if ns.API.Ready(spellID, opt, true) or opt.filler == true then
+		return true
+	end
+	return false
 end
 
 local function auraRemain(aura)
@@ -893,7 +902,17 @@ local AURA_FAMILIES = {
 
 local heldNames = {}
 local heldFamilies = {}
+local buffCastAt = {}
 local scanCache
+
+local FAMILY_SECONDS = {
+	seal = 30,
+	blessing = 300,
+	palaura = 1800,
+	aspect = 1800,
+	magearmor = 1800,
+	lockarmor = 1800,
+}
 
 local function normName(name)
 	local n = strlower(name)
@@ -929,15 +948,30 @@ local function auraIdentity(aura)
 	return auraID, auraName, hidden
 end
 
-local function rememberAura(spellID, auraName)
-	local now = GetTime()
+local function rememberAura(spellID, auraName, remain, fromCast)
 	local name = auraName or ns.API.SpellName(spellID)
-	if type(name) == "string" and name ~= "" then
-		local key = normName(name)
-		heldNames[key] = now
-		local family = familyOf(name)
+	if type(name) ~= "string" or name == "" then
+		return
+	end
+	local key = normName(name)
+	local family = familyOf(name)
+	local seconds = (family and FAMILY_SECONDS[family]) or 30
+	local exp
+	if remain and remain > 0 and remain < 9000 then
+		exp = GetTime() + remain
+	elseif fromCast or not heldNames[key] or heldNames[key] <= GetTime() then
+		exp = GetTime() + seconds
+	end
+	if exp then
+		heldNames[key] = exp
 		if family then
-			heldFamilies[family] = now
+			heldFamilies[family] = exp
+		end
+	end
+	if fromCast then
+		buffCastAt[key] = GetTime()
+		if family then
+			buffCastAt[family] = GetTime()
 		end
 	end
 end
@@ -946,7 +980,7 @@ function ns.API.NoteSelfBuff(spellID)
 	if spellID == nil or (issecretvalue and issecretvalue(spellID)) then
 		return
 	end
-	rememberAura(spellID)
+	rememberAura(spellID, nil, nil, true)
 end
 
 local function heldAura(spellID, wantName)
@@ -954,11 +988,14 @@ local function heldAura(spellID, wantName)
 	if type(name) ~= "string" or name == "" then
 		return false
 	end
-	if heldNames[normName(name)] then
+	local now = GetTime()
+	local exp = heldNames[normName(name)]
+	if exp and now < exp then
 		return true
 	end
 	local family = familyOf(name)
-	return family and heldFamilies[family] and true or false
+	exp = family and heldFamilies[family]
+	return exp and now < exp or false
 end
 
 local function releaseAura(spellID, wantName, familiesSeen)
@@ -967,14 +1004,15 @@ local function releaseAura(spellID, wantName, familiesSeen)
 		return
 	end
 	local key = normName(name)
-	local seen = heldNames[key]
-	if not seen or (GetTime() - seen) > 1 then
-		heldNames[key] = nil
+	local stamped = buffCastAt[key]
+	if stamped and (GetTime() - stamped) < 1 then
+		return
 	end
+	heldNames[key] = nil
 	local family = familyOf(name)
 	if family and not (familiesSeen and familiesSeen[family]) then
-		local marked = heldFamilies[family]
-		if not marked or (GetTime() - marked) > 1 then
+		local famStamp = buffCastAt[family]
+		if not famStamp or (GetTime() - famStamp) >= 1 then
 			heldFamilies[family] = nil
 		end
 	end
@@ -1062,7 +1100,7 @@ function ns.API.HasAura(spellID, unit, filter)
 	local selfBuff = unit == "player" and filter == "HELPFUL"
 	if found then
 		if selfBuff then
-			rememberAura(spellID)
+			rememberAura(spellID, nil, remain, false)
 		end
 		return true, remain
 	end

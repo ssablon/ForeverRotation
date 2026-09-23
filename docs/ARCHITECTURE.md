@@ -292,7 +292,9 @@ Auras : `C_UnitAuras.GetPlayerAuraBySpellID` pour le joueur, puis `GetAuraDataBy
 
 Un buff perso (`nobuff` sans `heal`) est toujours lu sur le joueur. Le sceau est un buff utile : le chercher sur la cible hostile le fait réapparaître dans la file.
 
-Sur le client camelot, choisir une cible peut rendre les auras illisibles (*secret values*). Une lecture qui échoue n'est pas une absence. `ns.API.NoteSelfBuff` (cast réussi) et la dernière lecture réussie sont conservées tant que la liste d'auras n'est pas à nouveau lisible et vide de ce buff. Les soins (`opt.heal`) continuent de regarder l'allié à soigner.
+Sur le client camelot, choisir une cible peut rendre les auras illisibles (*secret values*). Une lecture qui échoue n'est pas une absence. Le sceau est retenu **30 secondes** après le lancement (durée Classic), puis il est à nouveau proposé même en combat. Les bénédictions durent 5 minutes dans cette mémoire, les auras et aspects 30 minutes, sauf si le jeu donne une durée réelle plus courte. Les soins (`opt.heal`) continuent de regarder l'allié à soigner.
+
+La file imite ConROC : le 1er sort est celui qui est lançable maintenant, le 2e celui du prochain GCD, le 3e celui d'après. Un sort hors liste ne coupe pas la suggestion : au tick suivant, la priorité est recalculée. Le HUD se met à jour toutes les 0,05 s.
 
 Soins — unité : `opt.unit` s'il existe, sinon `mouseover`, `target`, `focus`, `targettarget`, sinon `player`. `HealHealth` utilise `LowestFriendly` (joueur, mouseover, target, focus, targettarget, pet, party1–4) quand aucun de mouseover/target/focus n'est allié. Unité morte ou attaquable = pas alliée.
 

@@ -54,43 +54,81 @@ function ns.BuildQueue()
 	if not ns.GetAPL then
 		return q
 	end
-	local heals = {}
+	local apl = ns.GetAPL()
+	local used = {}
+	local blocked = {}
 	local function markHeal(id, opt)
-		if not id then
+		if not id or not (API.IsHealSpell and API.IsHealSpell(id, opt)) then
 			return
 		end
-		if API.IsHealSpell and API.IsHealSpell(id, opt) then
-			ns.queueHeal[id] = true
-			local resolved = API.Resolve and API.Resolve(id)
-			if resolved then
-				ns.queueHeal[resolved] = true
+		ns.queueHeal[id] = true
+		local resolved = API.Resolve and API.Resolve(id)
+		if resolved then
+			ns.queueHeal[resolved] = true
+		end
+	end
+	local function take(step)
+		local id = (API.Resolve and API.Resolve(step.id)) or step.id
+		if not id or used[id] or used[step.key] then
+			return false
+		end
+		local group = step.opt and step.opt.anybuff
+		if group and blocked[group] then
+			return false
+		end
+		q[#q + 1] = id
+		used[id] = true
+		used[step.key] = true
+		if group then
+			blocked[group] = true
+		end
+		markHeal(id, step.opt)
+		return true
+	end
+	local function consider(step)
+		return ns.IsStepEnabled(step) and step.id and not ns.IsWeaponBuff(step.id) and not ns.IsMaintenanceBuff(step.id)
+	end
+	-- Comme ConROC : le sort prêt maintenant, puis ceux qui le seront au GCD suivant.
+	for _, shift in ipairs({ 0.2, 1.5, 3 }) do
+		if #q >= 3 then
+			break
+		end
+		for _, step in ipairs(apl) do
+			if #q >= 3 then
+				break
+			end
+			if consider(step) and not used[step.key] and API.StepOk(step.id, step.opt, shift) then
+				take(step)
 			end
 		end
 	end
-	for _, step in ipairs(ns.GetAPL()) do
-		if ns.IsStepEnabled(step) and step.id and not ns.IsWeaponBuff(step.id) and not ns.IsMaintenanceBuff(step.id) then
-			if API.IsHealSpell and API.IsHealSpell(step.id, step.opt) then
-				heals[#heals + 1] = step
+	if #q < 3 then
+		for _, step in ipairs(apl) do
+			if #q >= 3 then
+				break
 			end
-			local before = #q
-			API.Add(q, step.id, step.opt)
-			if #q > before then
-				markHeal(q[#q], step.opt)
+			if consider(step) and not used[step.key] and API.StepOk(step.id, step.opt, 999) then
+				take(step)
 			end
 		end
 	end
-	local shown = false
+	local healFirst = false
 	for _, id in ipairs(q) do
 		if ns.queueHeal[id] then
-			shown = true
+			healFirst = true
 			break
 		end
 	end
-	if not shown then
-		for _, step in ipairs(heals) do
-			if API.StepOk(step.id, step.opt) then
+	if not healFirst then
+		for _, step in ipairs(apl) do
+			if consider(step) and API.IsHealSpell and API.IsHealSpell(step.id, step.opt) and API.StepOk(step.id, step.opt, 0.2) then
 				local id = (API.Resolve and API.Resolve(step.id)) or step.id
 				if id then
+					for i = #q, 1, -1 do
+						if q[i] == id then
+							table.remove(q, i)
+						end
+					end
 					table.insert(q, 1, id)
 					while #q > 3 do
 						q[#q] = nil
