@@ -560,7 +560,7 @@ local function ensureRangeFilter(button)
 	end
 	local frame = CreateFrame("Frame", nil, button)
 	frame:SetAllPoints(button)
-	frame:SetFrameLevel((button.GetFrameLevel and button:GetFrameLevel() or 4) + 5)
+	frame:SetFrameLevel((button.GetFrameLevel and button:GetFrameLevel() or 4) + 8)
 	local tex = frame:CreateTexture(nil, "OVERLAY")
 	tex:SetAllPoints()
 	tex:SetTexture("Interface\\Buttons\\WHITE8x8")
@@ -660,37 +660,15 @@ function ns.RangeClear()
 		end
 	end
 	wipe(rangeOn)
-	if ns.UI and ns.UI.ApplyRange then
-		ns.UI.ApplyRange(true)
-	end
-end
-
-local function collectGlowing(seen)
-	local function take(set)
-		for button in pairs(set) do
-			if button then
-				seen[button] = true
-			end
-		end
-	end
-	take(damageGlowing)
-	take(defenseGlowing)
-	take(kickGlowing)
-	take(purgeGlowing)
-	take(cleanseGlowing)
-	take(weaponGlowing)
 end
 
 function ns.RangeUpdate()
-	local glowing = {}
-	collectGlowing(glowing)
-	if not next(glowing) then
-		ns.RangeClear()
-		return
+	if lastFetch == 0 then
+		ns.GlowFetch()
 	end
 	local seen = {}
-	for button in pairs(glowing) do
-		if button.IsShown and button:IsShown() then
+	for button in pairs(rangeButtons) do
+		if button and button.IsShown and button:IsShown() then
 			seen[button] = true
 			local flag = actionInRange(button)
 			local filter = ensureRangeFilter(button)
@@ -710,8 +688,5 @@ function ns.RangeUpdate()
 			end
 			rangeOn[button] = nil
 		end
-	end
-	if ns.UI and ns.UI.ApplyRange then
-		ns.UI.ApplyRange()
 	end
 end

@@ -1,3 +1,7 @@
+# 1.5.12
+
+- Red out-of-range overlay is back on action-bar buttons (heals included), not on the rotation HUD.
+
 # 1.5.11
 
 - Every recommended spell (heal, defense, interrupt, purge, cleanse) uses the same red out-of-range tint as attacks.

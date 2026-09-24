@@ -558,32 +558,6 @@ function ns.UI.RefreshModes()
 	ns.UI.toolbar:SetWidth(showMode and 314 or 170)
 end
 
-function ns.UI.ApplyRange(clear)
-	local function tint(slot)
-		if not slot or not slot.filter then
-			return
-		end
-		if clear or ns.db.showRange == false or not slot.spellID then
-			slot.filter:Hide()
-			return
-		end
-		if ns.SpellInRange and ns.SpellInRange(slot.spellID) == false then
-			slot.filter:Show()
-		else
-			slot.filter:Hide()
-		end
-	end
-	if ns.UI.slots then
-		for i = 1, 3 do
-			tint(ns.UI.slots[i])
-		end
-	end
-	tint(ns.UI.defense)
-	tint(ns.UI.interrupt)
-	tint(ns.UI.purge)
-	tint(ns.UI.cleanse)
-end
-
 function ns.UI.SetLocked(locked)
 	ns.db.locked = locked and true or false
 	local alpha = locked and 0.15 or 0.45
@@ -624,6 +598,9 @@ local function paint(slot, spellID, dim)
 		slot.texture:SetTexture(IMG .. "skull")
 	end
 	slot.texture:SetVertexColor(1, 1, 1, dim and 0.55 or 1)
+	if slot.filter then
+		slot.filter:Hide()
+	end
 	local remain, duration = API.Cooldown(spellID)
 	if duration and duration > 1.5 and remain > 0 then
 		slot.cooldown:Show()
