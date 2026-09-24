@@ -554,18 +554,6 @@ local function readableFlag(value)
 	return nil
 end
 
-local function hasUnitTarget()
-	local ok, exists = pcall(UnitExists, "target")
-	if ok then
-		local flag = readableFlag(exists)
-		if flag ~= nil then
-			return flag
-		end
-	end
-	local okName, name = pcall(UnitName, "target")
-	return okName and type(name) == "string" and name ~= ""
-end
-
 local function ensureRangeFilter(button)
 	if button.WFRRange then
 		return button.WFRRange
@@ -583,7 +571,47 @@ local function ensureRangeFilter(button)
 	return frame
 end
 
+local function isHealGlow(spellID)
+	if not spellID then
+		return false
+	end
+	if ns.queueHeal and ns.queueHeal[spellID] then
+		return true
+	end
+	return ns.API.IsHealSpell and ns.API.IsHealSpell(spellID)
+end
+
+local function spellInRangeOn(spellID, unit)
+	if not spellID or not unit then
+		return nil
+	end
+	if C_Spell and C_Spell.IsSpellInRange then
+		local ok, result = pcall(C_Spell.IsSpellInRange, spellID, unit)
+		if ok then
+			local flag = readableFlag(result)
+			if flag ~= nil then
+				return flag
+			end
+		end
+	end
+	if IsSpellInRange then
+		local name = spellName(spellID)
+		if name then
+			local ok, result = pcall(IsSpellInRange, name, unit)
+			if ok then
+				return readableFlag(result)
+			end
+		end
+	end
+	return nil
+end
+
 local function actionInRange(button)
+	local spellID = buttonSpells[button]
+	if isHealGlow(spellID) then
+		local unit = ns.API.HealRangeUnit and ns.API.HealRangeUnit() or "player"
+		return spellInRangeOn(spellID, unit)
+	end
 	local slot = buttonSlots[button]
 	if slot and ActionHasRange then
 		local okHas, hasRange = pcall(ActionHasRange, slot)
@@ -600,26 +628,7 @@ local function actionInRange(button)
 			end
 		end
 	end
-	local spellID = buttonSpells[button]
-	if spellID and C_Spell and C_Spell.IsSpellInRange then
-		local ok, result = pcall(C_Spell.IsSpellInRange, spellID, "target")
-		if ok then
-			local flag = readableFlag(result)
-			if flag ~= nil then
-				return flag
-			end
-		end
-	end
-	if spellID and IsSpellInRange then
-		local name = spellName(spellID)
-		if name then
-			local ok, result = pcall(IsSpellInRange, name, "target")
-			if ok then
-				return readableFlag(result)
-			end
-		end
-	end
-	return nil
+	return spellInRangeOn(spellID, "target")
 end
 
 function ns.RangeClear()
@@ -648,12 +657,12 @@ local function collectGlowing(seen)
 end
 
 function ns.RangeUpdate()
-	if not hasUnitTarget() then
+	local glowing = {}
+	collectGlowing(glowing)
+	if not next(glowing) then
 		ns.RangeClear()
 		return
 	end
-	local glowing = {}
-	collectGlowing(glowing)
 	local seen = {}
 	for button in pairs(glowing) do
 		if button.IsShown and button:IsShown() then

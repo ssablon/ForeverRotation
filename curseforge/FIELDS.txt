@@ -18,8 +18,8 @@ Website:              https://wow-forever.fr
 Source:               dépôt privé GitHub (ne pas rendre public si tu veux le garder privé)
 Issues:               laisser vide, ou ton Discord / wow-forever.fr
 
-Fichier à uploader:   F:\Github\addons\wow\WoWForeverRot-1.5.8.zip
-Display name:         WoWForeverRot 1.5.8
+Fichier à uploader:   F:\Github\addons\wow\WoWForeverRot-<VERSION.txt>.zip
+Display name:         WoWForeverRot <VERSION.txt>
 Release type:         Release
 Changelog:            curseforge/CHANGELOG.md
 Supported versions:   1.60.1  (API id 17053, type 88568)

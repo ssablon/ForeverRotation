@@ -1,0 +1,5 @@
+1.5.9
+
+2026-09-24
+- Heal spells use the same red out-of-range tint as attacks (checked on the heal target, not the enemy).
+- General options apply instantly. No /reload.

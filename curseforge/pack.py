@@ -4,7 +4,17 @@ import zipfile
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
-OUT = Path(r"F:\Github\addons\wow") / "WoWForeverRot-1.5.8.zip"
+
+
+def version():
+    for line in (ROOT / "VERSION.txt").read_text(encoding="utf-8").splitlines():
+        line = line.strip()
+        if line and not line.startswith("#"):
+            return line
+    raise SystemExit("VERSION.txt missing version")
+
+
+OUT = Path(r"F:\Github\addons\wow") / f"WoWForeverRot-{version()}.zip"
 
 SKIP_DIRS = {".git", ".cursor", "curseforge", "__pycache__", ".idea", ".vscode"}
 SKIP_FILES = {"AGENTS.md"}

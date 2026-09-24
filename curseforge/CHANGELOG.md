@@ -1,3 +1,8 @@
+# 1.5.9
+
+- Heal spells use the same red out-of-range tint as attacks (checked on the heal target, not the enemy).
+- General options apply instantly. No /reload.
+
 # 1.5.8
 
 - Feature checkboxes now toggle and apply at once (windows, skull glow, range tint, mode selector).

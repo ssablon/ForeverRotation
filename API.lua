@@ -714,6 +714,20 @@ function ns.API.HealHealth(opt)
 	return hp
 end
 
+function ns.API.HealRangeUnit(opt)
+	opt = opt or {}
+	if opt.unit and unitExists(opt.unit) then
+		return opt.unit
+	end
+	for _, unit in ipairs({ "mouseover", "target", "focus", "targettarget" }) do
+		if unitFriendly(unit) then
+			return unit
+		end
+	end
+	local unit = ns.API.LowestFriendly()
+	return unit or "player"
+end
+
 function ns.API.LowestFriendly()
 	local best, bestHp = "player", ns.API.Health("player")
 	local units = {

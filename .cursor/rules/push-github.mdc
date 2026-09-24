@@ -10,7 +10,8 @@ Le dépôt `ssablon/WoWForeverRot` est la source de vérité. Ne jamais remplace
 Après une modification demandée par l'utilisateur :
 
 1. Recopier les fichiers changés vers  
-   `C:\Program Files (x86)\World of Warcraft\_classic_beta_\Interface\AddOns\WoWForeverRot`
+   `D:\World of Warcraft\_classic_beta_\Interface\AddOns\WoWForeverRot`  
+   (sinon `C:\Program Files (x86)\World of Warcraft\_classic_beta_\Interface\AddOns\WoWForeverRot`)
 2. Commiter dans ce dépôt.
 3. Pousser : `git push origin HEAD`
 

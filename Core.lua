@@ -387,16 +387,50 @@ function ns.ApplyFeatureFlags()
 	if ns.UI and ns.UI.SetLocked then
 		ns.UI.SetLocked(ns.db.locked == true)
 	end
-	if ns.UI and ns.UI.RefreshModes then
-		ns.UI.RefreshModes()
+	if ns.UI then
+		if ns.UI.root then
+			ns.UI.root:SetShown(ns.db.showRotation ~= false)
+		end
+		if ns.UI.defense then
+			ns.UI.defense:SetShown(ns.db.showDefense ~= false)
+		end
+		if ns.UI.interrupt then
+			ns.UI.interrupt:SetShown(ns.db.showInterrupt ~= false)
+		end
+		if ns.UI.purge then
+			ns.UI.purge:SetShown(ns.db.showPurge ~= false)
+		end
+		if ns.UI.cleanse then
+			ns.UI.cleanse:SetShown(ns.db.showCleanse ~= false)
+		end
+		if ns.UI.weapon then
+			ns.UI.weapon:SetShown(ns.db.showWeapon ~= false)
+		end
+		if ns.UI.RefreshModes then
+			ns.UI.RefreshModes()
+		end
 	end
-	if ns.db.glow == false then
+	if ns.db.glow == false or ns.db.showRotation == false then
 		if ns.GlowClear then
 			ns.GlowClear()
 		end
+	end
+	if ns.db.glow == false or ns.db.showDefense == false then
 		if ns.GlowClearDef then
 			ns.GlowClearDef()
 		end
+	end
+	if ns.db.showInterrupt == false and ns.GlowClearKick then
+		ns.GlowClearKick()
+	end
+	if ns.db.showPurge == false and ns.GlowClearPurge then
+		ns.GlowClearPurge()
+	end
+	if ns.db.showCleanse == false and ns.GlowClearCleanse then
+		ns.GlowClearCleanse()
+	end
+	if ns.db.showWeapon == false and ns.GlowClearWeapon then
+		ns.GlowClearWeapon()
 	end
 	if ns.db.showRange == false and ns.RangeClear then
 		ns.RangeClear()
@@ -404,6 +438,9 @@ function ns.ApplyFeatureFlags()
 	lastTickSig = nil
 	if ns.Tick then
 		ns.Tick()
+	end
+	if ns.db.showRange ~= false and ns.RangeUpdate then
+		ns.RangeUpdate()
 	end
 end
 

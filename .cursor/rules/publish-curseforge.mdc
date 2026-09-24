@@ -1,0 +1,19 @@
+---
+description: Après chaque changement demandé, bumper la version et publier sur CurseForge
+alwaysApply: true
+---
+
+# Version + CurseForge
+
+Après une modification demandée (Lua, TOC, textes, zip) :
+
+1. Bumper **une seule source** : première ligne de `VERSION.txt` (semver `x.y.z`), puis les notes du jour en dessous.
+2. Recopier ce numéro dans les **deux** TOC (`## Version`) et `AGENTS.md`.
+3. Ajouter le bloc en anglais en tête de `curseforge/CHANGELOG.md` (même contenu que `VERSION.txt`).
+4. Recopier les fichiers vers AddOns (`D:\World of Warcraft\_classic_beta_\Interface\AddOns\WoWForeverRot`, sinon le chemin `Program Files (x86)`).
+5. `python curseforge/pack.py` puis upload projet **1708963** :
+   `CF_TOKEN` + `CF_PROJECT_ID=1708963` + `python curseforge/upload.py`
+6. Le changelog CurseForge = `CHANGELOG.md`. Display name = `WoWForeverRot <version>`. Version jeu = **1.60.1** (id `17053`).
+7. Commit + `git push origin HEAD`. Pas de token dans git.
+
+Ne pas publier si le code ne compile pas / n’a pas été recopié. Ne pas rescanner toute la barre pour la portée.
