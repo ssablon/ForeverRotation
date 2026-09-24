@@ -375,6 +375,38 @@ end
 local lastTickSig
 local lastRangeAt = 0
 
+local function flagBit(value)
+	return value ~= false and "1" or "0"
+end
+
+function ns.InvalidateTick()
+	lastTickSig = nil
+end
+
+function ns.ApplyFeatureFlags()
+	if ns.UI and ns.UI.SetLocked then
+		ns.UI.SetLocked(ns.db.locked == true)
+	end
+	if ns.UI and ns.UI.RefreshModes then
+		ns.UI.RefreshModes()
+	end
+	if ns.db.glow == false then
+		if ns.GlowClear then
+			ns.GlowClear()
+		end
+		if ns.GlowClearDef then
+			ns.GlowClearDef()
+		end
+	end
+	if ns.db.showRange == false and ns.RangeClear then
+		ns.RangeClear()
+	end
+	lastTickSig = nil
+	if ns.Tick then
+		ns.Tick()
+	end
+end
+
 function ns.Tick()
 	if not ns.UI or not ns.UI.root then
 		return
@@ -388,7 +420,7 @@ function ns.Tick()
 	if ns.db.showWeapon ~= false then
 		weapon, _, weaponNeed = ns.BuildWeapon()
 	end
-	local sig = (queue[1] or 0) .. ":" .. (queue[2] or 0) .. ":" .. (queue[3] or 0) .. ":" .. (defense or 0) .. ":" .. (interrupt or 0) .. ":" .. (purge or 0) .. ":" .. (cleanse or 0) .. ":" .. (weapon or 0) .. ":" .. (weaponNeed and 1 or 0)
+	local sig = (queue[1] or 0) .. ":" .. (queue[2] or 0) .. ":" .. (queue[3] or 0) .. ":" .. (defense or 0) .. ":" .. (interrupt or 0) .. ":" .. (purge or 0) .. ":" .. (cleanse or 0) .. ":" .. (weapon or 0) .. ":" .. (weaponNeed and 1 or 0) .. ":" .. flagBit(ns.db.showRotation) .. flagBit(ns.db.showDefense) .. flagBit(ns.db.showInterrupt) .. flagBit(ns.db.showPurge) .. flagBit(ns.db.showCleanse) .. flagBit(ns.db.showWeapon) .. flagBit(ns.db.glow) .. flagBit(ns.db.showModes) .. flagBit(ns.db.showRange) .. (ns.db.locked == true and "1" or "0")
 	if sig ~= lastTickSig then
 		lastTickSig = sig
 		ns.UI.Update(queue, defense, interrupt, purge, cleanse, weapon, weaponNeed)

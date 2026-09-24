@@ -4,7 +4,7 @@ import zipfile
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
-OUT = Path(r"F:\Github\addons\wow") / "WoWForeverRot-1.5.7.zip"
+OUT = Path(r"F:\Github\addons\wow") / "WoWForeverRot-1.5.8.zip"
 
 SKIP_DIRS = {".git", ".cursor", "curseforge", "__pycache__", ".idea", ".vscode"}
 SKIP_FILES = {"AGENTS.md"}

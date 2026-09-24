@@ -23,7 +23,7 @@ Attends l’approbation (souvent quelques heures). L’**ID numérique** est dan
 python curseforge/pack.py
 ```
 
-Sortie : `F:\Github\addons\wow\WoWForeverRot-1.5.7.zip`  
+Sortie : `F:\Github\addons\wow\WoWForeverRot-1.5.8.zip`  
 Racine du zip = dossier `WoWForeverRot` (sans numéro de version).
 
 ## 4. Envoyer le fichier

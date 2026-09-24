@@ -1,14 +1,12 @@
+# 1.5.8
+
+- Feature checkboxes now toggle and apply at once (windows, skull glow, range tint, mode selector).
+- Clicking the option label works, not only the small box.
+- HUD refresh no longer waits for a spell change.
+
 # 1.5.7
 
-- Timer 0,2 s comme ConROC (plus d’OnUpdate chaque frame).
-- Portée uniquement sur les boutons déjà surlignés.
-- Plus de tick à chaque événement de cast.
-- Logo du gestionnaire d’addons.
-
-# 1.5.6
-
-- Icône du gestionnaire d’addons (logo Forever Rot).
-
-# 1.5.5
-
-- Caches (auras, APL, nameplates, buffs longs) pour limiter la perte de FPS.
+- 0.2s ticker like ConROC (no per-frame OnUpdate).
+- Range check only on already glowing buttons.
+- No tick on every spellcast event.
+- Addon-list logo.

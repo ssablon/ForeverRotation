@@ -7,7 +7,7 @@ import urllib.error
 import urllib.request
 from pathlib import Path
 
-ZIP = Path(r"F:\Github\addons\wow\WoWForeverRot-1.5.7.zip")
+ZIP = Path(r"F:\Github\addons\wow\WoWForeverRot-1.5.8.zip")
 CHANGELOG = Path(__file__).with_name("CHANGELOG.md")
 # Forever / camelot, from GET https://wow.curseforge.com/api/game/versions
 GAME_VERSION_IDS = [17053]
@@ -25,7 +25,7 @@ def main():
     metadata = {
         "changelog": CHANGELOG.read_text(encoding="utf-8"),
         "changelogType": "markdown",
-        "displayName": "WoWForeverRot 1.5.7",
+        "displayName": "WoWForeverRot 1.5.8",
         "gameVersions": GAME_VERSION_IDS,
         "releaseType": "release",
     }
@@ -38,7 +38,7 @@ def main():
     body += b"Content-Type: application/json\r\n\r\n"
     body += meta + b"\r\n"
     body += f"--{boundary}\r\n".encode()
-    body += b'Content-Disposition: form-data; name="file"; filename="WoWForeverRot-1.5.7.zip"\r\n'
+    body += b'Content-Disposition: form-data; name="file"; filename="WoWForeverRot-1.5.8.zip"\r\n'
     body += b"Content-Type: application/zip\r\n\r\n"
     body += raw + b"\r\n"
     body += f"--{boundary}--\r\n".encode()

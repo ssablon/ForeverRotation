@@ -1,0 +1,105 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="utf-8" />
+  <title>Fiche CurseForge — Forever Rot</title>
+  <style>
+    body { font-family: Segoe UI, sans-serif; background: #111; color: #eee; max-width: 820px; margin: 24px auto; padding: 0 16px; }
+    h1 { font-size: 1.4rem; }
+    a.btn { display: inline-block; background: #f16436; color: #fff; padding: 10px 16px; border-radius: 6px; text-decoration: none; font-weight: 600; }
+    .field { margin: 18px 0; }
+    label { display: block; color: #aaa; font-size: 0.85rem; margin-bottom: 6px; }
+    textarea, input { width: 100%; background: #1c1c1c; color: #fff; border: 1px solid #444; padding: 8px; box-sizing: border-box; }
+    img.logo { width: 160px; height: 160px; object-fit: cover; border: 1px solid #444; border-radius: 8px; }
+    button { margin-top: 6px; }
+    .hint { color: #9ad; font-size: 0.9rem; }
+  </style>
+</head>
+<body>
+  <h1>Fiche préremplie — Forever Rot</h1>
+  <p class="hint">1. Ouvre CurseForge → 2. Copie chaque champ → 3. Glisse le logo sur « Upload image ».</p>
+  <p><a class="btn" href="https://authors.curseforge.com/#/projects/create/general" target="_blank" rel="noopener">Ouvrir Create Project sur CurseForge</a></p>
+
+  <div class="field">
+    <label>Project name (pas de « WoW » dans le titre)</label>
+    <input id="name" value="Forever Rot" readonly />
+    <button type="button" data-copy="name">Copier</button>
+  </div>
+
+  <div class="field">
+    <label>Logo — glisse cette image sur Upload image (ou choisis le fichier logo-512.png)</label>
+    <img class="logo" src="logo-512.png" alt="Forever Rot" draggable="true" />
+    <p class="hint">Fichier : F:\Github\addons\wow\WoWForeverRot\curseforge\logo-512.png</p>
+  </div>
+
+  <div class="field">
+    <label>Summary (anglais, obligatoire)</label>
+    <textarea id="summary" rows="2" readonly>Next-3-ability HUD and skull spellflash for WoW Forever Classic combat.</textarea>
+    <button type="button" data-copy="summary">Copier</button>
+  </div>
+
+  <div class="field">
+    <label>Main category</label>
+    <input value="Combat" readonly />
+  </div>
+
+  <div class="field">
+    <label>Allow Comments</label>
+    <input value="Oui — coché" readonly />
+  </div>
+
+  <div class="field">
+    <label>License</label>
+    <input value="All Rights Reserved" readonly />
+  </div>
+
+  <div class="field">
+    <label>Description (English — paste as HTML / source)</label>
+    <textarea id="desc" rows="16" readonly>&lt;div&gt;
+  &lt;p&gt;&lt;strong&gt;Rotation helper for WoW Forever&lt;/strong&gt; (Classic Era combat, camelot client). Next-3 ability HUD and skull spellflash on your action bars. &lt;strong&gt;This is not a bot&lt;/strong&gt; — you still press the keys.&lt;/p&gt;
+  &lt;h2&gt;Install&lt;/h2&gt;
+  &lt;ol&gt;
+    &lt;li&gt;Close the game client.&lt;/li&gt;
+    &lt;li&gt;Copy the &lt;code&gt;WoWForeverRot&lt;/code&gt; folder into &lt;code&gt;World of Warcraft\_classic_beta_\Interface\AddOns\&lt;/code&gt;&lt;/li&gt;
+    &lt;li&gt;Restart → Addons → enable &lt;strong&gt;WoW Forever Rot&lt;/strong&gt;.&lt;/li&gt;
+  &lt;/ol&gt;
+  &lt;p&gt;The CurseForge app often installs into official Classic. On Forever, &lt;strong&gt;unzip by hand&lt;/strong&gt; into &lt;code&gt;_classic_beta_&lt;/code&gt;.&lt;/p&gt;
+  &lt;h2&gt;Spellflash colors&lt;/h2&gt;
+  &lt;ul&gt;
+    &lt;li&gt;&lt;strong&gt;White&lt;/strong&gt; — next ability&lt;/li&gt;
+    &lt;li&gt;&lt;strong&gt;Green&lt;/strong&gt; — heal (only when someone is missing health)&lt;/li&gt;
+    &lt;li&gt;&lt;strong&gt;Blue&lt;/strong&gt; — defense buff (blessings, auras, buffs &amp;gt; 1 min)&lt;/li&gt;
+    &lt;li&gt;&lt;strong&gt;Red&lt;/strong&gt; — weapon enchant / poison&lt;/li&gt;
+  &lt;/ul&gt;
+  &lt;h2&gt;Profiles&lt;/h2&gt;
+  &lt;p&gt;Base · PvE · PvP · Custom — each has its own lists. Reset affects the current profile only.&lt;/p&gt;
+  &lt;h2&gt;Commands&lt;/h2&gt;
+  &lt;p&gt;&lt;code&gt;/wfr&lt;/code&gt; or &lt;code&gt;/foreverrot&lt;/code&gt;&lt;/p&gt;
+  &lt;ul&gt;
+    &lt;li&gt;&lt;code&gt;/wfr lock&lt;/code&gt; · &lt;code&gt;unlock&lt;/code&gt; — lock / move the HUD&lt;/li&gt;
+    &lt;li&gt;&lt;code&gt;/wfr menu&lt;/code&gt; — options (add, toggle, reorder)&lt;/li&gt;
+    &lt;li&gt;&lt;code&gt;/wfr profile&lt;/code&gt; · &lt;code&gt;base&lt;/code&gt; · &lt;code&gt;jce&lt;/code&gt; · &lt;code&gt;jcj&lt;/code&gt; · &lt;code&gt;custom&lt;/code&gt;&lt;/li&gt;
+    &lt;li&gt;&lt;code&gt;/wfr mode&lt;/code&gt; — Auto / Single / AoE / Burst&lt;/li&gt;
+    &lt;li&gt;&lt;code&gt;/wfr role&lt;/code&gt; — dps / tank / healer…&lt;/li&gt;
+  &lt;/ul&gt;
+  &lt;p&gt;Minimap button: left-click = options, right-click = lock.&lt;/p&gt;
+  &lt;h2&gt;Classes&lt;/h2&gt;
+  &lt;p&gt;Warrior, Paladin, Hunter, Rogue, Priest, Shaman, Mage, Warlock, Druid.&lt;/p&gt;
+  &lt;h2&gt;Author&lt;/h2&gt;
+  &lt;p&gt;&lt;strong&gt;Vohnka&lt;/strong&gt; — &lt;a href="https://wow-forever.fr"&gt;wow-forever.fr&lt;/a&gt;&lt;/p&gt;
+&lt;/div&gt;</textarea>
+    <button type="button" data-copy="desc">Copier</button>
+  </div>
+
+  <script>
+    document.querySelectorAll("[data-copy]").forEach((btn) => {
+      btn.addEventListener("click", async () => {
+        const el = document.getElementById(btn.getAttribute("data-copy"));
+        await navigator.clipboard.writeText(el.value);
+        btn.textContent = "Copié";
+        setTimeout(() => { btn.textContent = "Copier"; }, 1200);
+      });
+    });
+  </script>
+</body>
+</html>

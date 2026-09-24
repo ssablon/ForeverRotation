@@ -133,20 +133,30 @@ local function ensureOptions()
 	frame.general = general
 	frame.rotation = rotation
 
+	local function featureOn(key)
+		if key == "locked" then
+			return ns.db.locked == true
+		end
+		return ns.db[key] ~= false
+	end
+
 	local function check(parent, key, label, y, x)
 		local box = CreateFrame("CheckButton", nil, parent, "UICheckButtonTemplate")
 		box:SetPoint("TOPLEFT", x or 8, y)
-		local text = box:CreateFontString(nil, "OVERLAY", "GameFontHighlight")
+		box:SetHitRectInsets(0, -220, -2, -2)
+		local text = box.Text or box:CreateFontString(nil, "OVERLAY", "GameFontHighlight")
 		text:SetPoint("LEFT", box, "RIGHT", 4, 0)
 		text:SetWidth(210)
 		text:SetJustifyH("LEFT")
 		text:SetText(label)
+		box.Text = text
 		box:SetScript("OnClick", function(self)
-			ns.db[key] = self:GetChecked() and true or false
-			if key == "locked" then
-				ns.UI.SetLocked(ns.db.locked)
-			end
-			if ns.Tick then
+			local on = not featureOn(key)
+			self:SetChecked(on)
+			ns.db[key] = on
+			if ns.ApplyFeatureFlags then
+				ns.ApplyFeatureFlags()
+			elseif ns.Tick then
 				ns.Tick()
 			end
 		end)
