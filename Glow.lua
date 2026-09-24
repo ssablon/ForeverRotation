@@ -99,12 +99,14 @@ local function showDamage(button, isHeal)
 		if button.WFROverlays and button.WFROverlays.next then
 			button.WFROverlays.next:Hide()
 		end
-		overlay(button, "heal", IMG .. "skull", 0.15, 1, 0.28, 1.45, 0.95):Show()
+		local r, g, b = ns.Color("heal")
+		overlay(button, "heal", IMG .. "skull", r, g, b, 1.45, 0.95):Show()
 	else
 		if button.WFROverlays and button.WFROverlays.heal then
 			button.WFROverlays.heal:Hide()
 		end
-		overlay(button, "next", IMG .. "skull", 1, 1, 1, 1.45, 0.9):Show()
+		local r, g, b = ns.Color("next")
+		overlay(button, "next", IMG .. "skull", r, g, b, 1.45, 0.9):Show()
 	end
 	damageGlowing[button] = true
 end
@@ -123,9 +125,11 @@ end
 
 local function showDefense(button, isHeal)
 	if isHeal then
-		overlay(button, "def", IMG .. "skull", 0.15, 1, 0.28, 1.45, 0.95):Show()
+		local r, g, b = ns.Color("heal")
+		overlay(button, "def", IMG .. "skull", r, g, b, 1.45, 0.95):Show()
 	else
-		overlay(button, "def", IMG .. "skull", 0.2, 0.55, 1, 1.45, 0.92):Show()
+		local r, g, b = ns.Color("def")
+		overlay(button, "def", IMG .. "skull", r, g, b, 1.45, 0.92):Show()
 	end
 	defenseGlowing[button] = true
 end
@@ -497,7 +501,8 @@ local function hideCleanse(button)
 end
 
 local function showWeapon(button)
-	overlay(button, "weapon", IMG .. "skull", 1, 0.12, 0.08, 1.45, 0.95):Show()
+	local r, g, b = ns.Color("weapon")
+	overlay(button, "weapon", IMG .. "skull", r, g, b, 1.45, 0.95):Show()
 	weaponGlowing[button] = true
 end
 
@@ -565,7 +570,7 @@ local function ensureRangeFilter(button)
 	tex:SetAllPoints()
 	tex:SetTexture("Interface\\Buttons\\WHITE8x8")
 	tex:SetBlendMode("BLEND")
-	tex:SetVertexColor(0.88, 0.06, 0.06, 0.42)
+	frame.texture = tex
 	frame:Hide()
 	button.WFRRange = frame
 	return frame
@@ -673,6 +678,10 @@ function ns.RangeUpdate()
 			local flag = actionInRange(button)
 			local filter = ensureRangeFilter(button)
 			if flag == false then
+				if filter.texture then
+					local r, g, b = ns.Color("range")
+					filter.texture:SetVertexColor(r, g, b, 0.42)
+				end
 				filter:Show()
 				rangeOn[button] = true
 			else
@@ -689,4 +698,102 @@ function ns.RangeUpdate()
 			rangeOn[button] = nil
 		end
 	end
+end
+
+function ns.SpellOnBar(spellID)
+	if not spellID then
+		return false
+	end
+	if lastFetch == 0 then
+		ns.GlowFetch()
+	end
+	local function found(id)
+		if not id then
+			return false
+		end
+		if spells[id] and #spells[id] > 0 then
+			return true
+		end
+		local name = spellName(id)
+		return name and spellsByName[name] and #spellsByName[name] > 0
+	end
+	if found(spellID) then
+		return true
+	end
+	local resolved = API.Resolve and API.Resolve(spellID)
+	if resolved and resolved ~= spellID and found(resolved) then
+		return true
+	end
+	if not next(spells) and not next(spellsByName) then
+		return true
+	end
+	return false
+end
+
+local function slotCommand(slot)
+	slot = tonumber(slot)
+	if not slot then
+		return
+	end
+	if slot >= 1 and slot <= 12 then
+		return "ACTIONBUTTON" .. slot
+	end
+	local bars = {
+		{ 25, 36, "MULTIACTIONBAR3BUTTON" },
+		{ 37, 48, "MULTIACTIONBAR4BUTTON" },
+		{ 49, 60, "MULTIACTIONBAR2BUTTON" },
+		{ 61, 72, "MULTIACTIONBAR1BUTTON" },
+		{ 73, 84, "MULTIACTIONBAR5BUTTON" },
+		{ 85, 96, "MULTIACTIONBAR6BUTTON" },
+		{ 97, 108, "MULTIACTIONBAR7BUTTON" },
+	}
+	for _, row in ipairs(bars) do
+		if slot >= row[1] and slot <= row[2] then
+			return row[3] .. (slot - row[1] + 1)
+		end
+	end
+end
+
+local function shortKey(text)
+	if type(text) ~= "string" or text == "" then
+		return ""
+	end
+	text = text:gsub("SHIFT%-", "S")
+	text = text:gsub("CTRL%-", "C")
+	text = text:gsub("ALT%-", "A")
+	text = text:gsub("STRG%-", "C")
+	return text
+end
+
+function ns.SpellBinding(spellID)
+	if not spellID then
+		return ""
+	end
+	if lastFetch == 0 then
+		ns.GlowFetch()
+	end
+	local list = buttonsFor(spellID)
+	for _, button in ipairs(list) do
+		local hot = button.HotKey
+		if hot and hot.GetText then
+			local text = hot:GetText()
+			if type(text) == "string" and text ~= "" and text ~= RANGE_INDICATOR and text ~= "●" then
+				return shortKey(text)
+			end
+		end
+		local cmd = slotCommand(buttonSlots[button])
+		if cmd and GetBindingKey then
+			local ok, key = pcall(GetBindingKey, cmd)
+			if ok and type(key) == "string" and key ~= "" then
+				if GetBindingText then
+					local okText, pretty = pcall(GetBindingText, key)
+					if okText and type(pretty) == "string" and pretty ~= "" then
+						return shortKey(pretty)
+					end
+				end
+				return shortKey(key)
+			end
+		end
+	end
+	return ""
 end

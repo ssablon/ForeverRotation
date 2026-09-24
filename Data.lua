@@ -52,6 +52,26 @@ ns.CLASS_BY_ID = {
 	[11] = "DRUID",
 }
 
+ns.COLOR_DEFAULTS = {
+	next = { 1, 1, 1 },
+	heal = { 0.15, 1, 0.28 },
+	def = { 0.2, 0.55, 1 },
+	weapon = { 1, 0.12, 0.08 },
+	range = { 0.88, 0.06, 0.06 },
+}
+
+function ns.Color(key)
+	local pack = ns.db and ns.db.colors and ns.db.colors[key]
+	if type(pack) == "table" then
+		local r, g, b = tonumber(pack[1]), tonumber(pack[2]), tonumber(pack[3])
+		if r then
+			return r, g or 0, b or 0
+		end
+	end
+	pack = ns.COLOR_DEFAULTS[key] or ns.COLOR_DEFAULTS.next
+	return pack[1], pack[2], pack[3]
+end
+
 ns.CLASS_DAMAGE_ICON = {
 	WARRIOR = "melee",
 	PALADIN = "melee",

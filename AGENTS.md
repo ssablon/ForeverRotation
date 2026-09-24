@@ -2,7 +2,7 @@
 
 Addon d'aide à la rotation pour **WoW Forever** (combat Classic Era, client camelot, interface `16001`). Il affiche les prochains sorts et surligne les boutons. Il ne lance aucun sort.
 
-Version actuelle : **1.5.13**. Auteur : Vohnka — https://wow-forever.fr  
+Version actuelle : **1.5.14**. Auteur : Vohnka — https://wow-forever.fr  
 Dépôt : https://github.com/ssablon/WoWForeverRot (privé, branche `main`).
 
 La carte complète du code est dans [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md). Ce fichier dit seulement par où commencer.
@@ -21,7 +21,7 @@ Après chaque changement demandé : bumper `VERSION.txt` + les deux TOC, recopie
 
 Les deux TOC chargent les mêmes fichiers, dans cet ordre :
 
-`Credits.lua` → `Locale.lua` → `API.lua` → `Data.lua` → `Lists.lua` → `APL.lua` → `UI.lua` → `Options.lua` → `Glow.lua` → `Rotations.lua` → `Core.lua`
+`Credits.lua` → `Locale.lua` → `API.lua` → `Data.lua` → `Lists.lua` → `APL.lua` → `Share.lua` → `UI.lua` → `Options.lua` → `Glow.lua` → `Rotations.lua` → `Core.lua`
 
 Tout l'état partagé vit dans la table `ns` (deuxième valeur de `...`). `Core.lua` démarre un `C_Timer.NewTicker(0.2)` comme ConROC (`interval = 0.20`). Pas d'`OnUpdate` par frame.
 
@@ -32,6 +32,7 @@ Tout l'état partagé vit dans la table `ns` (deuxième valeur de `...`). `Core.
 | Nouveau sort, racial, interrupt, purge, cleanse, enchant d'arme | `Data.lua` (`ns.Spell`, puis les tables dérivées) |
 | Ordre par défaut mono / AoE / burst / défense | `Lists.lua` |
 | Sauvegarde, fusion, ajout, retrait d'un sort | `APL.lua` |
+| Import / export de profil | `Share.lua` |
 | Conditions « le sort est proposé » | `API.lua` (`StepOk`, `Ready`, `Resolve`) |
 | File HUD, défense, interrupt, arme | `Rotations.lua` |
 | Fenêtres, toolbar | `UI.lua` |

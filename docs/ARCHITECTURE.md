@@ -48,6 +48,7 @@ Chaque builder respecte son interrupteur `ns.db.show*`. `show*` absent vaut affi
 | `Data.lua` | IDs, rôles, couleurs, raciaux, interrupts, purges, cleanses, enchants, buffs longs, soins. |
 | `Lists.lua` | `ns.APLDefaults`, `ns.APLModes`, `ns.DefDefaults`. |
 | `APL.lua` | Lecture / écriture des listes sauvegardées, fusion avec les défauts. |
+| `Share.lua` | Export / import du profil actif (texte `WFR1`). |
 | `UI.lua` | HUD, toolbar, positions, échelle. |
 | `Options.lua` | Fenêtre d'options, éditeurs, minimap. `ns.ToggleSpellMenu = ns.ToggleOptions`. |
 | `Glow.lua` | Overlays de barres et filtre de portée. |
@@ -156,7 +157,7 @@ Un sort seulement utile (`IsHelpful` et pas `IsHarmful`) peut passer via le coû
 
 `ns.BuildQueue` parcourt `ns.GetAPL()` :
 
-- ignore un pas décoché, un enchant d'arme, un buff de maintenance ;
+- ignore un pas décoché, un enchant d'arme, un buff de maintenance, et (si `barOnly`) un sort absent des barres déjà indexées par GlowFetch ;
 - sépare les soins ;
 - `API.Add` pour chaque autre pas ;
 - si aucun soin n'est entré dans les 3 cases, le premier soin `StepOk` est inséré en tête et la file est recoupée à 3.
@@ -169,7 +170,7 @@ Un sort seulement utile (`IsHelpful` et pas `IsHarmful`) peut passer via le coû
 
 `ns.BuildPurge` : ID de classe prêt, cible hostile, aura purgeable.
 
-`ns.BuildCleanse` : première entrée connue, prête, et dont un type est sur **player**.
+`ns.BuildCleanse` : première entrée **connue et prête** dont `entry.types` matche un débuff sur le joueur, ou sur le groupe si `cleanseGroup ~= false`. Un guerrier / chasseur sans table `CLEANSE` n'affiche rien. Un mage ne voit que les malédictions, un prêtre maladie / magie seulement s'il a le sort, etc. Unité non alliée ignorée.
 
 `ns.BuildWeapon` renvoie `spellID, remain, need`.
 
@@ -239,11 +240,15 @@ HUD (`UI.lua`), ancré sur `WoWForeverRotFrame` :
 
 `/wfr reset` et le bouton d'options effacent `ns.db.pos`.
 
-Verrouillé : le fond est plus transparent et le drag est ignoré (`ns.db.locked`).
+Verrouillé : le fond est plus transparent, le drag est ignoré, et la souris traverse les fenêtres. Le cadenas reste cliquable et a un tooltip (`ns.db.locked`).
+
+`hideIdle` (défaut vrai) : masque file, défense, interrupt, purge, cleanse et arme si le joueur est mort, en taxi, monté, en train de manger / boire, ou au repos (ville / auberge) hors combat. Toolbar et cadenas restent.
+
+Les icônes HUD affichent le binding de barre (`ns.SpellBinding`) déjà connu par GlowFetch.
 
 Options (`WoWForeverRotOptions`, 500×560, dans `UISpecialFrames`) :
 
-- onglets Général / Rotation / Défense ;
+- onglets Général / Rotation / Défense / Extra ;
 - boutons de profil Base, JCE (`pve`), JCJ (`pvp`), Customs ;
 - cases des `show*` , glow, portée, sélecteur de modes ;
 - choix d'enchant, échelle, seuil AoE (2–8), reset position, reset du profil ;
@@ -334,6 +339,9 @@ profile              = "base" | "pve" | "pvp" | "custom"
 locked               = bool
 glow, showRotation, showDefense, showInterrupt, showPurge,
 showCleanse, showWeapon, showRange, showModes
+hideIdle, barOnly, autoProfile, cleanseGroup
+soundVolume          = 0 .. 100
+colors.next / heal / def / weapon / range
 uiScale              = 0.6 .. 2
 role, combatMode, lastManualMode, autoEnemies, weaponBuff
 apl, aplDrop, def, defDrop     -- miroir du profil actif

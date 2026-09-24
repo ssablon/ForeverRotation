@@ -55,6 +55,29 @@ local function defaults()
 	if ns.db.showModes == nil then
 		ns.db.showModes = true
 	end
+	if ns.db.hideIdle == nil then
+		ns.db.hideIdle = true
+	end
+	if ns.db.barOnly == nil then
+		ns.db.barOnly = true
+	end
+	if ns.db.autoProfile == nil then
+		ns.db.autoProfile = true
+	end
+	if ns.db.cleanseGroup == nil then
+		ns.db.cleanseGroup = true
+	end
+	if ns.db.soundVolume == nil then
+		ns.db.soundVolume = 60
+	end
+	ns.db.soundVolume = tonumber(ns.db.soundVolume) or 60
+	if ns.db.soundVolume < 0 then
+		ns.db.soundVolume = 0
+	end
+	if ns.db.soundVolume > 100 then
+		ns.db.soundVolume = 100
+	end
+	ns.db.colors = ns.db.colors or {}
 	if ns.db.uiScale == nil then
 		ns.db.uiScale = 1
 	end
@@ -387,24 +410,25 @@ function ns.ApplyFeatureFlags()
 	if ns.UI and ns.UI.SetLocked then
 		ns.UI.SetLocked(ns.db.locked == true)
 	end
+	local idle = ns.API.ShouldHideIdle and ns.API.ShouldHideIdle()
 	if ns.UI then
 		if ns.UI.root then
-			ns.UI.root:SetShown(ns.db.showRotation ~= false)
+			ns.UI.root:SetShown(ns.db.showRotation ~= false and not idle)
 		end
 		if ns.UI.defense then
-			ns.UI.defense:SetShown(ns.db.showDefense ~= false)
+			ns.UI.defense:SetShown(ns.db.showDefense ~= false and not idle)
 		end
 		if ns.UI.interrupt then
-			ns.UI.interrupt:SetShown(ns.db.showInterrupt ~= false)
+			ns.UI.interrupt:SetShown(ns.db.showInterrupt ~= false and not idle)
 		end
 		if ns.UI.purge then
-			ns.UI.purge:SetShown(ns.db.showPurge ~= false)
+			ns.UI.purge:SetShown(ns.db.showPurge ~= false and not idle)
 		end
 		if ns.UI.cleanse then
-			ns.UI.cleanse:SetShown(ns.db.showCleanse ~= false)
+			ns.UI.cleanse:SetShown(ns.db.showCleanse ~= false and not idle)
 		end
 		if ns.UI.weapon then
-			ns.UI.weapon:SetShown(ns.db.showWeapon ~= false)
+			ns.UI.weapon:SetShown(ns.db.showWeapon ~= false and not idle)
 		end
 		if ns.UI.RefreshModes then
 			ns.UI.RefreshModes()
@@ -444,20 +468,94 @@ function ns.ApplyFeatureFlags()
 	end
 end
 
+local lastAlertKick, lastAlertCleanse, lastAlertWeapon
+
+local function playAlert(kind)
+	local vol = tonumber(ns.db and ns.db.soundVolume) or 0
+	if vol <= 0 then
+		return
+	end
+	local kit
+	if vol < 34 then
+		kit = (SOUNDKIT and SOUNDKIT.IG_MAINMENU_OPTION_CHECKBOX_ON) or 856
+	elseif vol < 67 then
+		kit = (SOUNDKIT and SOUNDKIT.MAP_PING) or 5274
+	else
+		kit = (SOUNDKIT and SOUNDKIT.READY_CHECK) or 8960
+	end
+	pcall(PlaySound, kit, "Master", true)
+end
+
+function ns.ApplyAutoProfile()
+	if not ns.db or ns.db.autoProfile == false or not ns.SetProfile then
+		return
+	end
+	local itype
+	if GetInstanceInfo then
+		local ok, _, instanceType = pcall(GetInstanceInfo)
+		if ok then
+			itype = instanceType
+		end
+	end
+	local want
+	if itype == "pvp" or itype == "arena" then
+		want = "pvp"
+	elseif itype == "party" or itype == "raid" then
+		want = "pve"
+	end
+	if want then
+		if ns.ProfileKey() ~= want then
+			if not ns.db.autoProfileFrom then
+				ns.db.autoProfileFrom = ns.ProfileKey()
+			end
+			ns.SetProfile(want)
+		end
+		return
+	end
+	local from = ns.db.autoProfileFrom
+	if from and ns.ValidProfile(from) and ns.ProfileKey() ~= from then
+		ns.db.autoProfileFrom = nil
+		ns.SetProfile(from)
+		return
+	end
+	ns.db.autoProfileFrom = nil
+end
+
 function ns.Tick()
 	if not ns.UI or not ns.UI.root then
 		return
 	end
-	local queue = ns.db.showRotation ~= false and ns.BuildQueue() or {}
-	local defense = ns.db.showDefense ~= false and ns.BuildDefense() or nil
-	local interrupt = ns.db.showInterrupt ~= false and ns.BuildInterrupt() or nil
-	local purge = ns.db.showPurge ~= false and ns.BuildPurge() or nil
-	local cleanse = ns.db.showCleanse ~= false and ns.BuildCleanse() or nil
+	local idle = ns.API.ShouldHideIdle and ns.API.ShouldHideIdle()
+	local queue = (ns.db.showRotation ~= false and not idle) and ns.BuildQueue() or {}
+	local defense = (ns.db.showDefense ~= false and not idle) and ns.BuildDefense() or nil
+	local interrupt = (ns.db.showInterrupt ~= false and not idle) and ns.BuildInterrupt() or nil
+	local purge = (ns.db.showPurge ~= false and not idle) and ns.BuildPurge() or nil
+	local cleanse = (ns.db.showCleanse ~= false and not idle) and ns.BuildCleanse() or nil
 	local weapon, weaponNeed
-	if ns.db.showWeapon ~= false then
+	if ns.db.showWeapon ~= false and not idle then
 		weapon, _, weaponNeed = ns.BuildWeapon()
 	end
-	local sig = (queue[1] or 0) .. ":" .. (queue[2] or 0) .. ":" .. (queue[3] or 0) .. ":" .. (defense or 0) .. ":" .. (interrupt or 0) .. ":" .. (purge or 0) .. ":" .. (cleanse or 0) .. ":" .. (weapon or 0) .. ":" .. (weaponNeed and 1 or 0) .. ":" .. flagBit(ns.db.showRotation) .. flagBit(ns.db.showDefense) .. flagBit(ns.db.showInterrupt) .. flagBit(ns.db.showPurge) .. flagBit(ns.db.showCleanse) .. flagBit(ns.db.showWeapon) .. flagBit(ns.db.glow) .. flagBit(ns.db.showModes) .. flagBit(ns.db.showRange) .. (ns.db.locked == true and "1" or "0")
+	if idle then
+		lastAlertKick, lastAlertCleanse, lastAlertWeapon = nil, nil, nil
+	else
+		if interrupt and interrupt ~= lastAlertKick then
+			playAlert("kick")
+		end
+		lastAlertKick = interrupt
+		if cleanse and cleanse ~= lastAlertCleanse then
+			playAlert("cleanse")
+		end
+		lastAlertCleanse = cleanse
+		if weaponNeed and weapon and weapon ~= lastAlertWeapon then
+			playAlert("weapon")
+		end
+		if not weaponNeed then
+			lastAlertWeapon = nil
+		else
+			lastAlertWeapon = weapon
+		end
+	end
+	local sig = (queue[1] or 0) .. ":" .. (queue[2] or 0) .. ":" .. (queue[3] or 0) .. ":" .. (defense or 0) .. ":" .. (interrupt or 0) .. ":" .. (purge or 0) .. ":" .. (cleanse or 0) .. ":" .. (weapon or 0) .. ":" .. (weaponNeed and 1 or 0) .. ":" .. flagBit(ns.db.showRotation) .. flagBit(ns.db.showDefense) .. flagBit(ns.db.showInterrupt) .. flagBit(ns.db.showPurge) .. flagBit(ns.db.showCleanse) .. flagBit(ns.db.showWeapon) .. flagBit(ns.db.glow) .. flagBit(ns.db.showModes) .. flagBit(ns.db.showRange) .. (ns.db.locked == true and "1" or "0") .. flagBit(not idle)
 	if sig ~= lastTickSig then
 		lastTickSig = sig
 		ns.UI.Update(queue, defense, interrupt, purge, cleanse, weapon, weaponNeed)
@@ -504,6 +602,12 @@ pcall(frame.RegisterEvent, frame, "WEAPON_ENCHANT_CHANGED")
 pcall(frame.RegisterEvent, frame, "LEARNED_SPELL_IN_TAB")
 pcall(frame.RegisterEvent, frame, "PLAYER_TALENT_UPDATE")
 pcall(frame.RegisterEvent, frame, "PLAYER_LOGOUT")
+pcall(frame.RegisterEvent, frame, "PLAYER_DEAD")
+pcall(frame.RegisterEvent, frame, "PLAYER_ALIVE")
+pcall(frame.RegisterEvent, frame, "PLAYER_UNGHOST")
+pcall(frame.RegisterEvent, frame, "PLAYER_UPDATE_RESTING")
+pcall(frame.RegisterEvent, frame, "PLAYER_MOUNT_DISPLAY_CHANGED")
+pcall(frame.RegisterEvent, frame, "ZONE_CHANGED_NEW_AREA")
 
 local ticker
 local booted
@@ -592,11 +696,21 @@ frame:SetScript("OnEvent", function(_, event, unit, _, spellID)
 			end
 			startTicker()
 		end
+		if ns.ApplyAutoProfile then
+			ns.ApplyAutoProfile()
+		end
 		if event == "PLAYER_LOGIN" then
 			local token, _, localized = ns.ClassToken()
 			print("|cff66ccffWoW Forever Rot|r: " .. ns.T("INIT"))
 			print("|cff66ccffWoW Forever Rot|r: " .. format(ns.T("MODULE"), localized or token or "?"))
 		end
+		ns.Tick()
+	elseif event == "ZONE_CHANGED_NEW_AREA" then
+		if ns.ApplyAutoProfile then
+			ns.ApplyAutoProfile()
+		end
+	elseif event == "PLAYER_DEAD" or event == "PLAYER_ALIVE" or event == "PLAYER_UNGHOST" or event == "PLAYER_UPDATE_RESTING" or event == "PLAYER_MOUNT_DISPLAY_CHANGED" then
+		lastTickSig = nil
 		ns.Tick()
 	elseif event == "PLAYER_TARGET_CHANGED" then
 		ns.API.castTarget = false

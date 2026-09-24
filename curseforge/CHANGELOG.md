@@ -1,3 +1,11 @@
+# 1.5.14
+
+- Hide the HUD when dead, mounted, eating, or in town.
+- Locked windows are click-through; the padlock stays clickable.
+- Action-bar keybinds on HUD icons.
+- Group dispel only for types the current class can remove.
+- Profile import/export, auto PvE/PvP profile, bar-only suggestions, overlay colors, alert volume.
+
 # 1.5.13
 
 - Toolbar moves from the left grip or by dragging any button (clicks still change mode).

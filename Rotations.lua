@@ -105,8 +105,17 @@ function ns.BuildQueue()
 		markHeal(id, step.opt)
 		return true
 	end
+	local function onBar(id)
+		if ns.db.barOnly == false then
+			return true
+		end
+		if ns.SpellOnBar then
+			return ns.SpellOnBar(id)
+		end
+		return true
+	end
 	local function consider(step)
-		return ns.IsStepEnabled(step) and step.id and not ns.IsWeaponBuff(step.id) and not ns.IsMaintenanceBuff(step.id)
+		return ns.IsStepEnabled(step) and step.id and not ns.IsWeaponBuff(step.id) and not ns.IsMaintenanceBuff(step.id) and onBar(step.id)
 	end
 	-- Comme ConROC : un passage maintenant, un second pour le GCD suivant.
 	for _, shift in ipairs({ 0.2, 1.5 }) do
@@ -196,9 +205,19 @@ function ns.BuildCleanse()
 	if not list then
 		return
 	end
+	local units = { "player" }
+	if ns.db.cleanseGroup ~= false then
+		for _, unit in ipairs({ "mouseover", "target", "focus", "party1", "party2", "party3", "party4" }) do
+			units[#units + 1] = unit
+		end
+	end
 	for _, entry in ipairs(list) do
-		if API.Known(entry.id) and API.Ready(entry.id) and API.HasDebuffType(entry.types, "player") then
-			return entry.id
+		if API.Known(entry.id) and API.Ready(entry.id) then
+			for _, unit in ipairs(units) do
+				if API.HasDebuffType(entry.types, unit) then
+					return entry.id
+				end
+			end
 		end
 	end
 end

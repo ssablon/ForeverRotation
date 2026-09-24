@@ -1328,6 +1328,72 @@ function ns.API.InCombat()
 	return ok and combat and true or false
 end
 
+local EAT_AURA = {
+	food = true,
+	drink = true,
+	nourriture = true,
+	boisson = true,
+	essen = true,
+	trinken = true,
+	comida = true,
+	bebida = true,
+}
+
+function ns.API.IsEating()
+	if not C_UnitAuras or not C_UnitAuras.GetAuraDataByIndex then
+		return false
+	end
+	for i = 1, 40 do
+		local ok, aura = pcall(C_UnitAuras.GetAuraDataByIndex, "player", i, "HELPFUL")
+		if not ok or not aura then
+			break
+		end
+		local name = safe(aura.name, nil)
+		if name then
+			if EAT_AURA[strlower(name)] then
+				return true
+			end
+		end
+	end
+	return false
+end
+
+function ns.API.ShouldHideIdle()
+	if not ns.db or ns.db.hideIdle == false then
+		return false
+	end
+	local okDead, dead = pcall(UnitIsDeadOrGhost, "player")
+	if okDead and dead then
+		return true
+	end
+	if UnitOnTaxi then
+		local okTaxi, taxi = pcall(UnitOnTaxi, "player")
+		if okTaxi and taxi then
+			return true
+		end
+	end
+	if IsMounted then
+		local okMount, mounted = pcall(IsMounted)
+		if okMount and mounted then
+			return true
+		end
+	end
+	if ns.API.IsEating() then
+		return true
+	end
+	if not ns.API.InCombat() and IsResting then
+		local okRest, rest = pcall(IsResting)
+		if okRest and rest then
+			return true
+		end
+	end
+	return false
+end
+
+function ns.API.UnitFriendly(unit)
+	return unitFriendly(unit)
+end
+
 function ns.API.TargetCasting()
 	if not UnitExists("target") then
 		return false
@@ -1388,6 +1454,9 @@ end
 
 function ns.API.HasDebuffType(types, unit)
 	if not types or not C_UnitAuras or not C_UnitAuras.GetAuraDataByIndex then
+		return false
+	end
+	if unit and unit ~= "player" and not unitFriendly(unit) then
 		return false
 	end
 	unit = unit or "player"

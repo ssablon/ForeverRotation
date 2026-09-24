@@ -115,6 +115,11 @@ local function makeIcon(name, parent, size)
 	cd:SetAllPoints(tex)
 	cd:SetDrawEdge(false)
 	frame.cooldown = cd
+	local bind = frame:CreateFontString(nil, "OVERLAY", "NumberFontNormalSmall")
+	bind:SetPoint("BOTTOMRIGHT", -3, 3)
+	bind:SetTextColor(1, 0.92, 0.45)
+	bind:SetJustifyH("RIGHT")
+	frame.bind = bind
 	return frame
 end
 
@@ -197,6 +202,10 @@ function ns.UI.Create()
 		cd:SetAllPoints(inner)
 		cd:SetDrawEdge(false)
 		frame.cooldown = cd
+		local bind = frame:CreateFontString(nil, "OVERLAY", "NumberFontNormalSmall")
+		bind:SetPoint("BOTTOMRIGHT", -2, 2)
+		bind:SetTextColor(1, 0.92, 0.45)
+		frame.bind = bind
 		return frame
 	end
 
@@ -588,6 +597,38 @@ function ns.UI.RefreshModes()
 	ns.UI.toolbar:SetWidth(showMode and (ns.UI.toolbarWidthFull or 332) or (ns.UI.toolbarWidthCompact or 188))
 end
 
+function ns.UI.ApplyMouse()
+	local mouse = ns.db.locked ~= true
+	local frames = {
+		ns.UI.root,
+		ns.UI.defense,
+		ns.UI.interrupt,
+		ns.UI.purge,
+		ns.UI.cleanse,
+		ns.UI.weapon,
+		ns.UI.toolbar,
+		ns.UI.toolbarGrip,
+		ns.UI.roleBtn,
+		ns.UI.autoBtn,
+		ns.UI.modeBtn,
+		ns.UI.profileBtn,
+	}
+	for _, frame in ipairs(frames) do
+		if frame then
+			frame:EnableMouse(mouse)
+		end
+	end
+	if ns.UI.slots then
+		for _, slot in ipairs(ns.UI.slots) do
+			slot:EnableMouse(mouse)
+		end
+	end
+	if ns.UI.lock then
+		ns.UI.lock:EnableMouse(true)
+		ns.UI.lock:SetFrameStrata("HIGH")
+	end
+end
+
 function ns.UI.SetLocked(locked)
 	ns.db.locked = locked and true or false
 	local alpha = locked and 0.15 or 0.45
@@ -604,6 +645,18 @@ function ns.UI.SetLocked(locked)
 		ns.UI.lock.idleAlpha = 0.9
 		ns.UI.lock:SetAlpha(0.9)
 	end
+	ns.UI.ApplyMouse()
+end
+
+local function setBind(slot, spellID)
+	if not slot or not slot.bind then
+		return
+	end
+	if spellID and ns.SpellBinding then
+		slot.bind:SetText(ns.SpellBinding(spellID) or "")
+	else
+		slot.bind:SetText("")
+	end
 end
 
 local function paint(slot, spellID, dim)
@@ -619,6 +672,7 @@ local function paint(slot, spellID, dim)
 		if slot.filter then
 			slot.filter:Hide()
 		end
+		setBind(slot, nil)
 		return
 	end
 	local icon = API.SpellIcon(spellID)
@@ -638,6 +692,7 @@ local function paint(slot, spellID, dim)
 	else
 		slot.cooldown:Hide()
 	end
+	setBind(slot, spellID)
 end
 
 local function paintSide(slot, spellID, idleR, idleG, idleB)
@@ -674,6 +729,7 @@ function ns.UI.Update(queue, defenseID, interruptID, purgeID, cleanseID, weaponI
 		if ns.UI.defense.cooldown then
 			ns.UI.defense.cooldown:Hide()
 		end
+		setBind(ns.UI.defense, nil)
 	end
 	if interruptID then
 		ns.UI.interrupt.spellID = interruptID
@@ -684,6 +740,7 @@ function ns.UI.Update(queue, defenseID, interruptID, purgeID, cleanseID, weaponI
 		ns.UI.interrupt.texture:SetTexture(IMG .. "lightning-interrupt")
 		ns.UI.interrupt.texture:SetVertexColor(0.2, 0.2, 0.2, 0.8)
 	end
+	setBind(ns.UI.interrupt, interruptID)
 	if purgeID then
 		ns.UI.purge.spellID = purgeID
 		ns.UI.purge.texture:SetTexture(API.SpellIcon(purgeID) or (IMG .. "magiccircle-purge"))
@@ -693,10 +750,12 @@ function ns.UI.Update(queue, defenseID, interruptID, purgeID, cleanseID, weaponI
 		ns.UI.purge.texture:SetTexture(IMG .. "magiccircle-purge")
 		ns.UI.purge.texture:SetVertexColor(0.2, 0.2, 0.2, 0.8)
 	end
+	setBind(ns.UI.purge, purgeID)
 	paintSide(ns.UI.cleanse, cleanseID, 0.2, 0.85, 0.35)
 	if not cleanseID then
 		ns.UI.cleanse.texture:SetColorTexture(0.15, 0.45, 0.22, 0.55)
 	end
+	setBind(ns.UI.cleanse, cleanseID)
 	if ns.UI.weapon then
 		local hasWeapon = #(ns.WeaponChoices and ns.WeaponChoices() or {}) > 0
 		local icon = (weaponID and API.SpellIcon(weaponID)) or "Interface\\Icons\\INV_Axe_02"
@@ -741,23 +800,25 @@ function ns.UI.Update(queue, defenseID, interruptID, purgeID, cleanseID, weaponI
 			ns.UI.weapon:SetBackdropBorderColor(0.8, 0.65, 0.2, 0.4)
 		end
 	end
+	local idle = ns.API.ShouldHideIdle and ns.API.ShouldHideIdle()
 	if ns.UI.root then
-		ns.UI.root:SetShown(ns.db.showRotation ~= false)
+		ns.UI.root:SetShown(ns.db.showRotation ~= false and not idle)
 	end
 	if ns.UI.defense then
-		ns.UI.defense:SetShown(ns.db.showDefense ~= false)
+		ns.UI.defense:SetShown(ns.db.showDefense ~= false and not idle)
 	end
 	if ns.UI.interrupt then
-		ns.UI.interrupt:SetShown(ns.db.showInterrupt ~= false)
+		ns.UI.interrupt:SetShown(ns.db.showInterrupt ~= false and not idle)
 	end
 	if ns.UI.purge then
-		ns.UI.purge:SetShown(ns.db.showPurge ~= false)
+		ns.UI.purge:SetShown(ns.db.showPurge ~= false and not idle)
 	end
 	if ns.UI.cleanse then
-		ns.UI.cleanse:SetShown(ns.db.showCleanse ~= false)
+		ns.UI.cleanse:SetShown(ns.db.showCleanse ~= false and not idle)
 	end
 	if ns.UI.weapon then
-		ns.UI.weapon:SetShown(ns.db.showWeapon ~= false)
+		ns.UI.weapon:SetShown(ns.db.showWeapon ~= false and not idle)
+		setBind(ns.UI.weapon, weaponNeed and weaponID or nil)
 	end
 	ns.UI.RefreshRoles()
 end

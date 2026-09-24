@@ -107,6 +107,7 @@ local function ensureOptions()
 	local generalTab = tabBtn("WoWForeverRotTabGeneral", ns.T("TAB_GENERAL"), 16)
 	local rotTab = tabBtn("WoWForeverRotTabRot", ns.T("TAB_ROTATION"), 122)
 	local defTab = tabBtn("WoWForeverRotTabDef", ns.T("TAB_DEFENSE"), 228)
+	local extraTab = tabBtn("WoWForeverRotTabExtra", ns.T("TAB_EXTRA"), 334)
 
 	frame.profileButtons = {}
 	for i, key in ipairs({ "base", "pve", "pvp", "custom" }) do
@@ -130,8 +131,13 @@ local function ensureOptions()
 	rotation:SetPoint("TOPLEFT", 12, -88)
 	rotation:SetPoint("BOTTOMRIGHT", -12, 12)
 	rotation:Hide()
+	local extra = CreateFrame("Frame", nil, frame)
+	extra:SetPoint("TOPLEFT", 12, -88)
+	extra:SetPoint("BOTTOMRIGHT", -12, 12)
+	extra:Hide()
 	frame.general = general
 	frame.rotation = rotation
+	frame.extra = extra
 
 	local function featureOn(key)
 		if key == "locked" then
@@ -402,10 +408,176 @@ local function ensureOptions()
 		frame.modeDrops[mode] = drop
 	end
 
+	local function pickColor(key)
+		local r, g, b = ns.Color(key)
+		local function apply(nr, ng, nb)
+			ns.db.colors = ns.db.colors or {}
+			ns.db.colors[key] = { nr, ng, nb }
+			if ns.GlowInvalidate then
+				ns.GlowInvalidate()
+			end
+			if ns.ApplyFeatureFlags then
+				ns.ApplyFeatureFlags()
+			end
+			ns.RefreshOptions()
+		end
+		if ColorPickerFrame and ColorPickerFrame.SetupColorPickerAndShow then
+			ColorPickerFrame:SetupColorPickerAndShow({
+				r = r,
+				g = g,
+				b = b,
+				hasOpacity = false,
+				swatchFunc = function()
+					local cr, cg, cb = ColorPickerFrame:GetColorRGB()
+					apply(cr, cg, cb)
+				end,
+				cancelFunc = function()
+					apply(r, g, b)
+				end,
+			})
+		elseif ColorPickerFrame then
+			ColorPickerFrame.func = function()
+				local cr, cg, cb = ColorPickerFrame:GetColorRGB()
+				apply(cr, cg, cb)
+			end
+			ColorPickerFrame.cancelFunc = function()
+				apply(r, g, b)
+			end
+			if ColorPickerFrame.SetColorRGB then
+				ColorPickerFrame:SetColorRGB(r, g, b)
+			end
+			ColorPickerFrame:Show()
+		end
+	end
+
+	frame.optHideIdle = check(extra, "hideIdle", ns.T("OPT_HIDE_IDLE"), -4)
+	frame.optBarOnly = check(extra, "barOnly", ns.T("OPT_BAR_ONLY"), -32)
+	frame.optAutoProfile = check(extra, "autoProfile", ns.T("OPT_AUTO_PROFILE"), -60)
+	frame.optCleanseGroup = check(extra, "cleanseGroup", ns.T("OPT_CLEANSE_GROUP"), -88)
+	for _, box in ipairs({ frame.optHideIdle, frame.optBarOnly, frame.optAutoProfile, frame.optCleanseGroup }) do
+		if box.Text then
+			box.Text:SetWidth(420)
+		end
+		box:SetHitRectInsets(0, -400, -2, -2)
+	end
+
+	local colorTitle = extra:CreateFontString(nil, "OVERLAY", "GameFontNormal")
+	colorTitle:SetPoint("TOPLEFT", 12, -124)
+	colorTitle:SetText(ns.T("OPT_COLORS"))
+
+	frame.colorButtons = {}
+	local colorKeys = { "next", "heal", "def", "weapon", "range" }
+	local colorLabels = { "OPT_COLOR_NEXT", "OPT_COLOR_HEAL", "OPT_COLOR_DEF", "OPT_COLOR_WEAPON", "OPT_COLOR_RANGE" }
+	for i, key in ipairs(colorKeys) do
+		local btn = CreateFrame("Button", nil, extra, "BackdropTemplate")
+		btn:SetSize(22, 22)
+		btn:SetPoint("TOPLEFT", 16 + (i - 1) * 90, -148)
+		btn:SetBackdrop({
+			bgFile = "Interface\\Buttons\\WHITE8x8",
+			edgeFile = "Interface\\Buttons\\WHITE8x8",
+			edgeSize = 1,
+		})
+		btn.colorKey = key
+		btn:SetScript("OnClick", function()
+			pickColor(key)
+		end)
+		local label = extra:CreateFontString(nil, "OVERLAY", "GameFontHighlightSmall")
+		label:SetPoint("LEFT", btn, "RIGHT", 4, 0)
+		label:SetText(ns.T(colorLabels[i]))
+		frame.colorButtons[i] = btn
+	end
+
+	local soundLabel = extra:CreateFontString(nil, "OVERLAY", "GameFontNormal")
+	soundLabel:SetPoint("TOPLEFT", 16, -186)
+	frame.soundLabel = soundLabel
+
+	local soundLess = CreateFrame("Button", nil, extra, "UIPanelButtonTemplate")
+	soundLess:SetSize(22, 20)
+	soundLess:SetPoint("LEFT", soundLabel, "RIGHT", 10, 0)
+	soundLess:SetText("-")
+	soundLess:SetScript("OnClick", function()
+		ns.db.soundVolume = math.max(0, (tonumber(ns.db.soundVolume) or 60) - 10)
+		ns.RefreshOptions()
+	end)
+	local soundMore = CreateFrame("Button", nil, extra, "UIPanelButtonTemplate")
+	soundMore:SetSize(22, 20)
+	soundMore:SetPoint("LEFT", soundLess, "RIGHT", 6, 0)
+	soundMore:SetText("+")
+	soundMore:SetScript("OnClick", function()
+		ns.db.soundVolume = math.min(100, (tonumber(ns.db.soundVolume) or 60) + 10)
+		ns.RefreshOptions()
+	end)
+	frame.soundLess = soundLess
+	frame.soundMore = soundMore
+
+	local soundHint = extra:CreateFontString(nil, "OVERLAY", "GameFontHighlightSmall")
+	soundHint:SetPoint("TOPLEFT", 16, -210)
+	soundHint:SetWidth(450)
+	soundHint:SetJustifyH("LEFT")
+	soundHint:SetText(ns.T("OPT_SOUND_HINT"))
+
+	local shareHint = extra:CreateFontString(nil, "OVERLAY", "GameFontHighlightSmall")
+	shareHint:SetPoint("TOPLEFT", 16, -238)
+	shareHint:SetWidth(450)
+	shareHint:SetJustifyH("LEFT")
+	shareHint:SetText(ns.T("OPT_EXPORT_HINT"))
+
+	local box = CreateFrame("ScrollFrame", "WoWForeverRotShareScroll", extra, "UIPanelScrollFrameTemplate")
+	box:SetPoint("TOPLEFT", 16, -268)
+	box:SetPoint("BOTTOMRIGHT", -36, 48)
+	local edit = CreateFrame("EditBox", "WoWForeverRotShareEdit", box)
+	edit:SetMultiLine(true)
+	edit:SetFontObject("ChatFontSmall")
+	edit:SetWidth(420)
+	edit:SetHeight(400)
+	edit:SetAutoFocus(false)
+	edit:EnableMouse(true)
+	edit:SetMaxLetters(25000)
+	edit:SetTextInsets(4, 4, 4, 4)
+	edit:SetScript("OnEscapePressed", function(self)
+		self:ClearFocus()
+	end)
+	box:SetScrollChild(edit)
+	frame.shareEdit = edit
+
+	local exportBtn = CreateFrame("Button", nil, extra, "UIPanelButtonTemplate")
+	exportBtn:SetSize(140, 22)
+	exportBtn:SetPoint("BOTTOMLEFT", 16, 16)
+	exportBtn:SetText(ns.T("OPT_EXPORT"))
+	exportBtn:SetScript("OnClick", function()
+		if ns.ExportProfile then
+			edit:SetText(ns.ExportProfile())
+			edit:HighlightText()
+			edit:SetFocus()
+		end
+	end)
+
+	local importBtn = CreateFrame("Button", nil, extra, "UIPanelButtonTemplate")
+	importBtn:SetSize(140, 22)
+	importBtn:SetPoint("LEFT", exportBtn, "RIGHT", 8, 0)
+	importBtn:SetText(ns.T("OPT_IMPORT"))
+	importBtn:SetScript("OnClick", function()
+		if not ns.ImportProfile then
+			return
+		end
+		local ok, msg, extraArg = ns.ImportProfile(edit:GetText() or "")
+		if ok then
+			print("|cff66ccffWoW Forever Rot|r: " .. ns.T(msg))
+			ns.RefreshOptions()
+			return
+		end
+		if msg == "OPT_IMPORT_CLASS" then
+			print("|cff66ccffWoW Forever Rot|r: " .. ns.T("OPT_IMPORT_CLASS"):format(extraArg or "?"))
+			return
+		end
+		print("|cff66ccffWoW Forever Rot|r: " .. ns.T(msg or "OPT_IMPORT_BAD"))
+	end)
+
 	local function showTab(which)
 		listKind = which == "def" and "def" or "apl"
 		general:SetShown(which == "general")
 		rotation:SetShown(which == "rotation" or which == "def")
+		extra:SetShown(which == "extra")
 	end
 	generalTab:SetScript("OnClick", function()
 		showTab("general")
@@ -416,6 +588,10 @@ local function ensureOptions()
 	end)
 	defTab:SetScript("OnClick", function()
 		showTab("def")
+		ns.RefreshOptions()
+	end)
+	extraTab:SetScript("OnClick", function()
+		showTab("extra")
 		ns.RefreshOptions()
 	end)
 
@@ -564,6 +740,28 @@ function ns.RefreshOptions()
 		if frame.optCleanse then
 			frame.optCleanse:SetChecked(ns.db.showCleanse ~= false)
 			frame.optWeapon:SetChecked(ns.db.showWeapon ~= false)
+		end
+		if frame.optHideIdle then
+			frame.optHideIdle:SetChecked(ns.db.hideIdle ~= false)
+		end
+		if frame.optBarOnly then
+			frame.optBarOnly:SetChecked(ns.db.barOnly ~= false)
+		end
+		if frame.optAutoProfile then
+			frame.optAutoProfile:SetChecked(ns.db.autoProfile ~= false)
+		end
+		if frame.optCleanseGroup then
+			frame.optCleanseGroup:SetChecked(ns.db.cleanseGroup ~= false)
+		end
+	end
+	if frame.soundLabel then
+		frame.soundLabel:SetText(ns.T("OPT_SOUND"):format(tonumber(ns.db.soundVolume) or 60))
+	end
+	if frame.colorButtons then
+		for _, btn in ipairs(frame.colorButtons) do
+			local r, g, b = ns.Color(btn.colorKey)
+			btn:SetBackdropColor(r, g, b, 1)
+			btn:SetBackdropBorderColor(0.2, 0.2, 0.2, 1)
 		end
 	end
 	if frame.scaleLabel then
