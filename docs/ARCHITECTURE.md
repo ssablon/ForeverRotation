@@ -46,6 +46,7 @@ Chaque builder respecte son interrupteur `ns.db.show*`. `show*` absent vaut affi
 | `Locale.lua` | Packs `enUS`, `frFR`, `deDE`, `esES`, `esMX`, `ruRU`, `zhCN`, `zhTW`, `ptBR`, `itIT`, `koKR`. `ns.T(key)` retombe sur `enUS` puis sur la clé brute. |
 | `API.lua` | `ns.API` : résolution, grimoire, prêt, auras, soins, ennemis, arme. |
 | `Data.lua` | IDs, rôles, couleurs, raciaux, interrupts, purges, cleanses, enchants, buffs longs, soins. |
+| `Physics.lua` | Swing, clip de tir auto, tick d'énergie. Option `ns.db.showPhysics`. Pas de journal de combat. |
 | `Lists.lua` | `ns.APLDefaults`, `ns.APLModes`, `ns.DefDefaults`. |
 | `APL.lua` | Lecture / écriture des listes sauvegardées, fusion avec les défauts. |
 | `Share.lua` | Export / import du profil actif (texte `WFR1`). |
@@ -132,7 +133,7 @@ Les listes viennent d'un noyau Era type ConROC Classic, niveaux 1–60. Pas de S
 | `comboMin` | Points de combo joueur/cible minimum. |
 | `pet` / `nopet` | Familier présent ou absent. |
 | `ready = false` | Accepte le pas sans tester le cooldown ni l'utilisabilité. |
-| `filler` | Sort de spam sans temps de recharge propre (Colère, Frappe héroïque, Attaque pernicieuse…). Ignoré seulement par un vrai cooldown, pas par le GCD. |
+| `filler` | Sort de spam sans temps de recharge propre (Colère, Frappe héroïque, Attaque pernicieuse…). Ignoré seulement par un vrai cooldown, pas par le GCD. `ns.Physics.Blocks` s'applique quand même. |
 | `nocombat` | Refus si le joueur est en combat (Charge, Camouflage, Proie). |
 | `needbuff` | ID d'aura utile exigée sur le joueur (Garrot et Embuscade exigent Camouflage). |
 | `needdebuff` | ID de débuff exigé sur la cible (Conflagration exige Immolation). |
@@ -148,6 +149,8 @@ Les listes viennent d'un noyau Era type ConROC Classic, niveaux 1–60. Pas de S
 Le client camelot masque souvent `GetSpellCooldown` en combat. Au lancement réussi, `ns.API.NoteSpellCast` démarre le temps de recharge de base du sort (`GetSpellBaseCooldown`, sinon `ns.COOLDOWNS`). Les trois horions du chaman partagent ce temps (`ns.COOLDOWN_GROUPS`). Un proc qui rend le sort disponible plus tôt peut attendre la fin de ce délai, parce que le jeu ne laisse pas lire le temps restant.
 
 Fulgurance, Revanche, Riposte, Contre-attaque et Morsure de la mangouste (`opt.proc`) ne sont proposés que si `IsSpellUsable` répond vrai. Une réponse masquée saute le pas. Le journal de combat n'est pas lu.
+
+`Physics.lua` (option Extra `showPhysics`, défaut vrai) : coups blancs pour **toutes** les classes via `PLAYER_ENTER_COMBAT` / `UNIT_ATTACK` + `UnitAttackSpeed` (main + main gauche si dual wield). La fenêtre next-swing (Frappe héroïque, Enchaînement, Attaque du raptor, Mutiler) lit seulement la main droite. `UNIT_SPELLCAST_SUCCEEDED` + Auto Shot 75 pour le clip chasseur ; `UNIT_POWER_UPDATE` pour le tick d'énergie 2 s. Sans swing observé, le next-swing n'est pas caché. Pas de `CombatLogGetCurrentEventInfo` : les deux mains partent ensemble à l'auto-attaque puis se décalent par leur vitesse.
 
 Un sort seulement utile (`IsHelpful` et pas `IsHarmful`) peut passer via le coût de puissance si `IsSpellUsable` est faux ou absent. Un sort nuisible avec `usable == false` est refusé.
 
@@ -231,12 +234,13 @@ Autres défauts : `glow`, `showRotation`, `showDefense`, `showInterrupt`, `showP
 
 HUD (`UI.lua`), ancré sur `WoWForeverRotFrame` :
 
-- 3 icônes de file (la première plus grande). Positions sauvées sous `ns.db.pos.queue`.
-- Interruption et purge à gauche, dissipation et arme à droite. Ils suivent la file (même clé `queue`), ils n'ont pas de position propre.
-- Cadenas sous la file. Clic gauche verrouille ou déverrouille. Les options s'ouvrent par `/wfr options` ou le clic gauche du bouton minimap.
-- Toolbar (`pos.toolbar`) : poignée à gauche, rôle, Auto, mode manuel, profil. Glisser la poignée ou un bouton. Couleur de classe.
+- 3 icônes de file (la première plus grande). Positions sauvées sous `ns.db.pos.queue`. Jauge physique sous la file si `showPhysics`.
+- Interruption (`pos.interrupt`) et purge (`pos.purge`) à gauche, dissipation (`pos.cleanse`) et arme (`pos.weapon`) à droite. Chaque icône se déplace toute seule.
+- Cadenas (`pos.lock`) sous la file. Clic gauche verrouille ou déverrouille. Les options s'ouvrent par `/wfr options` ou le clic gauche du bouton minimap.
+- Toolbar (`pos.toolbar`) : poignée à gauche, rôle, Auto, mode manuel, profil. Glisser la poignée ou un bouton. Couleur de classe. Son chrome n'est pas modifié.
 - Défense (`pos.defense`) sous la toolbar.
-- Échelle appliquée à root, toolbar, interrupt, purge, cleanse, weapon, defense, lock.
+- File, défense, interrupt, purge, cleanse, arme et cadenas partagent le chrome de la toolbar (fond ChatFrame, bord tooltip, couleur de classe).
+- Échelle appliquée à root, toolbar, interrupt, purge, cleanse, weapon, defense, lockWrap.
 
 `/wfr reset` et le bouton d'options effacent `ns.db.pos`.
 
@@ -339,7 +343,7 @@ profile              = "base" | "pve" | "pvp" | "custom"
 locked               = bool
 glow, showRotation, showDefense, showInterrupt, showPurge,
 showCleanse, showWeapon, showRange, showModes
-hideIdle, barOnly, autoProfile, cleanseGroup
+hideIdle, barOnly, autoProfile, cleanseGroup, showPhysics
 soundVolume          = 0 .. 100
 colors.next / heal / def / weapon / range
 uiScale              = 0.6 .. 2
@@ -347,6 +351,7 @@ role, combatMode, lastManualMode, autoEnemies, weaponBuff
 apl, aplDrop, def, defDrop     -- miroir du profil actif
 profiles[key]        -- même champs de liste + role/mode/arme
 pos.queue / pos.toolbar / pos.defense
+pos.interrupt / pos.purge / pos.cleanse / pos.weapon / pos.lock
   = { point, relativePoint, x, y }  -- 2e valeur = nom de l'ancre, aujourd'hui UIParent via GetPoint
 minimapAngle
 ```

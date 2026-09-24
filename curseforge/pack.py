@@ -17,7 +17,7 @@ def version():
 OUT = Path(r"F:\Github\addons\wow") / f"WoWForeverRot-{version()}.zip"
 
 SKIP_DIRS = {".git", ".cursor", "curseforge", "__pycache__", ".idea", ".vscode"}
-SKIP_FILES = {"AGENTS.md"}
+SKIP_FILES = {"AGENTS.md", "LISEZMOI.txt"}
 SKIP_SUFFIX = {".pyc", ".bak", ".tmp", ".log"}
 
 

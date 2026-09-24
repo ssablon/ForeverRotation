@@ -451,10 +451,11 @@ local function ensureOptions()
 	end
 
 	frame.optHideIdle = check(extra, "hideIdle", ns.T("OPT_HIDE_IDLE"), -4)
-	frame.optBarOnly = check(extra, "barOnly", ns.T("OPT_BAR_ONLY"), -32)
-	frame.optAutoProfile = check(extra, "autoProfile", ns.T("OPT_AUTO_PROFILE"), -60)
-	frame.optCleanseGroup = check(extra, "cleanseGroup", ns.T("OPT_CLEANSE_GROUP"), -88)
-	for _, box in ipairs({ frame.optHideIdle, frame.optBarOnly, frame.optAutoProfile, frame.optCleanseGroup }) do
+	frame.optPhysics = check(extra, "showPhysics", ns.T("OPT_PHYSICS"), -32)
+	frame.optBarOnly = check(extra, "barOnly", ns.T("OPT_BAR_ONLY"), -60)
+	frame.optAutoProfile = check(extra, "autoProfile", ns.T("OPT_AUTO_PROFILE"), -88)
+	frame.optCleanseGroup = check(extra, "cleanseGroup", ns.T("OPT_CLEANSE_GROUP"), -116)
+	for _, box in ipairs({ frame.optHideIdle, frame.optPhysics, frame.optBarOnly, frame.optAutoProfile, frame.optCleanseGroup }) do
 		if box.Text then
 			box.Text:SetWidth(420)
 		end
@@ -462,7 +463,7 @@ local function ensureOptions()
 	end
 
 	local colorTitle = extra:CreateFontString(nil, "OVERLAY", "GameFontNormal")
-	colorTitle:SetPoint("TOPLEFT", 12, -124)
+	colorTitle:SetPoint("TOPLEFT", 12, -152)
 	colorTitle:SetText(ns.T("OPT_COLORS"))
 
 	frame.colorButtons = {}
@@ -471,7 +472,7 @@ local function ensureOptions()
 	for i, key in ipairs(colorKeys) do
 		local btn = CreateFrame("Button", nil, extra, "BackdropTemplate")
 		btn:SetSize(22, 22)
-		btn:SetPoint("TOPLEFT", 16 + (i - 1) * 90, -148)
+		btn:SetPoint("TOPLEFT", 16 + (i - 1) * 90, -176)
 		btn:SetBackdrop({
 			bgFile = "Interface\\Buttons\\WHITE8x8",
 			edgeFile = "Interface\\Buttons\\WHITE8x8",
@@ -488,7 +489,7 @@ local function ensureOptions()
 	end
 
 	local soundLabel = extra:CreateFontString(nil, "OVERLAY", "GameFontNormal")
-	soundLabel:SetPoint("TOPLEFT", 16, -186)
+	soundLabel:SetPoint("TOPLEFT", 16, -214)
 	frame.soundLabel = soundLabel
 
 	local soundLess = CreateFrame("Button", nil, extra, "UIPanelButtonTemplate")
@@ -511,19 +512,19 @@ local function ensureOptions()
 	frame.soundMore = soundMore
 
 	local soundHint = extra:CreateFontString(nil, "OVERLAY", "GameFontHighlightSmall")
-	soundHint:SetPoint("TOPLEFT", 16, -210)
+	soundHint:SetPoint("TOPLEFT", 16, -238)
 	soundHint:SetWidth(450)
 	soundHint:SetJustifyH("LEFT")
 	soundHint:SetText(ns.T("OPT_SOUND_HINT"))
 
 	local shareHint = extra:CreateFontString(nil, "OVERLAY", "GameFontHighlightSmall")
-	shareHint:SetPoint("TOPLEFT", 16, -238)
+	shareHint:SetPoint("TOPLEFT", 16, -266)
 	shareHint:SetWidth(450)
 	shareHint:SetJustifyH("LEFT")
 	shareHint:SetText(ns.T("OPT_EXPORT_HINT"))
 
 	local box = CreateFrame("ScrollFrame", "WoWForeverRotShareScroll", extra, "UIPanelScrollFrameTemplate")
-	box:SetPoint("TOPLEFT", 16, -268)
+	box:SetPoint("TOPLEFT", 16, -296)
 	box:SetPoint("BOTTOMRIGHT", -36, 48)
 	local edit = CreateFrame("EditBox", "WoWForeverRotShareEdit", box)
 	edit:SetMultiLine(true)
@@ -743,6 +744,9 @@ function ns.RefreshOptions()
 		end
 		if frame.optHideIdle then
 			frame.optHideIdle:SetChecked(ns.db.hideIdle ~= false)
+		end
+		if frame.optPhysics then
+			frame.optPhysics:SetChecked(ns.db.showPhysics ~= false)
 		end
 		if frame.optBarOnly then
 			frame.optBarOnly:SetChecked(ns.db.barOnly ~= false)

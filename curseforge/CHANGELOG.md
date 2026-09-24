@@ -1,3 +1,21 @@
+# 1.5.19
+
+- English-only player README. UI strings complete in all 11 locales.
+- Classic white-hit timing for every class, dual-wield bars, HUD chrome.
+
+# 1.5.18
+
+- Main-hand and off-hand swing bars use different colors (orange / blue).
+
+# 1.5.17
+
+- White-hit swing timing for every class, with a second bar when dual wielding.
+
+# 1.5.16
+
+- Optional Classic combat timing: heroic strike / cleave / raptor / maul in the next-swing window, hunter aimed / multi / volley held off the auto-shot clip, energy spells offered just before the next tick.
+- HUD windows use the same class-colored chrome as the mode toolbar. Queue, defense, interrupt, purge, cleanse, weapon and lock still move independently.
+
 # 1.5.15
 
 - Translate the new Extra options into all supported locales (not only French).

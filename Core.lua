@@ -67,6 +67,9 @@ local function defaults()
 	if ns.db.cleanseGroup == nil then
 		ns.db.cleanseGroup = true
 	end
+	if ns.db.showPhysics == nil then
+		ns.db.showPhysics = true
+	end
 	if ns.db.soundVolume == nil then
 		ns.db.soundVolume = 60
 	end

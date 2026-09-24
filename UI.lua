@@ -5,6 +5,40 @@ local API = ns.API
 local SIZE = 50
 local GAP = 8
 local IMG = "Interface\\AddOns\\WoWForeverRot\\images\\"
+local CHROME = {
+	bgFile = "Interface\\ChatFrame\\ChatFrameBackground",
+	edgeFile = "Interface\\Tooltips\\UI-Tooltip-Border",
+	tile = true,
+	tileSize = 8,
+	edgeSize = 16,
+	insets = { left = 3, right = 3, top = 3, bottom = 3 },
+}
+
+local function classColor()
+	local token, classId = ns.ClassToken and ns.ClassToken()
+	if (not token or not ns.CLASS_COLORS[token]) and classId and ns.CLASS_BY_ID then
+		token = ns.CLASS_BY_ID[classId]
+	end
+	local pack = token and ns.CLASS_COLORS and ns.CLASS_COLORS[token]
+	if pack then
+		return pack[1], pack[2], pack[3]
+	end
+	return 0.83, 0.63, 0.09
+end
+
+local function applyChrome(frame, locked)
+	if not frame or not frame.SetBackdrop then
+		return
+	end
+	if not frame._wfrChrome then
+		frame:SetBackdrop(CHROME)
+		frame._wfrChrome = true
+	end
+	local dim = locked or (ns.db and ns.db.locked)
+	frame:SetBackdropColor(0, 0, 0, dim and 0.22 or 0.75)
+	local r, g, b = classColor()
+	frame:SetBackdropBorderColor(r, g, b, 0.75)
+end
 
 local function savePoint(frame, key)
 	local point, _, rel, x, y = frame:GetPoint()
@@ -80,16 +114,7 @@ local function makeIcon(name, parent, size)
 	local frame = CreateFrame("Frame", name, parent or UIParent, "BackdropTemplate")
 	frame:SetSize(size or SIZE, size or SIZE)
 	frame:SetFrameStrata("MEDIUM")
-	frame:SetBackdrop({
-		bgFile = "Interface\\Buttons\\WHITE8x8",
-		edgeFile = "Interface\\Tooltips\\UI-Tooltip-Border",
-		tile = true,
-		tileSize = 8,
-		edgeSize = 10,
-		insets = { left = 2, right = 2, top = 2, bottom = 2 },
-	})
-	frame:SetBackdropColor(0, 0, 0, 0.35)
-	frame:SetBackdropBorderColor(0.8, 0.65, 0.2, 0.4)
+	applyChrome(frame)
 	local tex = frame:CreateTexture(nil, "ARTWORK")
 	tex:SetPoint("TOPLEFT", 3, -3)
 	tex:SetPoint("BOTTOMRIGHT", -3, 3)
@@ -146,18 +171,9 @@ function ns.UI.Create()
 	end
 
 	local root = CreateFrame("Frame", "WoWForeverRotFrame", UIParent, "BackdropTemplate")
-	root:SetSize(SIZE * 3 + GAP * 2 + 8, SIZE + 16)
+	root:SetSize(SIZE * 3 + GAP * 2 + 16, SIZE + 28)
 	root:SetFrameStrata("MEDIUM")
-	root:SetBackdrop({
-		bgFile = "Interface\\Buttons\\WHITE8x8",
-		edgeFile = "Interface\\Tooltips\\UI-Tooltip-Border",
-		tile = true,
-		tileSize = 8,
-		edgeSize = 12,
-		insets = { left = 3, right = 3, top = 3, bottom = 3 },
-	})
-	root:SetBackdropColor(0, 0, 0, 0.45)
-	root:SetBackdropBorderColor(0.83, 0.63, 0.09, 0.8)
+	applyChrome(root)
 	makeMovable(root, "queue")
 	bindTip(root, "TIP_NEXT", "TIP_NEXT_DESC")
 
@@ -170,29 +186,118 @@ function ns.UI.Create()
 	for i = 1, 3 do
 		local slot = makeIcon("WoWForeverRotSlot" .. i, root, i == 1 and SIZE or 40)
 		if i == 1 then
-			slot:SetPoint("LEFT", root, "LEFT", 8, 0)
+			slot:SetPoint("LEFT", root, "LEFT", 8, 6)
 		else
-			slot:SetPoint("LEFT", ns.UI.slots[i - 1], "RIGHT", GAP, i == 2 and -5 or 0)
+			slot:SetPoint("LEFT", ns.UI.slots[i - 1], "RIGHT", GAP, i == 2 and -4 or 0)
 		end
 		makeMovable(slot, "queue", root)
 		bindTip(slot, tipKeys[i][1], tipKeys[i][2])
 		ns.UI.slots[i] = slot
 	end
 
+	local gauge = CreateFrame("Frame", "WoWForeverRotGauge", root)
+	gauge:SetPoint("BOTTOMLEFT", root, "BOTTOMLEFT", 8, 6)
+	gauge:SetPoint("BOTTOMRIGHT", root, "BOTTOMRIGHT", -8, 6)
+	gauge:SetHeight(8)
+	gauge.rows = {}
+	local function gaugeRow(parent, index)
+		local row = parent.rows[index]
+		if row then
+			return row
+		end
+		row = CreateFrame("Frame", nil, parent)
+		row:SetHeight(5)
+		local bg = row:CreateTexture(nil, "BACKGROUND")
+		bg:SetAllPoints()
+		bg:SetTexture("Interface\\Buttons\\WHITE8x8")
+		bg:SetVertexColor(0, 0, 0, 0.55)
+		local fill = row:CreateTexture(nil, "ARTWORK")
+		fill:SetPoint("TOPLEFT", 1, -1)
+		fill:SetPoint("BOTTOMLEFT", 1, 1)
+		fill:SetWidth(1)
+		fill:SetTexture("Interface\\Buttons\\WHITE8x8")
+		row.fill = fill
+		parent.rows[index] = row
+		return row
+	end
+	gauge:SetScript("OnUpdate", function(self, elapsed)
+		self._acc = (self._acc or 0) + elapsed
+		if self._acc < 0.05 then
+			return
+		end
+		self._acc = 0
+		if not ns.Physics or not ns.Physics.Enabled or not ns.Physics.Enabled() or not ns.Physics.Status then
+			self:Hide()
+			if ns.UI.root then
+				ns.UI.root:SetHeight(SIZE + 28)
+			end
+			return
+		end
+		local st = ns.Physics.Status()
+		local bars = st and (st.bars or { st })
+		if not bars or #bars == 0 then
+			self:Hide()
+			if ns.UI.root then
+				ns.UI.root:SetHeight(SIZE + 28)
+			end
+			return
+		end
+		self:Show()
+		local n = #bars
+		local rowH, gap = 5, 2
+		local gh = n * rowH + (n - 1) * gap
+		self:SetHeight(gh)
+		if ns.UI.root then
+			ns.UI.root:SetHeight(SIZE + 20 + gh)
+		end
+		local inner = math.max(8, self:GetWidth() - 2)
+		local cr, cg, cb = classColor()
+		for i = 1, n do
+			local row = gaugeRow(self, i)
+			row:ClearAllPoints()
+			row:SetPoint("LEFT")
+			row:SetPoint("RIGHT")
+			row:SetHeight(rowH)
+			if i == 1 then
+				row:SetPoint("TOP", self, "TOP", 0, 0)
+			else
+				row:SetPoint("TOP", self.rows[i - 1], "BOTTOM", 0, -gap)
+			end
+			row:Show()
+			local bar = bars[i]
+			row.fill:SetWidth(math.max(1, inner * (bar.progress or 0)))
+			if bar.kind == "offhand" then
+				if bar.hot then
+					row.fill:SetVertexColor(0.45, 0.78, 1, 1)
+				else
+					row.fill:SetVertexColor(0.15, 0.48, 0.95, 0.9)
+				end
+			elseif bar.kind == "swing" then
+				if bar.hot then
+					row.fill:SetVertexColor(1, 0.72, 0.18, 1)
+				else
+					row.fill:SetVertexColor(0.92, 0.48, 0.08, 0.9)
+				end
+			elseif bar.kind == "energy" then
+				row.fill:SetVertexColor(0.35, 0.85, 0.4, bar.hot and 1 or 0.9)
+			elseif bar.hot then
+				row.fill:SetVertexColor(1, 0.82, 0.2, 0.95)
+			else
+				row.fill:SetVertexColor(cr, cg, cb, 0.85)
+			end
+		end
+		for i = n + 1, #self.rows do
+			self.rows[i]:Hide()
+		end
+	end)
+	gauge:Hide()
+	ns.UI.gauge = gauge
+
 	local function makeDefense()
 		local frame = CreateFrame("Frame", "WoWForeverRotDefense", UIParent, "BackdropTemplate")
 		frame:SetSize(42, 42)
 		frame:SetFrameStrata("MEDIUM")
-		frame:SetBackdrop({
-			bgFile = "Interface\\Buttons\\WHITE8x8",
-			edgeFile = "Interface\\Buttons\\WHITE8x8",
-			tile = true,
-			tileSize = 8,
-			edgeSize = 2,
-			insets = { left = 2, right = 2, top = 2, bottom = 2 },
-		})
-		frame:SetBackdropColor(0.04, 0.1, 0.14, 0.92)
-		frame:SetBackdropBorderColor(0.2, 0.78, 0.95, 0.95)
+		applyChrome(frame)
 		local inner = frame:CreateTexture(nil, "ARTWORK")
 		inner:SetPoint("TOPLEFT", 4, -4)
 		inner:SetPoint("BOTTOMRIGHT", -4, 4)
@@ -223,7 +328,7 @@ function ns.UI.Create()
 	kick:SetPoint("RIGHT", root, "LEFT", -8, 12)
 	kick.texture:SetTexture(IMG .. "lightning-interrupt")
 	kick.texture:SetVertexColor(0.2, 0.2, 0.2)
-	makeMovable(kick, "queue", root)
+	makeMovable(kick, "interrupt")
 	bindTip(kick, "TIP_INTERRUPT", "TIP_INTERRUPT_DESC")
 	ns.UI.interrupt = kick
 
@@ -232,7 +337,7 @@ function ns.UI.Create()
 	purge:SetPoint("RIGHT", root, "LEFT", -8, -12)
 	purge.texture:SetTexture(IMG .. "magiccircle-purge")
 	purge.texture:SetVertexColor(0.2, 0.2, 0.2)
-	makeMovable(purge, "queue", root)
+	makeMovable(purge, "purge")
 	bindTip(purge, "TIP_PURGE", "TIP_PURGE_DESC")
 	ns.UI.purge = purge
 
@@ -240,7 +345,7 @@ function ns.UI.Create()
 	cleanse:ClearAllPoints()
 	cleanse:SetPoint("LEFT", root, "RIGHT", 8, 12)
 	paintIdle(cleanse, 0.2, 0.85, 0.35)
-	makeMovable(cleanse, "queue", root)
+	makeMovable(cleanse, "cleanse")
 	bindTip(cleanse, "TIP_CLEANSE", "TIP_CLEANSE_DESC")
 	ns.UI.cleanse = cleanse
 
@@ -249,7 +354,7 @@ function ns.UI.Create()
 	weapon:SetPoint("LEFT", root, "RIGHT", 8, -12)
 	weapon.texture:SetTexture("Interface\\Icons\\INV_Axe_02")
 	weapon.texture:SetVertexColor(1, 1, 1, 0.45)
-	makeMovable(weapon, "queue", root)
+	makeMovable(weapon, "weapon")
 	bindTip(weapon, "TIP_WEAPON", "TIP_WEAPON_DESC")
 	weapon.pulseTick = function(self, elapsed)
 		if not self.needRefresh then
@@ -262,26 +367,24 @@ function ns.UI.Create()
 	end
 	ns.UI.weapon = weapon
 
-	local lock = makeIconButton("WoWForeverRotLock", UIParent, 22)
-	lock:SetPoint("TOP", root, "BOTTOM", 0, -4)
+	local lockWrap = CreateFrame("Frame", "WoWForeverRotLock", UIParent, "BackdropTemplate")
+	lockWrap:SetSize(28, 28)
+	lockWrap:SetFrameStrata("HIGH")
+	applyChrome(lockWrap)
+	local lock = makeIconButton("WoWForeverRotLockBtn", lockWrap, 18)
+	lock:SetPoint("CENTER")
 	lock:RegisterForClicks("LeftButtonUp")
-	lock:SetScript("OnClick", function()
+	lock:SetScript("OnClick", function(self)
+		if self._wfrDragged then
+			self._wfrDragged = nil
+			return
+		end
 		ns.UI.SetLocked(not ns.db.locked)
 	end)
-	makeMovable(lock, "queue", root)
+	makeMovable(lockWrap, "lock")
+	makeMovable(lock, "lock", lockWrap)
 	ns.UI.lock = lock
-
-	local function classColor()
-		local token, classId = ns.ClassToken and ns.ClassToken()
-		if (not token or not ns.CLASS_COLORS[token]) and classId and ns.CLASS_BY_ID then
-			token = ns.CLASS_BY_ID[classId]
-		end
-		local pack = token and ns.CLASS_COLORS and ns.CLASS_COLORS[token]
-		if pack then
-			return pack[1], pack[2], pack[3]
-		end
-		return 0.83, 0.63, 0.09
-	end
+	ns.UI.lockWrap = lockWrap
 
 	local TOOLBAR_W_FULL = 332
 	local TOOLBAR_W_COMPACT = 188
@@ -429,30 +532,36 @@ function ns.UI.Create()
 	ns.UI.SetLocked(ns.db.locked == true)
 end
 
+function ns.UI.ApplyChrome()
+	local locked = ns.db and ns.db.locked == true
+	applyChrome(ns.UI.root, locked)
+	applyChrome(ns.UI.defense, locked)
+	applyChrome(ns.UI.interrupt, locked)
+	applyChrome(ns.UI.purge, locked)
+	applyChrome(ns.UI.cleanse, locked)
+	applyChrome(ns.UI.weapon, locked)
+	applyChrome(ns.UI.lockWrap, locked)
+	if ns.UI.slots then
+		for _, slot in ipairs(ns.UI.slots) do
+			applyChrome(slot, locked)
+		end
+	end
+	if ns.UI.toolbar then
+		local r, g, b = classColor()
+		ns.UI.toolbar:SetBackdropBorderColor(r, g, b, 0.75)
+		ns.UI.toolbar:SetBackdropColor(0, 0, 0, locked and 0.2 or 0.75)
+	end
+end
+
 function ns.UI.ApplyPosition()
 	loadPoint(ns.UI.root, "queue", { "CENTER", UIParent, "CENTER", 0, -80 })
-	if ns.UI.lock then
-		ns.UI.lock:ClearAllPoints()
-		ns.UI.lock:SetPoint("TOP", ns.UI.root, "BOTTOM", 0, -4)
-	end
-	loadPoint(ns.UI.toolbar, "toolbar", { "TOP", ns.UI.root, "BOTTOM", 0, -36 })
-	loadPoint(ns.UI.defense, "defense", { "TOP", ns.UI.root, "BOTTOM", 0, -76 })
-	if ns.UI.interrupt then
-		ns.UI.interrupt:ClearAllPoints()
-		ns.UI.interrupt:SetPoint("RIGHT", ns.UI.root, "LEFT", -8, 12)
-	end
-	if ns.UI.purge then
-		ns.UI.purge:ClearAllPoints()
-		ns.UI.purge:SetPoint("RIGHT", ns.UI.root, "LEFT", -8, -12)
-	end
-	if ns.UI.cleanse then
-		ns.UI.cleanse:ClearAllPoints()
-		ns.UI.cleanse:SetPoint("LEFT", ns.UI.root, "RIGHT", 8, 12)
-	end
-	if ns.UI.weapon then
-		ns.UI.weapon:ClearAllPoints()
-		ns.UI.weapon:SetPoint("LEFT", ns.UI.root, "RIGHT", 8, -12)
-	end
+	loadPoint(ns.UI.lockWrap, "lock", { "TOP", ns.UI.root, "BOTTOM", 0, -4 })
+	loadPoint(ns.UI.toolbar, "toolbar", { "TOP", ns.UI.root, "BOTTOM", 0, -40 })
+	loadPoint(ns.UI.defense, "defense", { "TOP", ns.UI.root, "BOTTOM", 0, -80 })
+	loadPoint(ns.UI.interrupt, "interrupt", { "RIGHT", ns.UI.root, "LEFT", -8, 12 })
+	loadPoint(ns.UI.purge, "purge", { "RIGHT", ns.UI.root, "LEFT", -8, -12 })
+	loadPoint(ns.UI.cleanse, "cleanse", { "LEFT", ns.UI.root, "RIGHT", 8, 12 })
+	loadPoint(ns.UI.weapon, "weapon", { "LEFT", ns.UI.root, "RIGHT", 8, -12 })
 	ns.UI.ApplyScale()
 end
 
@@ -469,7 +578,7 @@ end
 
 function ns.UI.ApplyScale()
 	local s = ns.UIScale()
-	for _, key in ipairs({ "root", "toolbar", "interrupt", "purge", "cleanse", "weapon", "defense", "lock" }) do
+	for _, key in ipairs({ "root", "toolbar", "interrupt", "purge", "cleanse", "weapon", "defense", "lockWrap" }) do
 		local frame = ns.UI[key]
 		if frame then
 			frame:SetScale(s)
@@ -590,9 +699,8 @@ function ns.UI.RefreshModes()
 	if ns.UI.roleBtn and ns.UI.roleBtn.SetActive then
 		ns.UI.roleBtn:SetActive(true)
 	end
-	if ns.UI.ClassColor then
-		local r, g, b = ns.UI.ClassColor()
-		ns.UI.toolbar:SetBackdropBorderColor(r, g, b, 0.75)
+	if ns.UI.ApplyChrome then
+		ns.UI.ApplyChrome()
 	end
 	ns.UI.toolbar:SetWidth(showMode and (ns.UI.toolbarWidthFull or 332) or (ns.UI.toolbarWidthCompact or 188))
 end
@@ -612,6 +720,7 @@ function ns.UI.ApplyMouse()
 		ns.UI.autoBtn,
 		ns.UI.modeBtn,
 		ns.UI.profileBtn,
+		ns.UI.lockWrap,
 	}
 	for _, frame in ipairs(frames) do
 		if frame then
@@ -623,6 +732,10 @@ function ns.UI.ApplyMouse()
 			slot:EnableMouse(mouse)
 		end
 	end
+	if ns.UI.lockWrap then
+		ns.UI.lockWrap:EnableMouse(true)
+		ns.UI.lockWrap:SetFrameStrata("HIGH")
+	end
 	if ns.UI.lock then
 		ns.UI.lock:EnableMouse(true)
 		ns.UI.lock:SetFrameStrata("HIGH")
@@ -631,12 +744,8 @@ end
 
 function ns.UI.SetLocked(locked)
 	ns.db.locked = locked and true or false
-	local alpha = locked and 0.15 or 0.45
-	if ns.UI.root then
-		ns.UI.root:SetBackdropColor(0, 0, 0, alpha)
-	end
-	if ns.UI.toolbar then
-		ns.UI.toolbar:SetBackdropColor(0, 0, 0, locked and 0.2 or 0.4)
+	if ns.UI.ApplyChrome then
+		ns.UI.ApplyChrome()
 	end
 	if ns.UI.lock then
 		ns.UI.lock.texture:SetTexture(IMG .. (locked and "padlock_closed" or "padlock_open"))
@@ -719,13 +828,11 @@ function ns.UI.Update(queue, defenseID, interruptID, purgeID, cleanseID, weaponI
 	end
 	if defenseID then
 		paint(ns.UI.defense, defenseID)
-		ns.UI.defense:SetBackdropBorderColor(0.35, 0.95, 1, 1)
 	else
 		ns.UI.defense.spellID = nil
 		ns.UI.defense.texture:SetTexture("Interface\\LFGFrame\\UI-LFG-ICON-ROLES")
 		ns.UI.defense.texture:SetTexCoord(0, 0.26171875, 0.26171875, 0.5234375)
 		ns.UI.defense.texture:SetVertexColor(0.25, 0.8, 1, 0.55)
-		ns.UI.defense:SetBackdropBorderColor(0.2, 0.78, 0.95, 0.7)
 		if ns.UI.defense.cooldown then
 			ns.UI.defense.cooldown:Hide()
 		end
@@ -777,7 +884,6 @@ function ns.UI.Update(queue, defenseID, interruptID, purgeID, cleanseID, weaponI
 			if ns.UI.weapon.shine then
 				ns.UI.weapon.shine:Hide()
 			end
-			ns.UI.weapon:SetBackdropBorderColor(0.9, 0.15, 0.1, 1)
 		elseif hasWeapon then
 			ns.UI.weapon:SetAlpha(1)
 			ns.UI.weapon.texture:SetVertexColor(1, 1, 1, 1)
@@ -787,7 +893,6 @@ function ns.UI.Update(queue, defenseID, interruptID, purgeID, cleanseID, weaponI
 			if ns.UI.weapon.shine then
 				ns.UI.weapon.shine:Show()
 			end
-			ns.UI.weapon:SetBackdropBorderColor(0.95, 0.82, 0.25, 1)
 		else
 			ns.UI.weapon:SetAlpha(1)
 			ns.UI.weapon.texture:SetVertexColor(1, 1, 1, 0.45)
@@ -797,7 +902,6 @@ function ns.UI.Update(queue, defenseID, interruptID, purgeID, cleanseID, weaponI
 			if ns.UI.weapon.shine then
 				ns.UI.weapon.shine:Hide()
 			end
-			ns.UI.weapon:SetBackdropBorderColor(0.8, 0.65, 0.2, 0.4)
 		end
 	end
 	local idle = ns.API.ShouldHideIdle and ns.API.ShouldHideIdle()

@@ -948,7 +948,13 @@ function ns.API.StepOk(spellID, opt, timeShift)
 	if opt.ready == false then
 		return true
 	end
+	if ns.Physics and ns.Physics.Blocks and ns.Physics.Blocks(spellID) then
+		return false
+	end
 	if ns.API.Ready(spellID, opt, true) or opt.filler == true then
+		return true
+	end
+	if ns.Physics and ns.Physics.EnergySoon and ns.Physics.EnergySoon(spellID) then
 		return true
 	end
 	return false
