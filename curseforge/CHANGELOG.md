@@ -1,3 +1,7 @@
+# 1.5.13
+
+- Toolbar moves from the left grip or by dragging any button (clicks still change mode).
+
 # 1.5.12
 
 - Red out-of-range overlay is back on action-bar buttons (heals included), not on the rotation HUD.

@@ -63,10 +63,11 @@ local function makeMovable(frame, key, dragFrame)
 	frame:SetClampedToScreen(true)
 	frame:EnableMouse(true)
 	frame:RegisterForDrag("LeftButton")
-	frame:SetScript("OnDragStart", function()
+	frame:SetScript("OnDragStart", function(self)
 		if ns.db.locked then
 			return
 		end
+		self._wfrDragged = true
 		dragFrame:StartMoving()
 	end)
 	frame:SetScript("OnDragStop", function()
@@ -273,9 +274,12 @@ function ns.UI.Create()
 		return 0.83, 0.63, 0.09
 	end
 
+	local TOOLBAR_W_FULL = 332
+	local TOOLBAR_W_COMPACT = 188
 	local bar = CreateFrame("Frame", "WoWForeverRotToolbar", UIParent, "BackdropTemplate")
-	bar:SetSize(314, 26)
+	bar:SetSize(TOOLBAR_W_FULL, 32)
 	bar:SetFrameStrata("MEDIUM")
+	bar:SetHitRectInsets(-10, -10, -8, -8)
 	bar:SetBackdrop({
 		bgFile = "Interface\\ChatFrame\\ChatFrameBackground",
 		edgeFile = "Interface\\Tooltips\\UI-Tooltip-Border",
@@ -290,6 +294,24 @@ function ns.UI.Create()
 	makeMovable(bar, "toolbar")
 	ns.UI.toolbar = bar
 	ns.UI.ClassColor = classColor
+	ns.UI.toolbarWidthFull = TOOLBAR_W_FULL
+	ns.UI.toolbarWidthCompact = TOOLBAR_W_COMPACT
+
+	local grip = CreateFrame("Frame", "WoWForeverRotToolbarGrip", bar)
+	grip:SetSize(14, 22)
+	grip:SetPoint("LEFT", bar, "LEFT", 4, 0)
+	for i = 1, 6 do
+		local dot = grip:CreateTexture(nil, "ARTWORK")
+		dot:SetSize(3, 3)
+		dot:SetTexture("Interface\\Buttons\\WHITE8x8")
+		dot:SetVertexColor(1, 1, 1, 0.5)
+		local col = (i - 1) % 2
+		local row = math.floor((i - 1) / 2)
+		dot:SetPoint("TOPLEFT", grip, "TOPLEFT", 3 + col * 5, -4 - row * 5)
+	end
+	makeMovable(grip, "toolbar", bar)
+	bindTip(grip, "TIP_MOVE_BAR", "TIP_MOVE_BAR_DESC")
+	ns.UI.toolbarGrip = grip
 
 	local function makeCycleBtn(name, width, onClick)
 		local btn = CreateFrame("Button", name, bar)
@@ -338,6 +360,10 @@ function ns.UI.Create()
 		end
 		btn:SetActive(false)
 		btn:SetScript("OnClick", function(self)
+			if self._wfrDragged then
+				self._wfrDragged = nil
+				return
+			end
 			onClick(self)
 		end)
 		btn:SetScript("OnEnter", showTip)
@@ -350,8 +376,9 @@ function ns.UI.Create()
 			ns.CycleRole()
 		end
 	end)
-	roleBtn:SetPoint("LEFT", bar, "LEFT", 6, 0)
+	roleBtn:SetPoint("LEFT", grip, "RIGHT", 4, 0)
 	roleBtn:SetActive(true)
+	makeMovable(roleBtn, "toolbar", bar)
 	ns.UI.roleBtn = roleBtn
 
 	local autoBtn = makeCycleBtn("WoWForeverRotAutoBtn", 56, function()
@@ -361,6 +388,7 @@ function ns.UI.Create()
 	end)
 	autoBtn:SetPoint("LEFT", roleBtn, "RIGHT", 4, 0)
 	autoBtn:SetText(ns.T("MODE_AUTO"))
+	makeMovable(autoBtn, "toolbar", bar)
 	ns.UI.autoBtn = autoBtn
 
 	local modeBtn = makeCycleBtn("WoWForeverRotModeBtn", 80, function()
@@ -369,6 +397,7 @@ function ns.UI.Create()
 		end
 	end)
 	modeBtn:SetPoint("LEFT", autoBtn, "RIGHT", 4, 0)
+	makeMovable(modeBtn, "toolbar", bar)
 	ns.UI.modeBtn = modeBtn
 
 	local profileBtn = makeCycleBtn("WoWForeverRotProfileBtn", 64, function()
@@ -378,6 +407,7 @@ function ns.UI.Create()
 	end)
 	profileBtn:SetPoint("LEFT", modeBtn, "RIGHT", 4, 0)
 	profileBtn:SetActive(true)
+	makeMovable(profileBtn, "toolbar", bar)
 	ns.UI.profileBtn = profileBtn
 
 	ns.UI.roles = {}
@@ -555,7 +585,7 @@ function ns.UI.RefreshModes()
 		local r, g, b = ns.UI.ClassColor()
 		ns.UI.toolbar:SetBackdropBorderColor(r, g, b, 0.75)
 	end
-	ns.UI.toolbar:SetWidth(showMode and 314 or 170)
+	ns.UI.toolbar:SetWidth(showMode and (ns.UI.toolbarWidthFull or 332) or (ns.UI.toolbarWidthCompact or 188))
 end
 
 function ns.UI.SetLocked(locked)

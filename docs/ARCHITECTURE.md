@@ -233,7 +233,7 @@ HUD (`UI.lua`), ancré sur `WoWForeverRotFrame` :
 - 3 icônes de file (la première plus grande). Positions sauvées sous `ns.db.pos.queue`.
 - Interruption et purge à gauche, dissipation et arme à droite. Ils suivent la file (même clé `queue`), ils n'ont pas de position propre.
 - Cadenas sous la file. Clic gauche verrouille ou déverrouille. Les options s'ouvrent par `/wfr options` ou le clic gauche du bouton minimap.
-- Toolbar (`pos.toolbar`) : rôle, Auto, mode manuel, profil. Couleur de classe.
+- Toolbar (`pos.toolbar`) : poignée à gauche, rôle, Auto, mode manuel, profil. Glisser la poignée ou un bouton. Couleur de classe.
 - Défense (`pos.defense`) sous la toolbar.
 - Échelle appliquée à root, toolbar, interrupt, purge, cleanse, weapon, defense, lock.
 
