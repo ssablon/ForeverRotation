@@ -1,3 +1,7 @@
+# 1.5.15
+
+- Translate the new Extra options into all supported locales (not only French).
+
 # 1.5.14
 
 - Hide the HUD when dead, mounted, eating, or in town.
