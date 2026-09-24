@@ -279,7 +279,7 @@ Overlays `button.WFROverlays`, blend `ADD`, tête de mort :
 
 `ns.db.glow == false` coupe les têtes de mort de rotation et de défense. Interrupt, purge, cleanse et arme ont leur propre `Glow*` appelé depuis `Tick` sans retester `glow` dans ces fonctions : ils suivent surtout `showInterrupt` / `showPurge` / `showCleanse` / `showWeapon`, qui court-circuitent le builder.
 
-`ns.RangeUpdate` teinte en rouge seulement les boutons déjà surlignés (comme ConROC, qui ne scanne pas toute la barre). Coupé par `showRange == false`. Les soins testent `HealRangeUnit` (même unité que le soin), pas la cible ennemie. Pas besoin d’une cible hostile pour le filtre soin.
+`ns.RangeUpdate` teinte en rouge les boutons déjà surlignés et les icônes HUD (file, défense, interrupt, purge, cleanse). Même test que les attaques (`IsActionInRange` + `IsSpellInRange`). Soins / sorts utiles : unité `HealRangeUnit`. Pas de scan de toute la barre. Coupé par `showRange == false`.
 
 ## Résolution d'un sort
 

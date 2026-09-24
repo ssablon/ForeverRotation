@@ -606,29 +606,51 @@ local function spellInRangeOn(spellID, unit)
 	return nil
 end
 
-local function actionInRange(button)
-	local spellID = buttonSpells[button]
-	if isHealGlow(spellID) then
-		local unit = ns.API.HealRangeUnit and ns.API.HealRangeUnit() or "player"
-		return spellInRangeOn(spellID, unit)
+local function rangeUnitFor(spellID)
+	if not spellID then
+		return "target"
 	end
-	local slot = buttonSlots[button]
-	if slot and ActionHasRange then
-		local okHas, hasRange = pcall(ActionHasRange, slot)
-		if okHas and readableFlag(hasRange) == false then
-			return nil
+	if isHealGlow(spellID) then
+		return ns.API.HealRangeUnit and ns.API.HealRangeUnit() or "player"
+	end
+	if ns.API.IsHelpful and ns.API.IsHelpful(spellID) and not (ns.API.IsHarmful and ns.API.IsHarmful(spellID)) then
+		return ns.API.HealRangeUnit and ns.API.HealRangeUnit() or "player"
+	end
+	return "target"
+end
+
+function ns.SpellInRange(spellID, slot)
+	if not spellID then
+		return nil
+	end
+	if slot and IsActionInRange then
+		local ok, result = pcall(IsActionInRange, slot)
+		if ok and readableFlag(result) == false then
+			return false
+		end
+	end
+	local unit = rangeUnitFor(spellID)
+	local flag = spellInRangeOn(spellID, unit)
+	if flag ~= nil then
+		return flag
+	end
+	if unit ~= "target" then
+		flag = spellInRangeOn(spellID, "target")
+		if flag ~= nil then
+			return flag
 		end
 	end
 	if slot and IsActionInRange then
 		local ok, result = pcall(IsActionInRange, slot)
 		if ok then
-			local flag = readableFlag(result)
-			if flag ~= nil then
-				return flag
-			end
+			return readableFlag(result)
 		end
 	end
-	return spellInRangeOn(spellID, "target")
+	return nil
+end
+
+local function actionInRange(button)
+	return ns.SpellInRange(buttonSpells[button], buttonSlots[button])
 end
 
 function ns.RangeClear()
@@ -638,6 +660,9 @@ function ns.RangeClear()
 		end
 	end
 	wipe(rangeOn)
+	if ns.UI and ns.UI.ApplyRange then
+		ns.UI.ApplyRange(true)
+	end
 end
 
 local function collectGlowing(seen)
@@ -685,5 +710,8 @@ function ns.RangeUpdate()
 			end
 			rangeOn[button] = nil
 		end
+	end
+	if ns.UI and ns.UI.ApplyRange then
+		ns.UI.ApplyRange()
 	end
 end

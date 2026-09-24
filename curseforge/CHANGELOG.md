@@ -1,3 +1,7 @@
+# 1.5.11
+
+- Every recommended spell (heal, defense, interrupt, purge, cleanse) uses the same red out-of-range tint as attacks.
+
 # 1.5.10
 
 - Fix load error: priest Silence cooldown used a missing spell id.
