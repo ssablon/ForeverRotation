@@ -1,3 +1,7 @@
+# 1.5.10
+
+- Fix load error: priest Silence cooldown used a missing spell id.
+
 # 1.5.9
 
 - Heal spells use the same red out-of-range tint as attacks (checked on the heal target, not the enemy).

@@ -396,6 +396,7 @@ ns.Spell = {
 		DevouringPlague = 2944,
 		ManaBurn = 8129,
 		ShadowProtection = 976,
+		Silence = 15487,
 	},
 	Shaman = {
 		LightningBolt = 403,
