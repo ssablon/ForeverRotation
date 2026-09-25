@@ -1,1 +1,1 @@
-Next-3-ability HUD and skull spellflash for WoW Forever Classic combat.
+Rotation helper for WoW Forever Classic. See the next 3 spells on a HUD, a skull on the matching action-bar button, plus heals, defense, interrupts, purges, cleanses and weapon buffs. Not a bot — you still press the keys.
