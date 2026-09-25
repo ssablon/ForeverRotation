@@ -26,6 +26,30 @@
 - Swing bars sit under the spell icons, with a white mark for the cast window.
 - The HUD loads again on the Forever beta when attack speed is hidden by the client.
 
+# 1.5.25
+
+- Swing bars sit below the spell icons instead of covering them.
+
+# 1.5.24
+
+- The swing gauge is drawn inside the rotation frame.
+
+# 1.5.23
+
+- Swing bars show under the rotation frame.
+
+# 1.5.22
+
+- Swing speed is read from the weapon tooltip when the client hides attack speed.
+
+# 1.5.21
+
+- The addon loads again after a broken French translation line.
+
+# 1.5.20
+
+- The HUD shows on login instead of staying hidden while idle.
+
 # 1.5.19
 
 - English-only player README. UI strings complete in all 11 locales.
