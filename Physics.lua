@@ -447,6 +447,7 @@ local function addBar(bars, kind, left, speed, window, label)
 		kind = kind,
 		progress = 1 - (left / speed),
 		hot = left <= window,
+		mark = 1 - (window / speed),
 		label = label,
 	}
 end
@@ -481,6 +482,7 @@ function ns.Physics.Status()
 				kind = "energy",
 				progress = 1 - (tick / ENERGY_TICK),
 				hot = tick <= ENERGY_WAIT,
+				mark = 1 - (ENERGY_WAIT / ENERGY_TICK),
 				label = ns.T("PHYS_ENERGY"),
 			}
 		end

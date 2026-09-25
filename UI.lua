@@ -222,6 +222,13 @@ function ns.UI.Create()
 		label:SetPoint("LEFT", 4, 0)
 		label:SetJustifyH("LEFT")
 		row.label = label
+		local mark = row:CreateTexture(nil, "OVERLAY")
+		mark:SetWidth(2)
+		mark:SetTexture("Interface\\Buttons\\WHITE8x8")
+		mark:SetVertexColor(1, 1, 1, 0.95)
+		mark:SetPoint("TOP", row, "TOPLEFT", 0, 0)
+		mark:SetPoint("BOTTOM", row, "BOTTOMLEFT", 0, 0)
+		row.mark = mark
 		parent.rows[index] = row
 		return row
 	end
@@ -244,7 +251,7 @@ function ns.UI.Create()
 			local speed = 2
 			local progress = (GetTime() % speed) / speed
 			bars = {
-				{ kind = "swing", progress = progress, hot = progress > 0.8, label = "" },
+				{ kind = "swing", progress = progress, hot = progress > 0.8, mark = 0.8, label = "" },
 			}
 		end
 		self:Show()
@@ -268,6 +275,23 @@ function ns.UI.Create()
 			local bar = bars[i]
 			if row.label then
 				row.label:SetText(bar.label or "")
+				if bar.hot then
+					row.label:SetTextColor(1, 1, 1)
+				else
+					row.label:SetTextColor(1, 0.9, 0.7)
+				end
+			end
+			if row.mark then
+				local markAt = tonumber(bar.mark) or 0.8
+				if markAt < 0.05 then
+					markAt = 0.05
+				end
+				if markAt > 0.95 then
+					markAt = 0.95
+				end
+				row.mark:ClearAllPoints()
+				row.mark:SetPoint("TOP", row, "TOPLEFT", inner * markAt, 0)
+				row.mark:SetPoint("BOTTOM", row, "BOTTOMLEFT", inner * markAt, 0)
 			end
 			row.fill:SetWidth(math.max(1, inner * (bar.progress or 0)))
 			if bar.kind == "offhand" then
