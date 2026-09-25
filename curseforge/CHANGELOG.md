@@ -1,13 +1,15 @@
 # 1.5.33
 
-- The addon follows the client language, and options can force another language.
-- Settings are saved per character and kept across reload and restart.
+- Language follows the WoW client (English, French, German, Spanish, Russian, Simplified Chinese, Traditional Chinese, Portuguese, Italian, Korean). Mexican Spanish uses Spanish, and British English uses English.
+- Options can force a language. Auto keeps the client language. The choice is saved.
+- Every setting is stored per character: position, scale, options, lists, profile, language, and lock. They stay after a reload or a restart.
 
 # 1.5.32
 
-- The energy bar shows the seconds left and only resyncs on a real regen tick.
-- A movable combo-point window follows the HUD style for rogues and cat druids.
-- A parry shortens the main-hand swing when the client reports it.
+- The energy bar shows the seconds left until the next tick and keeps moving at full energy.
+- It resyncs only on a real regen tick of about 20, not on Thistle Tea or Relentless Strikes.
+- A movable combo-point window uses the same frame style as the HUD, for rogues and cat druids. The number turns gold at 5.
+- When the client reports a parry, the main-hand swing shortens by 40 percent, and never below 20 percent of weapon speed.
 
 # 1.5.31
 
