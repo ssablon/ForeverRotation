@@ -244,7 +244,7 @@ function ns.UI.Create()
 		end
 		self:Show()
 		local n = #bars
-		local rowH, gap = 5, 2
+		local rowH, gap = 8, 2
 		local gh = n * rowH + (n - 1) * gap
 		self:SetHeight(gh)
 		if ns.UI.root then

@@ -1,4 +1,4 @@
-1.5.21
+1.5.22
 
 2026-09-24
 - English-only player README. UI strings complete in all 11 locales.

@@ -13,6 +13,7 @@ local ENERGY = 3
 local mhAt, mhSpeed = 0, 0
 local ohAt, ohSpeed = 0, 0
 local shotAt, shotSpeed = 0, 0
+local cachedMain, cachedOff, cachedShot = 0, 0, 0
 local energyAt, lastEnergy = 0, -1
 local swingIDs, clipIDs
 
@@ -73,16 +74,104 @@ local function plainNumber(value)
 	return n
 end
 
+local function parseSpeedText(text)
+	if type(text) ~= "string" then
+		return nil
+	end
+	local low = text:lower()
+	if not (low:find("speed", 1, true) or low:find("vitesse", 1, true) or low:find("tempo", 1, true) or low:find("veloc", 1, true) or low:find("скорость", 1, true) or low:find("속도", 1, true) or low:find("速度", 1, true)) then
+		return nil
+	end
+	local num = low:match("([%d]+[%.%,][%d]+)") or low:match("([%d]+)")
+	if not num then
+		return nil
+	end
+	local speed = plainNumber((num:gsub(",", ".")))
+	if speed and speed > 0.4 and speed < 6 then
+		return speed
+	end
+	return nil
+end
+
+local function lineSpeed(line)
+	if type(line) ~= "table" then
+		return nil
+	end
+	local left, right = line.leftText, line.rightText
+	if type(left) == "string" and type(right) == "string" then
+		return parseSpeedText(left .. " " .. right)
+	end
+	if type(left) == "string" then
+		return parseSpeedText(left)
+	end
+	return nil
+end
+
+local function slotWeaponSpeed(slot)
+	if not C_TooltipInfo or not C_TooltipInfo.GetInventoryItem then
+		return nil
+	end
+	local ok, data = pcall(C_TooltipInfo.GetInventoryItem, "player", slot)
+	if not ok or type(data) ~= "table" or type(data.lines) ~= "table" then
+		return nil
+	end
+	for _, line in ipairs(data.lines) do
+		local okLine, speed = pcall(lineSpeed, line)
+		if okLine and speed then
+			return speed
+		end
+	end
+	return 0
+end
+
+local function readWeaponSpeeds()
+	local main = slotWeaponSpeed(16)
+	local off = slotWeaponSpeed(17)
+	local shot = slotWeaponSpeed(18)
+	if main and main > 0 then
+		cachedMain = main
+	end
+	if off then
+		cachedOff = off
+	end
+	if shot and shot > 0 then
+		cachedShot = shot
+	end
+end
+
 local function attackSpeeds()
-	if not UnitAttackSpeed then
-		return 0, 0
+	local main, off = cachedMain, cachedOff
+	local offKnown = false
+	if UnitAttackSpeed then
+		local pack = { pcall(UnitAttackSpeed, "player") }
+		if pack[1] then
+			local liveMain = plainNumber(pack[2])
+			local liveOff = plainNumber(pack[3])
+			if liveMain and liveMain > 0.4 then
+				main = liveMain
+				cachedMain = liveMain
+			end
+			if liveOff and liveOff > 0.4 then
+				off = liveOff
+				cachedOff = liveOff
+				offKnown = true
+			elseif liveOff and pack[2] ~= nil then
+				off = 0
+				cachedOff = 0
+				offKnown = true
+			end
+		end
 	end
-	local pack = { pcall(UnitAttackSpeed, "player") }
-	if not pack[1] then
-		return 0, 0
+	if main <= 0.4 then
+		readWeaponSpeeds()
+		main, off = cachedMain, cachedOff
+	elseif not offKnown and off <= 0 then
+		local tipOff = slotWeaponSpeed(17)
+		if tipOff and tipOff > 0 then
+			off = tipOff
+			cachedOff = tipOff
+		end
 	end
-	local main = plainNumber(pack[2]) or 0
-	local off = plainNumber(pack[3]) or 0
 	if main <= 0.4 then
 		main = 0
 	end
@@ -97,10 +186,73 @@ local function rangedSpeed()
 		local ok, speed = pcall(UnitRangedDamage, "player")
 		speed = ok and plainNumber(speed)
 		if speed and speed > 0.4 then
+			cachedShot = speed
 			return speed
 		end
 	end
+	if cachedShot <= 0.4 then
+		local tip = slotWeaponSpeed(18)
+		if tip and tip > 0 then
+			cachedShot = tip
+		end
+	end
+	if cachedShot > 0.4 then
+		return cachedShot
+	end
 	return 0
+end
+
+local function spellIsOn(spellID)
+	if IsCurrentSpell then
+		local ok, on = pcall(IsCurrentSpell, spellID)
+		if ok and on == true then
+			return true
+		end
+	end
+	if IsAutoRepeatSpell then
+		local ok, on = pcall(IsAutoRepeatSpell, spellID)
+		if ok and on == true then
+			return true
+		end
+	end
+	return false
+end
+
+local function restartIfDue(at, speed, live)
+	if live <= 0 then
+		return 0, 0
+	end
+	local now = GetTime()
+	if at <= 0 or speed <= 0 or now >= at + speed then
+		return now, live
+	end
+	if math.abs(speed - live) > 0.05 then
+		local elapsed = now - at
+		local progress = elapsed / speed
+		if progress < 0 then
+			progress = 0
+		end
+		if progress > 1 then
+			progress = 1
+		end
+		return now - progress * live, live
+	end
+	return at, speed
+end
+
+local function ensureLive()
+	if spellIsOn(6603) then
+		local main, off = attackSpeeds()
+		mhAt, mhSpeed = restartIfDue(mhAt, mhSpeed, main)
+		ohAt, ohSpeed = restartIfDue(ohAt, ohSpeed, off)
+	end
+	if spellIsOn(AUTO_SHOT) then
+		local speed = rangedSpeed()
+		if speed <= 0 then
+			speed = 2.8
+		end
+		shotAt, shotSpeed = restartIfDue(shotAt, shotSpeed, speed)
+	end
 end
 
 local function rescale(at, oldSpeed, newSpeed)
@@ -281,6 +433,7 @@ function ns.Physics.Status()
 	if not ns.Physics.Enabled() then
 		return
 	end
+	ensureLive()
 	local bars = {}
 	local token = ns.ClassToken and ns.ClassToken()
 	local role = ns.db and ns.db.role
@@ -328,6 +481,7 @@ pcall(frame.RegisterEvent, frame, "UNIT_ATTACK")
 pcall(frame.RegisterEvent, frame, "UNIT_ATTACK_SPEED")
 pcall(frame.RegisterEvent, frame, "UNIT_POWER_UPDATE")
 pcall(frame.RegisterEvent, frame, "UNIT_SPELLCAST_SUCCEEDED")
+pcall(frame.RegisterEvent, frame, "PLAYER_EQUIPMENT_CHANGED")
 
 frame:SetScript("OnEvent", function(_, event, unit, _, spellID)
 	if event == "PLAYER_REGEN_ENABLED" then
@@ -351,6 +505,11 @@ frame:SetScript("OnEvent", function(_, event, unit, _, spellID)
 		return
 	end
 	if event == "UNIT_ATTACK_SPEED" and (not unit or unit == "player") then
+		refreshSpeeds()
+		return
+	end
+	if event == "PLAYER_EQUIPMENT_CHANGED" then
+		readWeaponSpeeds()
 		refreshSpeeds()
 		return
 	end
