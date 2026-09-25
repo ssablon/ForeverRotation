@@ -2,10 +2,48 @@ local addonName, ns = ...
 local API = ns.API
 
 WoWForeverRotDB = WoWForeverRotDB or {}
-ns.db = WoWForeverRotDB
+
+local function copyValue(value, seen)
+	if type(value) ~= "table" then
+		return value
+	end
+	seen = seen or {}
+	if seen[value] then
+		return seen[value]
+	end
+	local out = {}
+	seen[value] = out
+	for k, v in pairs(value) do
+		out[copyValue(k, seen)] = copyValue(v, seen)
+	end
+	return out
+end
+
+local function useCharacterDB()
+	WoWForeverRotDB = WoWForeverRotDB or {}
+	WoWForeverRotCharDB = WoWForeverRotCharDB or {}
+	if WoWForeverRotCharDB.charReady ~= 1 then
+		local snap = copyValue(WoWForeverRotDB)
+		for k, v in pairs(snap) do
+			if WoWForeverRotCharDB[k] == nil then
+				WoWForeverRotCharDB[k] = v
+			end
+		end
+		WoWForeverRotCharDB.charReady = 1
+	end
+	ns.db = WoWForeverRotCharDB
+end
+
+useCharacterDB()
 
 local function defaults()
-	ns.db = WoWForeverRotDB
+	useCharacterDB()
+	if ns.db.locale == nil or ns.db.locale == "" then
+		ns.db.locale = "auto"
+	end
+	if ns.ApplyLocale then
+		ns.ApplyLocale()
+	end
 	if ns.db.uiVersion ~= 6 then
 		ns.db.uiVersion = 6
 		if ns.db.pos then

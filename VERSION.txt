@@ -1,6 +1,5 @@
-1.5.32
+1.5.33
 
 2026-09-25
-- The energy bar shows the seconds left and only resyncs on a real regen tick.
-- A movable combo-point window follows the HUD style for rogues and cat druids.
-- A parry shortens the main-hand swing when the client reports it.
+- The addon follows the client language, and options can force another language.
+- Settings are saved per character and kept across reload and restart.

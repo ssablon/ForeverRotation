@@ -46,6 +46,7 @@ L.enUS = {
 	OPT_WEAPON_PICK = "Weapon buff to remind:",
 	OPT_SCALE = "Interface size: %d%%",
 	OPT_RESET_POS = "Reset window positions",
+	OPT_LANG = "Language",
 	OPT_RESET_ALL = "Reset this profile",
 	OPT_RESET_ALL_CONFIRM = "Restore this profile's rotations and defense to defaults? Other profiles are kept.",
 	OPT_RESET_ALL_DONE = "This profile was restored to defaults.",
@@ -183,6 +184,7 @@ L.frFR = {
 	OPT_WEAPON_PICK = "Buff d'arme à rappeler :",
 	OPT_SCALE = "Taille de l'interface : %d%%",
 	OPT_RESET_POS = "Réinitialiser les positions",
+	OPT_LANG = "Langue",
 	OPT_RESET_ALL = "Réinitialiser ce profil",
 	OPT_RESET_ALL_CONFIRM = "Remettre les rotations et la défense de ce profil par défaut ? Les autres profils sont conservés.",
 	OPT_RESET_ALL_DONE = "Ce profil a été remis par défaut.",
@@ -320,6 +322,7 @@ L.deDE = {
 	OPT_WEAPON_PICK = "Waffenbuff zum Erinnern:",
 	OPT_SCALE = "Interfacegröße: %d%%",
 	OPT_RESET_POS = "Fensterpositionen zurücksetzen",
+	OPT_LANG = "Sprache",
 	OPT_RESET_ALL = "Dieses Profil zurücksetzen",
 	OPT_RESET_ALL_CONFIRM = "Rotationen und Verteidigung dieses Profils zurücksetzen? Andere Profile bleiben erhalten.",
 	OPT_RESET_ALL_DONE = "Dieses Profil wurde zurückgesetzt.",
@@ -457,6 +460,7 @@ L.esES = {
 	OPT_WEAPON_PICK = "Buff de arma a recordar:",
 	OPT_SCALE = "Tamaño de la interfaz: %d%%",
 	OPT_RESET_POS = "Restablecer posiciones",
+	OPT_LANG = "Idioma",
 	OPT_RESET_ALL = "Restablecer este perfil",
 	OPT_RESET_ALL_CONFIRM = "¿Restaurar las rotaciones y la defensa de este perfil? Los demás perfiles se conservan.",
 	OPT_RESET_ALL_DONE = "Este perfil se ha restablecido.",
@@ -596,6 +600,7 @@ L.ruRU = {
 	OPT_WEAPON_PICK = "Какое усиление оружия напоминать:",
 	OPT_SCALE = "Размер интерфейса: %d%%",
 	OPT_RESET_POS = "Сбросить позиции окон",
+	OPT_LANG = "Язык",
 	OPT_RESET_ALL = "Сбросить этот профиль",
 	OPT_RESET_ALL_CONFIRM = "Сбросить ротации и защиту этого профиля? Другие профили сохранятся.",
 	OPT_RESET_ALL_DONE = "Этот профиль сброшен.",
@@ -733,6 +738,7 @@ L.zhCN = {
 	OPT_WEAPON_PICK = "要提醒的武器增益：",
 	OPT_SCALE = "界面大小：%d%%",
 	OPT_RESET_POS = "重置窗口位置",
+	OPT_LANG = "语言",
 	OPT_RESET_ALL = "重置此配置",
 	OPT_RESET_ALL_CONFIRM = "将此配置的循环和防御恢复为默认？其他配置会保留。",
 	OPT_RESET_ALL_DONE = "已重置此配置。",
@@ -870,6 +876,7 @@ L.zhTW = {
 	OPT_WEAPON_PICK = "要提醒的武器增益：",
 	OPT_SCALE = "介面大小：%d%%",
 	OPT_RESET_POS = "重設視窗位置",
+	OPT_LANG = "語言",
 	OPT_RESET_ALL = "重設此設定檔",
 	OPT_RESET_ALL_CONFIRM = "將此設定檔的循環與防禦恢復為預設？其他設定檔會保留。",
 	OPT_RESET_ALL_DONE = "已重設此設定檔。",
@@ -1007,6 +1014,7 @@ L.ptBR = {
 	OPT_WEAPON_PICK = "Buff de arma para lembrar:",
 	OPT_SCALE = "Tamanho da interface: %d%%",
 	OPT_RESET_POS = "Redefinir posições",
+	OPT_LANG = "Idioma",
 	OPT_RESET_ALL = "Redefinir este perfil",
 	OPT_RESET_ALL_CONFIRM = "Restaurar as rotações e a defesa deste perfil? Os outros perfis são mantidos.",
 	OPT_RESET_ALL_DONE = "Este perfil foi redefinido.",
@@ -1144,6 +1152,7 @@ L.itIT = {
 	OPT_WEAPON_PICK = "Buff arma da ricordare:",
 	OPT_SCALE = "Dimensione interfaccia: %d%%",
 	OPT_RESET_POS = "Reimposta posizioni",
+	OPT_LANG = "Lingua",
 	OPT_RESET_ALL = "Reimposta questo profilo",
 	OPT_RESET_ALL_CONFIRM = "Ripristinare rotazioni e difesa di questo profilo? Gli altri profili restano.",
 	OPT_RESET_ALL_DONE = "Questo profilo è stato ripristinato.",
@@ -1281,6 +1290,7 @@ L.koKR = {
 	OPT_WEAPON_PICK = "알릴 무기 강화:",
 	OPT_SCALE = "인터페이스 크기: %d%%",
 	OPT_RESET_POS = "창 위치 초기화",
+	OPT_LANG = "언어",
 	OPT_RESET_ALL = "이 프로필 초기화",
 	OPT_RESET_ALL_CONFIRM = "이 프로필의 순환과 방어를 기본값으로 되돌릴까요? 다른 프로필은 유지됩니다.",
 	OPT_RESET_ALL_DONE = "이 프로필이 초기화되었습니다.",
@@ -1381,10 +1391,81 @@ if type(L.esMX) ~= "table" or L.esMX == L.esES then
 	end
 end
 
-local locale = GetLocale()
-local pack = L[locale] or L.enUS
-setmetatable(pack, { __index = L.enUS })
-ns.L = pack
+local ORDER = { "auto", "enUS", "frFR", "deDE", "esES", "ruRU", "zhCN", "zhTW", "ptBR", "itIT", "koKR" }
+local NAMES = {
+	auto = "Auto",
+	enUS = "English",
+	enGB = "English",
+	frFR = "Français",
+	deDE = "Deutsch",
+	esES = "Español",
+	esMX = "Español",
+	ruRU = "Русский",
+	zhCN = "简体中文",
+	zhTW = "繁體中文",
+	ptBR = "Português",
+	itIT = "Italiano",
+	koKR = "한국어",
+}
+
+local function resolveLocale(choice)
+	if choice == nil or choice == "" or choice == "auto" then
+		choice = GetLocale()
+	end
+	if choice == "enGB" then
+		choice = "enUS"
+	end
+	if choice == "esMX" then
+		choice = "esES"
+	end
+	if not L[choice] then
+		choice = "enUS"
+	end
+	return choice
+end
+
+function ns.ApplyLocale()
+	local choice = ns.db and ns.db.locale
+	local pack = L[resolveLocale(choice)] or L.enUS
+	setmetatable(pack, { __index = L.enUS })
+	ns.L = pack
+end
+
+function ns.LocaleLabel(code)
+	code = code or (ns.db and ns.db.locale) or "auto"
+	if code == "" then
+		code = "auto"
+	end
+	if code == "auto" then
+		local client = NAMES[GetLocale()] or GetLocale()
+		return "Auto (" .. client .. ")"
+	end
+	return NAMES[code] or code
+end
+
+function ns.CycleLocale()
+	if not ns.db then
+		return
+	end
+	local cur = ns.db.locale
+	if cur == nil or cur == "" then
+		cur = "auto"
+	end
+	local idx = 1
+	for i, code in ipairs(ORDER) do
+		if code == cur then
+			idx = i
+			break
+		end
+	end
+	ns.db.locale = ORDER[(idx % #ORDER) + 1]
+	ns.ApplyLocale()
+	if ns.RefreshLocale then
+		ns.RefreshLocale()
+	end
+end
+
+ns.ApplyLocale()
 
 function ns.T(key)
 	return ns.L[key] or L.enUS[key] or key

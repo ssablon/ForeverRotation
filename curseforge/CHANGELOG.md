@@ -1,3 +1,8 @@
+# 1.5.33
+
+- The addon follows the client language, and options can force another language.
+- Settings are saved per character and kept across reload and restart.
+
 # 1.5.32
 
 - The energy bar shows the seconds left and only resyncs on a real regen tick.

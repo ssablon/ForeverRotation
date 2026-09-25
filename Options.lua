@@ -66,7 +66,8 @@ local function ensureOptions()
 	if ns.UI.options then
 		return ns.UI.options
 	end
-	local frame = CreateFrame("Frame", "WoWForeverRotOptions", UIParent, "BackdropTemplate")
+	ns.optSerial = (ns.optSerial or 0) + 1
+	local frame = CreateFrame("Frame", "WoWForeverRotOptions" .. ns.optSerial, UIParent, "BackdropTemplate")
 	frame:SetSize(500, 560)
 	frame:SetPoint("CENTER", UIParent, "CENTER", 260, 40)
 	frame:SetFrameStrata("HIGH")
@@ -87,7 +88,7 @@ local function ensureOptions()
 	frame:SetBackdropColor(0.05, 0.05, 0.05, 0.94)
 	frame:SetBackdropBorderColor(0.83, 0.63, 0.09, 1)
 	frame:Hide()
-	tinsert(UISpecialFrames, "WoWForeverRotOptions")
+	tinsert(UISpecialFrames, frame:GetName())
 
 	local title = frame:CreateFontString(nil, "OVERLAY", "GameFontNormalLarge")
 	title:SetPoint("TOP", frame, "TOP", 0, -12)
@@ -213,6 +214,21 @@ local function ensureOptions()
 	end)
 	frame.scaleLess = scaleLess
 	frame.scaleMore = scaleMore
+
+	local langLabel = general:CreateFontString(nil, "OVERLAY", "GameFontNormal")
+	langLabel:SetPoint("TOPLEFT", 16, -372)
+	langLabel:SetText(ns.T("OPT_LANG"))
+	frame.langLabel = langLabel
+	local langBtn = CreateFrame("Button", nil, general, "UIPanelButtonTemplate")
+	langBtn:SetSize(170, 22)
+	langBtn:SetPoint("LEFT", langLabel, "RIGHT", 10, 0)
+	langBtn:SetText(ns.LocaleLabel and ns.LocaleLabel() or "Auto")
+	langBtn:SetScript("OnClick", function()
+		if ns.CycleLocale then
+			ns.CycleLocale()
+		end
+	end)
+	frame.langBtn = langBtn
 
 	local resetPos = CreateFrame("Button", nil, general, "UIPanelButtonTemplate")
 	resetPos:SetSize(180, 22)
@@ -759,6 +775,12 @@ function ns.RefreshOptions()
 		end
 	end
 	if frame.soundLabel then
+		if frame.langLabel then
+			frame.langLabel:SetText(ns.T("OPT_LANG"))
+		end
+		if frame.langBtn and ns.LocaleLabel then
+			frame.langBtn:SetText(ns.LocaleLabel())
+		end
 		frame.soundLabel:SetText(ns.T("OPT_SOUND"):format(tonumber(ns.db.soundVolume) or 60))
 	end
 	if frame.colorButtons then
@@ -983,6 +1005,24 @@ function ns.RefreshOptions()
 		end
 	end
 	child:SetHeight(math.max(40, y + 10))
+end
+
+function ns.RefreshLocale()
+	if ns.UI and ns.UI.RefreshTips then
+		ns.UI.RefreshTips()
+	end
+	if ns.UI and ns.UI.RefreshRoles then
+		ns.UI.RefreshRoles()
+	end
+	local shown = ns.UI and ns.UI.options and ns.UI.options:IsShown()
+	if ns.UI and ns.UI.options then
+		ns.UI.options:Hide()
+		ns.UI.options:SetParent(nil)
+		ns.UI.options = nil
+	end
+	if shown and ns.ToggleOptions then
+		ns.ToggleOptions()
+	end
 end
 
 function ns.ToggleOptions()

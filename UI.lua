@@ -85,6 +85,8 @@ local function hideTip()
 end
 
 local function bindTip(frame, titleKey, descKey)
+	frame.tipTitleKey = titleKey
+	frame.tipDescKey = descKey
 	frame.tipTitle = ns.T(titleKey)
 	frame.tipDesc = ns.T(descKey)
 	frame:SetScript("OnEnter", showTip)
@@ -677,6 +679,30 @@ function ns.UI.Create()
 	ns.UI.ApplyScale()
 	ns.UI.RefreshRoles()
 	ns.UI.SetLocked(ns.db.locked == true)
+end
+
+function ns.UI.RefreshTips()
+	local frames = {
+		ns.UI.root,
+		ns.UI.defense,
+		ns.UI.interrupt,
+		ns.UI.purge,
+		ns.UI.cleanse,
+		ns.UI.weapon,
+		ns.UI.combo,
+		ns.UI.lock,
+	}
+	if ns.UI.slots then
+		for _, slot in ipairs(ns.UI.slots) do
+			frames[#frames + 1] = slot
+		end
+	end
+	for _, frame in ipairs(frames) do
+		if frame and frame.tipTitleKey then
+			frame.tipTitle = ns.T(frame.tipTitleKey)
+			frame.tipDesc = frame.tipDescKey and ns.T(frame.tipDescKey) or nil
+		end
+	end
 end
 
 function ns.UI.ApplyChrome()
