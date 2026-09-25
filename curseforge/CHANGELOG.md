@@ -1,3 +1,8 @@
+# 1.5.36
+
+- The skull overlay finds the action button again for attacks, heals, and defense. A hidden spell id no longer drops the button name, and the spell icon is used when the name is hidden.
+- The match stays on the buttons that carry that spell. It does not light every occupied slot.
+
 # 1.5.35
 
 - A partial action-bar scan no longer hides the rotation. If a button cannot be read, its spells stay suggested for every class and race.

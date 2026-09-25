@@ -53,6 +53,7 @@ local slotsKnown = 0
 local knownSlot = {}
 local countedSlot = {}
 local spellsByNorm = {}
+local buttonsByIcon = {}
 local nameOwner = {}
 local badNames = {}
 
@@ -86,16 +87,20 @@ local function actionSpellName(slot)
 		return nil
 	end
 	text = text:gsub("%s*%([^)]*%)%s*$", "")
-	if text == "" or not C_Spell or not C_Spell.GetSpellInfo then
+	if text == "" then
 		return nil
 	end
-	local okInfo, info = pcall(C_Spell.GetSpellInfo, text)
-	if not okInfo or type(info) ~= "table" or not plainID(info.spellID) then
-		return nil
-	end
-	local name = info.name
-	if type(name) == "string" and name ~= "" then
-		return name
+	if C_Spell and C_Spell.GetSpellInfo then
+		local okInfo, info = pcall(C_Spell.GetSpellInfo, text)
+		if okInfo and type(info) == "table" then
+			local name = info.name
+			if issecretvalue and issecretvalue(name) then
+				name = nil
+			end
+			if type(name) == "string" and name ~= "" then
+				return name
+			end
+		end
 	end
 	return text
 end
@@ -351,6 +356,86 @@ local function actionSlot(button)
 	return slot
 end
 
+local function plainTexture(value)
+	if value == nil or value == "" or value == 0 then
+		return nil
+	end
+	if issecretvalue and issecretvalue(value) then
+		return nil
+	end
+	if canaccessvalue and not canaccessvalue(value) then
+		return nil
+	end
+	if type(value) == "number" and value > 0 then
+		return value
+	end
+	if type(value) == "string" and value ~= "" then
+		return value:lower()
+	end
+	return nil
+end
+
+local function addIcon(key, button)
+	if not key or not button then
+		return
+	end
+	buttonsByIcon[key] = buttonsByIcon[key] or {}
+	buttonsByIcon[key][#buttonsByIcon[key] + 1] = button
+end
+
+local function indexButtonIcon(button, slot)
+	if not button then
+		return
+	end
+	if slot and GetActionTexture then
+		local ok, tex = pcall(GetActionTexture, slot)
+		if ok then
+			addIcon(plainTexture(tex), button)
+		end
+	end
+	local icon = button.icon or button.Icon
+	if not icon and button.GetName then
+		icon = _G[button:GetName() .. "Icon"]
+	end
+	if icon and icon.GetTexture then
+		local ok, tex = pcall(icon.GetTexture, icon)
+		if ok then
+			addIcon(plainTexture(tex), button)
+		end
+	end
+end
+
+local function spellIconKeys(spellID)
+	local keys = {}
+	local function add(value)
+		local key = plainTexture(value)
+		if key then
+			keys[key] = true
+		end
+	end
+	if not spellID then
+		return keys
+	end
+	if C_Spell and C_Spell.GetSpellTexture then
+		local ok, tex = pcall(C_Spell.GetSpellTexture, spellID)
+		if ok then
+			add(tex)
+		end
+	end
+	if GetSpellTexture then
+		local ok, tex = pcall(GetSpellTexture, spellID)
+		if ok then
+			add(tex)
+		end
+	end
+	local info = API.SpellInfo(spellID)
+	if type(info) == "table" then
+		add(info.iconID)
+		add(info.originalIconID)
+	end
+	return keys
+end
+
 local function addStandard(button)
 	if not button then
 		return
@@ -413,6 +498,8 @@ local function addStandard(button)
 								end
 								if type(spellLabel) == "string" and spellLabel ~= "" then
 									addSpellName(spellLabel, button)
+								else
+									addSpellName(token, button)
 								end
 								if spellId then
 									addButton(spellId, button, slot)
@@ -428,6 +515,7 @@ local function addStandard(button)
 		local okHas, has = pcall(HasAction, slot)
 		if okHas and has then
 			noteOccupied(button)
+			indexButtonIcon(button, slot)
 		end
 	end
 	if slot then
@@ -467,6 +555,7 @@ function ns.GlowFetch(force)
 	wipe(nameOwner)
 	wipe(badNames)
 	wipe(spellsByNorm)
+	wipe(buttonsByIcon)
 	wipe(knownSlot)
 	wipe(countedSlot)
 	barSpellCount = 0
@@ -540,6 +629,17 @@ local function buttonsFor(spellID)
 		local key = normKey(name)
 		if key then
 			take(spellsByNorm[key])
+		end
+	end
+	local icons = spellIconKeys(id)
+	local more = spellIconKeys(resolved or spellID)
+	for key in pairs(more) do
+		icons[key] = true
+	end
+	for key in pairs(icons) do
+		local list = buttonsByIcon[key]
+		if list and #list > 0 and #list <= 4 then
+			take(list)
 		end
 	end
 	return out

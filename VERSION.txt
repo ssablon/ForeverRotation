@@ -1,3 +1,8 @@
+1.5.36
+
+2026-09-25
+- The skull is found from the button name and from the spell icon, for attacks, heals, and defense on every class.
+
 1.5.35
 
 2026-09-25
