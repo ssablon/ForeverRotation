@@ -226,6 +226,10 @@ function ns.UI.Create()
 		label:SetPoint("LEFT", 4, 0)
 		label:SetJustifyH("LEFT")
 		row.label = label
+		local time = row:CreateFontString(nil, "OVERLAY", "GameFontHighlightSmall")
+		time:SetPoint("RIGHT", -4, 0)
+		time:SetJustifyH("RIGHT")
+		row.time = time
 		local mark = row:CreateTexture(nil, "OVERLAY")
 		mark:SetWidth(2)
 		mark:SetTexture("Interface\\Buttons\\WHITE8x8")
@@ -286,6 +290,15 @@ function ns.UI.Create()
 					row.label:SetTextColor(1, 1, 1)
 				else
 					row.label:SetTextColor(1, 0.9, 0.7)
+				end
+			end
+			if row.time then
+				if bar.kind == "energy" and type(bar.left) == "number" then
+					row.time:SetText(string.format("%.1f", bar.left))
+					row.time:Show()
+				else
+					row.time:SetText("")
+					row.time:Hide()
 				end
 			end
 			if row.mark then
@@ -617,6 +630,48 @@ function ns.UI.Create()
 	ns.UI.roles = {}
 	ns.UI.modes = {}
 
+	local combo = CreateFrame("Frame", "WoWForeverRotCombo", UIParent, "BackdropTemplate")
+	combo:SetSize(36, 36)
+	combo:SetFrameStrata("MEDIUM")
+	applyChrome(combo)
+	local comboText = combo:CreateFontString(nil, "OVERLAY", "GameFontNormalLarge")
+	comboText:SetPoint("CENTER", 0, 1)
+	local comboFont = comboText:GetFont()
+	if comboFont then
+		comboText:SetFont(comboFont, 22, "OUTLINE")
+	end
+	comboText:SetText("0")
+	combo.text = comboText
+	makeMovable(combo, "combo")
+	bindTip(combo, "TIP_COMBO", "TIP_COMBO_DESC")
+	combo:SetScript("OnUpdate", function(self, elapsed)
+		self._acc = (self._acc or 0) + elapsed
+		if self._acc < 0.1 then
+			return
+		end
+		self._acc = 0
+		local idle = ns.API.ShouldHideIdle and ns.API.ShouldHideIdle()
+		local token = ns.ClassToken and ns.ClassToken()
+		local cat = token == "DRUID" and ns.db and ns.db.role == "cat"
+		local show = not idle and ns.db and ns.db.showRotation ~= false and (token == "ROGUE" or cat)
+		self:SetShown(show)
+		if not show then
+			return
+		end
+		local points = ns.API.Combo and ns.API.Combo() or 0
+		if type(points) ~= "number" then
+			points = 0
+		end
+		self.text:SetText(tostring(points))
+		if points >= 5 then
+			self.text:SetTextColor(1, 0.82, 0.2)
+		else
+			local r, g, b = classColor()
+			self.text:SetTextColor(r, g, b)
+		end
+	end)
+	ns.UI.combo = combo
+
 	ns.UI.root = root
 	ns.UI.ApplyPosition()
 	ns.UI.ApplyScale()
@@ -632,6 +687,7 @@ function ns.UI.ApplyChrome()
 	applyChrome(ns.UI.purge, locked)
 	applyChrome(ns.UI.cleanse, locked)
 	applyChrome(ns.UI.weapon, locked)
+	applyChrome(ns.UI.combo, locked)
 	applyChrome(ns.UI.lockWrap, locked)
 	if ns.UI.slots then
 		for _, slot in ipairs(ns.UI.slots) do
@@ -654,6 +710,7 @@ function ns.UI.ApplyPosition()
 	loadPoint(ns.UI.purge, "purge", { "RIGHT", ns.UI.root, "LEFT", -8, -12 })
 	loadPoint(ns.UI.cleanse, "cleanse", { "LEFT", ns.UI.root, "RIGHT", 8, 12 })
 	loadPoint(ns.UI.weapon, "weapon", { "LEFT", ns.UI.root, "RIGHT", 8, -12 })
+	loadPoint(ns.UI.combo, "combo", { "BOTTOM", ns.UI.root, "TOP", 0, 8 })
 	ns.UI.ApplyScale()
 end
 
@@ -670,7 +727,7 @@ end
 
 function ns.UI.ApplyScale()
 	local s = ns.UIScale()
-	for _, key in ipairs({ "root", "toolbar", "interrupt", "purge", "cleanse", "weapon", "defense", "lockWrap" }) do
+	for _, key in ipairs({ "root", "toolbar", "interrupt", "purge", "cleanse", "weapon", "defense", "lockWrap", "combo" }) do
 		local frame = ns.UI[key]
 		if frame then
 			frame:SetScale(s)
@@ -806,6 +863,7 @@ function ns.UI.ApplyMouse()
 		ns.UI.purge,
 		ns.UI.cleanse,
 		ns.UI.weapon,
+		ns.UI.combo,
 		ns.UI.toolbar,
 		ns.UI.toolbarGrip,
 		ns.UI.roleBtn,

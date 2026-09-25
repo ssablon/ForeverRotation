@@ -1,3 +1,9 @@
+# 1.5.32
+
+- The energy bar shows the seconds left and only resyncs on a real regen tick.
+- A movable combo-point window follows the HUD style for rogues and cat druids.
+- A parry shortens the main-hand swing when the client reports it.
+
 # 1.5.31
 
 - The energy bar advances on its own and resyncs when a tick lands.

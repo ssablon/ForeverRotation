@@ -365,8 +365,11 @@ function ns.Physics.NoteEnergy(current)
 	if not current then
 		return
 	end
-	if lastEnergy >= 0 and current >= lastEnergy + 10 then
-		energyAt = GetTime()
+	if lastEnergy >= 0 then
+		local gain = current - lastEnergy
+		if (gain >= 18 and gain <= 22) or (gain >= 37 and gain <= 43) then
+			energyAt = GetTime()
+		end
 	end
 	lastEnergy = current
 end
@@ -545,6 +548,7 @@ function ns.Physics.Status()
 			progress = 1 - (tick / ENERGY_TICK),
 			hot = tick <= ENERGY_WAIT,
 			mark = 1 - (ENERGY_WAIT / ENERGY_TICK),
+			left = tick,
 			label = ns.T("PHYS_ENERGY"),
 		}
 	end
@@ -560,6 +564,19 @@ function ns.Physics.Status()
 	}
 end
 
+local function hastenMainHand()
+	if mhAt <= 0 or mhSpeed <= 0 then
+		return
+	end
+	local left = math.max(0, mhSpeed - (GetTime() - mhAt))
+	local hasted = left * 0.6
+	local floor = mhSpeed * 0.2
+	if hasted < floor then
+		hasted = floor
+	end
+	mhAt = GetTime() - (mhSpeed - hasted)
+end
+
 local function clearSwings()
 	mhAt, mhSpeed, ohAt, ohSpeed = 0, 0, 0, 0
 end
@@ -573,8 +590,13 @@ pcall(frame.RegisterEvent, frame, "UNIT_ATTACK_SPEED")
 pcall(frame.RegisterEvent, frame, "UNIT_POWER_UPDATE")
 pcall(frame.RegisterEvent, frame, "UNIT_SPELLCAST_SUCCEEDED")
 pcall(frame.RegisterEvent, frame, "PLAYER_EQUIPMENT_CHANGED")
+pcall(frame.RegisterEvent, frame, "UNIT_COMBAT")
 
-frame:SetScript("OnEvent", function(_, event, unit, _, spellID)
+frame:SetScript("OnEvent", function(_, event, unit, action, spellID)
+	if event == "UNIT_COMBAT" and unit == "player" and action == "PARRY" then
+		hastenMainHand()
+		return
+	end
 	if event == "PLAYER_REGEN_ENABLED" then
 		clearSwings()
 		shotAt = 0
