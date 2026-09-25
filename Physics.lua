@@ -59,6 +59,20 @@ function ns.Physics.IsClip(spellID)
 	return markId(clipIDs, spellID)
 end
 
+local function plainNumber(value)
+	local ok, n = pcall(function()
+		local v = tonumber(value)
+		if type(v) ~= "number" then
+			return nil
+		end
+		return v + 0
+	end)
+	if not ok or type(n) ~= "number" then
+		return nil
+	end
+	return n
+end
+
 local function attackSpeeds()
 	if not UnitAttackSpeed then
 		return 0, 0
@@ -67,8 +81,8 @@ local function attackSpeeds()
 	if not pack[1] then
 		return 0, 0
 	end
-	local main = tonumber(pack[2]) or 0
-	local off = tonumber(pack[3]) or 0
+	local main = plainNumber(pack[2]) or 0
+	local off = plainNumber(pack[3]) or 0
 	if main <= 0.4 then
 		main = 0
 	end
@@ -81,7 +95,8 @@ end
 local function rangedSpeed()
 	if UnitRangedDamage then
 		local ok, speed = pcall(UnitRangedDamage, "player")
-		if ok and type(speed) == "number" and speed > 0.4 then
+		speed = ok and plainNumber(speed)
+		if speed and speed > 0.4 then
 			return speed
 		end
 	end
@@ -144,7 +159,7 @@ function ns.Physics.NoteShot()
 end
 
 function ns.Physics.NoteEnergy(current)
-	current = tonumber(current)
+	current = plainNumber(current)
 	if not current then
 		return
 	end
@@ -207,8 +222,8 @@ local function spellEnergyCost(spellID)
 	end
 	for _, cost in ipairs(costs) do
 		if type(cost) == "table" then
-			local needed = tonumber(cost.cost)
-			local ptype = tonumber(cost.type)
+			local needed = plainNumber(cost.cost)
+			local ptype = plainNumber(cost.type)
 			if needed and needed > 0 and ptype == ENERGY then
 				return needed
 			end
@@ -223,7 +238,8 @@ function ns.Physics.EnergySoon(spellID)
 		return false
 	end
 	local ok, cur = pcall(UnitPower, "player", ENERGY)
-	if not ok or type(cur) ~= "number" then
+	cur = ok and plainNumber(cur)
+	if not cur then
 		return false
 	end
 	if cur >= cost then

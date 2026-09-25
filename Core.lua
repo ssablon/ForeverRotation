@@ -693,9 +693,15 @@ frame:SetScript("OnEvent", function(_, event, unit, _, spellID)
 			if ns.API and ns.API.InvalidateSpells then
 				ns.API.InvalidateSpells()
 			end
-			ns.UI.Create()
+			local okCreate, errCreate = pcall(ns.UI.Create)
+			if not okCreate then
+				print("|cff66ccffWoW Forever Rot|r: " .. tostring(errCreate))
+			end
 			if ns.CreateMinimap then
-				ns.CreateMinimap()
+				local okMini, errMini = pcall(ns.CreateMinimap)
+				if not okMini then
+					print("|cff66ccffWoW Forever Rot|r: " .. tostring(errMini))
+				end
 			end
 			if ns.GlowFetch then
 				ns.GlowFetch(true)
