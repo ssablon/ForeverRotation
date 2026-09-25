@@ -1,3 +1,9 @@
+1.5.37
+
+2026-09-25
+- The suggested spell stays on screen while it is casting or still in the air, for every class.
+- Melee fillers stay visible between swings. The swing cue still marks the moment to press.
+
 1.5.36
 
 2026-09-25

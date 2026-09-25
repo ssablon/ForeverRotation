@@ -942,13 +942,22 @@ function ns.API.StepOk(spellID, opt, timeShift)
 	if gate < 0.2 then
 		gate = 0.2
 	end
-	if not opt.swing and ns.API.Cooldown(spellID) > gate then
+	local remain = ns.API.Cooldown(spellID)
+	if ns.API.CastingSpell(spellID) then
+		remain = 0
+	else
+		local castLeft = ns.API.CastRemain()
+		if castLeft > 0 and remain > 0 and remain <= castLeft + 0.45 then
+			remain = 0
+		end
+	end
+	if not opt.swing and remain > gate then
 		return false
 	end
 	if opt.ready == false then
 		return true
 	end
-	if not opt.swing and ns.Physics and ns.Physics.Blocks and ns.Physics.Blocks(spellID) then
+	if ns.Physics and ns.Physics.IsClip and ns.Physics.IsClip(spellID) and ns.Physics.WouldClip and ns.Physics.WouldClip() then
 		return false
 	end
 	if ns.API.Ready(spellID, opt, true) or opt.filler == true or opt.swing == true then
@@ -1389,6 +1398,59 @@ end
 
 function ns.API.UnitFriendly(unit)
 	return unitFriendly(unit)
+end
+
+function ns.API.CastRemain()
+	local function remain(fn)
+		if not fn then
+			return 0
+		end
+		local ok, name, _, _, _, endTime = pcall(fn, "player")
+		if not ok or name == nil then
+			return 0
+		end
+		if issecretvalue and issecretvalue(name) then
+			return 0
+		end
+		endTime = tonumber(safe(endTime, nil))
+		if not endTime then
+			return 0
+		end
+		if endTime > 100000 then
+			endTime = endTime / 1000
+		end
+		local left = endTime - GetTime()
+		if left < 0 then
+			return 0
+		end
+		return left
+	end
+	local cast = remain(UnitCastingInfo)
+	if cast > 0 then
+		return cast
+	end
+	return remain(UnitChannelInfo)
+end
+
+function ns.API.CastingSpell(spellID)
+	local name = ns.API.SpellName(spellID)
+	if type(name) ~= "string" or name == "" then
+		return false
+	end
+	local function same(fn)
+		if not fn then
+			return false
+		end
+		local ok, castName = pcall(fn, "player")
+		if not ok or type(castName) ~= "string" or castName == "" then
+			return false
+		end
+		if issecretvalue and issecretvalue(castName) then
+			return false
+		end
+		return castName == name
+	end
+	return same(UnitCastingInfo) or same(UnitChannelInfo)
 end
 
 function ns.API.TargetCasting()

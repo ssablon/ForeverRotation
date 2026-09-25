@@ -1,3 +1,9 @@
+# 1.5.37
+
+- The suggested spell no longer vanishes while you are casting it or while it is still traveling to the target.
+- A shared cast lock no longer clears the queue. The next spell can show before the projectile lands.
+- Heroic Strike, Maul, and Raptor Strike stay suggested between swings. Only a shot that would clip the auto shot is held back.
+
 # 1.5.36
 
 - The skull overlay finds the action button again for attacks, heals, and defense. A hidden spell id no longer drops the button name, and the spell icon is used when the name is hidden.
