@@ -1365,33 +1365,24 @@ function ns.API.IsEating()
 end
 
 function ns.API.ShouldHideIdle()
-	if not ns.db or ns.db.hideIdle == false then
+	if not ns.db or ns.db.hideIdle ~= true then
 		return false
 	end
-	local okDead, dead = pcall(UnitIsDeadOrGhost, "player")
-	if okDead and dead then
+	local function yes(fn, ...)
+		if type(fn) ~= "function" then
+			return false
+		end
+		local ok, value = pcall(fn, ...)
+		return ok and value == true
+	end
+	if yes(UnitIsDeadOrGhost, "player") or yes(UnitOnTaxi, "player") or yes(IsMounted) then
 		return true
 	end
-	if UnitOnTaxi then
-		local okTaxi, taxi = pcall(UnitOnTaxi, "player")
-		if okTaxi and taxi then
-			return true
-		end
-	end
-	if IsMounted then
-		local okMount, mounted = pcall(IsMounted)
-		if okMount and mounted then
-			return true
-		end
-	end
-	if ns.API.IsEating() then
+	if ns.API.IsEating() == true then
 		return true
 	end
-	if not ns.API.InCombat() and IsResting then
-		local okRest, rest = pcall(IsResting)
-		if okRest and rest then
-			return true
-		end
+	if not ns.API.InCombat() and yes(IsResting) then
+		return true
 	end
 	return false
 end

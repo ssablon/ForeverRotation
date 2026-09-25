@@ -55,8 +55,11 @@ local function defaults()
 	if ns.db.showModes == nil then
 		ns.db.showModes = true
 	end
-	if ns.db.hideIdle == nil then
-		ns.db.hideIdle = true
+	if ns.db.idleSeen ~= 1 then
+		ns.db.idleSeen = 1
+		ns.db.hideIdle = false
+	elseif ns.db.hideIdle == nil then
+		ns.db.hideIdle = false
 	end
 	if ns.db.barOnly == nil then
 		ns.db.barOnly = true
