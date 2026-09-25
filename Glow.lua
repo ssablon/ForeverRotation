@@ -47,20 +47,46 @@ local function addonLoaded(name)
 	return loaded
 end
 
+local nameOwner = {}
+local badNames = {}
+
+local function plainID(value)
+	if value == nil or value == 0 or value == "" then
+		return nil
+	end
+	if issecretvalue and issecretvalue(value) then
+		return nil
+	end
+	if canaccessvalue and not canaccessvalue(value) then
+		return nil
+	end
+	local ok, n = pcall(function()
+		local v = tonumber(value)
+		if type(v) ~= "number" then
+			return nil
+		end
+		return v + 0
+	end)
+	if ok and type(n) == "number" and n > 0 then
+		return n
+	end
+	return nil
+end
+
 local function spellName(spellID)
+	spellID = plainID(spellID)
 	if not spellID then
 		return
 	end
 	local info = API.SpellInfo(spellID)
-	if not info then
+	local name = info and info.name
+	if type(name) ~= "string" or name == "" then
 		return
 	end
-	if type(info.name) == "string" then
-		return info.name
+	if issecretvalue and issecretvalue(name) then
+		return
 	end
-	if canaccessvalue and canaccessvalue(info.name) then
-		return info.name
-	end
+	return name
 end
 
 local function overlay(button, key, texture, r, g, b, scale, alpha)
@@ -166,18 +192,26 @@ local function hidePurge(button)
 end
 
 local function addButton(spellID, button, slot)
-	if not spellID or not button then
+	local id = plainID(spellID)
+	if not id or not button then
 		return
 	end
-	if type(spellID) == "number" then
-		spells[spellID] = spells[spellID] or {}
-		spells[spellID][#spells[spellID] + 1] = button
+	spells[id] = spells[id] or {}
+	spells[id][#spells[id] + 1] = button
+	buttonSpells[button] = id
+	local name = spellName(id)
+	if not name or badNames[name] then
+		return
 	end
-	local name = spellName(spellID)
-	if name then
-		spellsByName[name] = spellsByName[name] or {}
-		spellsByName[name][#spellsByName[name] + 1] = button
+	if nameOwner[name] and nameOwner[name] ~= id then
+		badNames[name] = true
+		spellsByName[name] = nil
+		nameOwner[name] = nil
+		return
 	end
+	nameOwner[name] = id
+	spellsByName[name] = spellsByName[name] or {}
+	spellsByName[name][#spellsByName[name] + 1] = button
 	if slot then
 		buttonSlots[button] = slot
 	end
@@ -225,9 +259,12 @@ local function addStandard(button)
 		if slot and HasAction then
 			local okHas, has = pcall(HasAction, slot)
 			if okHas and has then
-				local okInfo, t, actionID = pcall(GetActionInfo, slot)
-				if okInfo then
-					actionType, id = t, actionID
+				local okInfo, t, actionID, _, spellFromAction = pcall(GetActionInfo, slot)
+				if okInfo and t == "spell" then
+					actionType = "spell"
+					id = plainID(spellFromAction) or plainID(actionID)
+				elseif okInfo and t == "macro" then
+					actionType, id = "macro", actionID
 				end
 			end
 		end
@@ -255,13 +292,8 @@ local function addStandard(button)
 	end
 	if actionType == "spell" and id then
 		local info = API.SpellInfo(id)
-		local spellID = info and info.spellID or id
-		buttonSpells[button] = spellID
+		local spellID = plainID(info and info.spellID) or plainID(id)
 		addButton(spellID, button, slot)
-		rangeButtons[button] = true
-	elseif id then
-		buttonSpells[button] = id
-		addButton(id, button, slot)
 		rangeButtons[button] = true
 	end
 end
@@ -284,6 +316,8 @@ function ns.GlowFetch(force)
 	wipe(buttonSlots)
 	wipe(rangeButtons)
 	wipe(buttonSpells)
+	wipe(nameOwner)
+	wipe(badNames)
 	lastFetch = GetTime()
 	for _, bar in ipairs(BARS) do
 		for i = 1, 12 do
@@ -338,28 +372,17 @@ local function buttonsFor(spellID)
 			end
 		end
 	end
-	if type(spellID) == "number" then
-		take(spells[spellID])
+	local id = plainID(spellID)
+	local resolved = API.Resolve and plainID(API.Resolve(spellID))
+	if id then
+		take(spells[id])
 	end
-	local name = spellName(spellID)
-	if name then
+	if resolved and resolved ~= id then
+		take(spells[resolved])
+	end
+	local name = spellName(id) or spellName(resolved)
+	if name and not badNames[name] then
 		take(spellsByName[name])
-	end
-	if #out > 0 then
-		return out
-	end
-	if C_ActionBar and C_ActionBar.FindSpellActionButtons then
-		local ok, slots = pcall(C_ActionBar.FindSpellActionButtons, spellID)
-		if ok and type(slots) == "table" then
-			for _, slot in pairs(slots) do
-				for button, btnSlot in pairs(buttonSlots) do
-					if btnSlot == slot and not seen[button] then
-						seen[button] = true
-						out[#out + 1] = button
-					end
-				end
-			end
-		end
 	end
 	return out
 end

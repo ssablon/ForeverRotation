@@ -1,5 +1,4 @@
-1.5.29
+1.5.30
 
 2026-09-25
-- Rotation icons stay in color at long range, so a melee still sees the spell to engage.
-- The key to press on those icons is larger. Red range tint stays on the action bar only.
+- The skull overlay stays on the one action button for the spell to press.

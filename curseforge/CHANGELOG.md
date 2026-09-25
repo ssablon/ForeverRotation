@@ -1,3 +1,7 @@
+# 1.5.30
+
+- The skull overlay stays on the one action button for the spell to press.
+
 # 1.5.29
 
 - Rotation icons stay in color at long range, so a melee still sees the spell to engage.

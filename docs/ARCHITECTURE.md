@@ -272,7 +272,7 @@ Textures dans `images/` : `skull`, éclairs, cercle de purge, cadenas, boutons, 
 - Bartender4 `BT4Button1-180` ;
 - ElvUI `ElvUI_Bar1-10Button1-12`.
 
-Association par ID, par nom, et par `C_ActionBar.FindSpellActionButtons` croisé avec le slot du bouton. Les macros passent par `GetMacroSpell`.
+Association par ID lisible, puis par nom seulement si ce nom n'est pas partagé par un autre sort. Pas de `FindSpellActionButtons` : cette recherche allumait toute la barre. Les macros passent par `GetMacroSpell`.
 
 Overlays `button.WFROverlays`, blend `ADD`, tête de mort :
 
