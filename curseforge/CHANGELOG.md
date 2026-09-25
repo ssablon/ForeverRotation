@@ -1,3 +1,8 @@
+# 1.5.29
+
+- Rotation icons stay in color at long range, so a melee still sees the spell to engage.
+- The key to press on those icons is larger. Red range tint stays on the action bar only.
+
 # 1.5.28
 
 - Main hand, off hand and energy can show together, under the spell icons.

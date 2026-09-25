@@ -193,6 +193,10 @@ function ns.UI.Create()
 		makeMovable(slot, "queue", root)
 		bindTip(slot, tipKeys[i][1], tipKeys[i][2])
 		ns.UI.slots[i] = slot
+		local font = slot.bind:GetFont()
+		if font then
+			slot.bind:SetFont(font, i == 1 and 18 or 16, "OUTLINE")
+		end
 	end
 
 	local gauge = CreateFrame("Frame", "WoWForeverRotGauge", root)
@@ -845,26 +849,6 @@ function ns.UI.SetLocked(locked)
 	ns.UI.ApplyMouse()
 end
 
-local function paintRange(slot, spellID)
-	if not slot or not slot.filter then
-		return
-	end
-	if not spellID or (ns.db and ns.db.showRange == false) then
-		slot.filter:Hide()
-		return
-	end
-	if ns.SpellInRange and ns.SpellInRange(spellID) == false then
-		local r, g, b = 0.9, 0.08, 0.08
-		if ns.Color then
-			r, g, b = ns.Color("range")
-		end
-		slot.filter:SetVertexColor(r, g, b, 0.5)
-		slot.filter:Show()
-	else
-		slot.filter:Hide()
-	end
-end
-
 function ns.UI.RefreshCue()
 	if not ns.UI.slots then
 		return
@@ -919,7 +903,9 @@ local function paint(slot, spellID, dim)
 		slot.texture:SetTexture(IMG .. "skull")
 	end
 	slot.texture:SetVertexColor(1, 1, 1, dim and 0.55 or 1)
-	paintRange(slot, spellID)
+	if slot.filter then
+		slot.filter:Hide()
+	end
 	local remain, duration = API.Cooldown(spellID)
 	if duration and duration > 1.5 and remain > 0 then
 		slot.cooldown:Show()
@@ -974,7 +960,6 @@ function ns.UI.Update(queue, defenseID, interruptID, purgeID, cleanseID, weaponI
 		ns.UI.interrupt.texture:SetVertexColor(0.2, 0.2, 0.2, 0.8)
 	end
 	setBind(ns.UI.interrupt, interruptID)
-	paintRange(ns.UI.interrupt, interruptID)
 	if purgeID then
 		ns.UI.purge.spellID = purgeID
 		ns.UI.purge.texture:SetTexture(API.SpellIcon(purgeID) or (IMG .. "magiccircle-purge"))
@@ -985,7 +970,6 @@ function ns.UI.Update(queue, defenseID, interruptID, purgeID, cleanseID, weaponI
 		ns.UI.purge.texture:SetVertexColor(0.2, 0.2, 0.2, 0.8)
 	end
 	setBind(ns.UI.purge, purgeID)
-	paintRange(ns.UI.purge, purgeID)
 	paintSide(ns.UI.cleanse, cleanseID, 0.2, 0.85, 0.35)
 	if not cleanseID then
 		ns.UI.cleanse.texture:SetColorTexture(0.15, 0.45, 0.22, 0.55)
