@@ -359,13 +359,25 @@ end
 
 function ns.Physics.NoteEnergy(current)
 	current = plainNumber(current)
+	if energyAt <= 0 then
+		energyAt = GetTime()
+	end
 	if not current then
 		return
 	end
-	if lastEnergy >= 0 and current > lastEnergy then
+	if lastEnergy >= 0 and current >= lastEnergy + 10 then
 		energyAt = GetTime()
 	end
 	lastEnergy = current
+end
+
+local function sampleEnergy()
+	local ok, cur = pcall(UnitPower, "player", ENERGY)
+	if ok then
+		ns.Physics.NoteEnergy(cur)
+	elseif energyAt <= 0 then
+		energyAt = GetTime()
+	end
 end
 
 local function handRemain(at, speed)
@@ -526,17 +538,15 @@ function ns.Physics.Status()
 	local ohLeft, ohSp = handRemain(ohAt, ohSpeed)
 	addBar(bars, "offhand", ohLeft, ohSp, SWING_WINDOW, ns.T("PHYS_OFFHAND"))
 	if token == "ROGUE" or (token == "DRUID" and role ~= "tank" and role ~= "heal") then
-		local ok, cur = pcall(UnitPower, "player", ENERGY)
-		if ok and type(cur) == "number" then
-			local tick = energyTickRemain() or ENERGY_TICK
-			bars[#bars + 1] = {
-				kind = "energy",
-				progress = 1 - (tick / ENERGY_TICK),
-				hot = tick <= ENERGY_WAIT,
-				mark = 1 - (ENERGY_WAIT / ENERGY_TICK),
-				label = ns.T("PHYS_ENERGY"),
-			}
-		end
+		sampleEnergy()
+		local tick = energyTickRemain() or ENERGY_TICK
+		bars[#bars + 1] = {
+			kind = "energy",
+			progress = 1 - (tick / ENERGY_TICK),
+			hot = tick <= ENERGY_WAIT,
+			mark = 1 - (ENERGY_WAIT / ENERGY_TICK),
+			label = ns.T("PHYS_ENERGY"),
+		}
 	end
 	if #bars == 0 then
 		return

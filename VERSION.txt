@@ -1,4 +1,4 @@
-1.5.30
+1.5.31
 
 2026-09-25
-- The skull overlay stays on the one action button for the spell to press.
+- The energy bar advances on its own and resyncs when a tick lands.

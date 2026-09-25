@@ -1,3 +1,7 @@
+# 1.5.31
+
+- The energy bar advances on its own and resyncs when a tick lands.
+
 # 1.5.30
 
 - The skull overlay stays on the one action button for the spell to press.
