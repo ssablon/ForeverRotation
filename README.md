@@ -154,6 +154,10 @@ The player guide above is not the implementation map. Before changing code, read
 
 The git repository is the source of truth. The copy under `World of Warcraft\_classic_beta_\Interface\AddOns\WoWForeverRot` must be refreshed from this repo. Do not replace this repo with files taken from the game folder.
 
+## Support
+
+Support is on Discord only, in English: [https://discord.gg/qmb2uDu8Z3](https://discord.gg/qmb2uDu8Z3) (`#support`, `#bugs`, `#suggestions`). Website: [https://wow-forever.fr](https://wow-forever.fr).
+
 ## License
 
 Private repository. © Vohnka / [wow-forever.fr](https://wow-forever.fr). All rights reserved.

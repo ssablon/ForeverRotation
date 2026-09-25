@@ -1,11 +1,11 @@
 ---
-description: Après chaque changement demandé, bumper la version et publier sur CurseForge
+description: Après chaque changement demandé, publier CurseForge + Discord changelog et annonce
 alwaysApply: true
 ---
 
-# Version + CurseForge
+# Version + CurseForge + Discord
 
-Après une modification demandée (Lua, TOC, textes, zip) :
+Après une modification demandée (Lua, TOC, textes, zip), la tâche n’est pas finie tant que les **trois** publications ne sont pas faites : CurseForge, `#changelog`, `#announcements`.
 
 1. Bumper **une seule source** : première ligne de `VERSION.txt` (semver `x.y.z`), puis les notes du jour en dessous.
 2. Recopier ce numéro dans les **deux** TOC (`## Version`) et `AGENTS.md`.
@@ -13,7 +13,11 @@ Après une modification demandée (Lua, TOC, textes, zip) :
 4. Recopier les fichiers vers AddOns (`D:\World of Warcraft\_classic_beta_\Interface\AddOns\WoWForeverRot`, sinon le chemin `Program Files (x86)`).
 5. `python curseforge/pack.py` puis upload projet **1708963** :
    `CF_TOKEN` + `CF_PROJECT_ID=1708963` + `python curseforge/upload.py`
-6. Le changelog CurseForge = `CHANGELOG.md`. Display name = `WoWForeverRot <version>`. Version jeu = **1.60.1** (id `17053`).
-7. Commit + `git push origin HEAD`. Pas de token dans git.
+6. Changelog CurseForge = `CHANGELOG.md`. Display name = `WoWForeverRot <version>`. Version jeu = **1.60.1** (id `17053`).
+7. Discord (`secrets/discord.env`, jamais commit) :
+   `python tools/discord_announce_version.py`
+   → entrée dans `#changelog` **et** annonce « new version » dans `#announcements` avec
+   https://www.curseforge.com/wow/addons/forever-rot
+8. Commit + `git push origin HEAD`. Pas de token dans git.
 
 Ne pas publier si le code ne compile pas / n’a pas été recopié. Ne pas rescanner toute la barre pour la portée.

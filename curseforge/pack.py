@@ -29,7 +29,7 @@ def keep(path: Path) -> bool:
         return False
     if path.suffix.lower() in SKIP_SUFFIX:
         return False
-    if path.name == "ARCHITECTURE.md":
+    if path.name == "ARCHITECTURE.md" or path.name == "FOREVER_SPELLBOOK.md":
         return False
     return True
 

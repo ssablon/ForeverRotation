@@ -28,7 +28,7 @@ local palaBlessings = {
 }
 local hunterAspects = { H.AspectHawk, H.AspectMonkey, H.AspectWild, H.AspectCheetah, H.AspectPack, H.AspectBeast }
 local hunterStings = { H.SerpentSting, H.ViperSting, H.ScorpidSting }
-local lockCurses = { L.CurseofAgony, L.CurseofElements, L.CurseofShadow }
+local lockCurses = { L.CurseofAgony, L.CurseofElements, L.CurseofShadow, L.BaneofHavoc }
 
 -- Noyau combat Era (ConROC Classic), 1–60. Auto = liste mono. Pas de SoD / Midnight.
 ns.APLDefaults = {
@@ -44,6 +44,7 @@ ns.APLDefaults = {
 		},
 		heal = {
 			step("Swiftmend", D.Swiftmend, { hp = 60,  heal = true }),
+			step("WildGrowth", D.WildGrowth, { hp = 80, heal = true }),
 			step("Regrowth", D.Regrowth, { hp = 70,  heal = true }),
 			step("Rejuvenation", D.Rejuvenation, { hp = 90,  nobuff = true, heal = true }),
 			step("HealingTouch", D.HealingTouch, { hp = 80,  heal = true }),
@@ -54,14 +55,18 @@ ns.APLDefaults = {
 		tank = {
 			step("DemoralizingRoar", D.DemoralizingRoar, { nodebuff = true, hostile = true }),
 			step("FaerieFireFeral", D.FaerieFireFeral, { nodebuff = true, hostile = true }),
+			step("MangleBear", D.MangleBear, { hostile = true }),
+			step("Lacerate", D.Lacerate, { nodebuff = true, hostile = true }),
 			step("Swipe", D.Swipe, { hostile = true }),
 			step("Maul", D.Maul, { filler = true }),
 		},
 		cat = {
 			step("Prowl", D.Prowl, { nobuff = true, nocombat = true }),
 			step("Ravage", D.Ravage, { needbuff = D.Prowl, hostile = true }),
+			step("FeralChargeCat", D.FeralChargeCat, { hostile = true }),
 			step("TigersFury", D.TigersFury, { nobuff = true }),
 			step("FaerieFireFeral", D.FaerieFireFeral, { nodebuff = true, hostile = true }),
+			step("MangleCat", D.MangleCat, { hostile = true }),
 			step("Rake", D.Rake, { nodebuff = true, hostile = true }),
 			step("Rip", D.Rip, { comboMin = 5, nodebuff = true, hostile = true }),
 			step("FerociousBite", D.FerociousBite, { comboMin = 5, hostile = true }),
@@ -71,6 +76,8 @@ ns.APLDefaults = {
 		bear = {
 			step("DemoralizingRoar", D.DemoralizingRoar, { nodebuff = true, hostile = true }),
 			step("FaerieFireFeral", D.FaerieFireFeral, { nodebuff = true, hostile = true }),
+			step("MangleBear", D.MangleBear, { hostile = true }),
+			step("Lacerate", D.Lacerate, { nodebuff = true, hostile = true }),
 			step("Swipe", D.Swipe, { hostile = true }),
 			step("Maul", D.Maul, { filler = true }),
 		},
@@ -82,6 +89,7 @@ ns.APLDefaults = {
 			step("SealRighteousness", P.SealRighteousness, { nobuff = true, anybuff = palaSeals }),
 			step("SealCrusader", P.SealCrusader, { nobuff = true, anybuff = palaSeals }),
 			step("HammerofWrath", P.HammerofWrath, { hp = 20, unit = "target", hostile = true }),
+			step("HolyStrike", P.HolyStrike, { hostile = true }),
 			step("Judgement", P.Judgement, { hostile = true }),
 			step("CrusaderStrike", P.CrusaderStrike, { hostile = true }),
 			step("HolyShock", P.HolyShock, { hostile = true }),
@@ -94,6 +102,7 @@ ns.APLDefaults = {
 			step("SealFury", P.SealFury, { nobuff = true, anybuff = palaSeals }),
 			step("SealRighteousness", P.SealRighteousness, { nobuff = true, anybuff = palaSeals }),
 			step("HolyShield", P.HolyShield, { combat = true, hostile = true }),
+			step("HolyStrike", P.HolyStrike, { hostile = true }),
 			step("CrusaderStrike", P.CrusaderStrike, { hostile = true }),
 			step("Judgement", P.Judgement, { hostile = true }),
 			step("Consecration", P.Consecration, { hostile = true }),
@@ -105,6 +114,7 @@ ns.APLDefaults = {
 		heal = {
 			step("SealLight", P.SealLight, { nobuff = true, anybuff = palaSeals }),
 			step("SealWisdom", P.SealWisdom, { nobuff = true, anybuff = palaSeals }),
+			step("LightsVigil", P.LightsVigil, { hp = 70, heal = true }),
 			step("HolyShock", P.HolyShock, { hp = 80,  heal = true }),
 			step("FlashofLight", P.FlashofLight, { hp = 70,  heal = true }),
 			step("HolyLight", P.HolyLight, { hp = 80,  heal = true }),
@@ -116,7 +126,9 @@ ns.APLDefaults = {
 			step("Charge", W.Charge, { nocombat = true, hostile = true }),
 			step("Bloodrage", W.Bloodrage, { combat = true, hpMin = 70 }),
 			step("Execute", W.Execute, { hp = 20, unit = "target", hostile = true }),
+			step("VictoryRush", W.VictoryRush, { hostile = true }),
 			step("Overpower", W.Overpower, { proc = "dodge", hostile = true }),
+			step("SpearingStrike", W.SpearingStrike, { hostile = true }),
 			step("Revenge", W.Revenge, { proc = "revenge", hostile = true }),
 			step("Bloodthirst", W.Bloodthirst, { hostile = true }),
 			step("Whirlwind", W.Whirlwind, { hostile = true }),
@@ -130,7 +142,9 @@ ns.APLDefaults = {
 		},
 		tank = {
 			step("DemoralizingShout", W.DemoralizingShout, { nodebuff = true, hostile = true }),
+			step("VictoryRush", W.VictoryRush, { hostile = true }),
 			step("Revenge", W.Revenge, { proc = "revenge", hostile = true }),
+			step("SpearingStrike", W.SpearingStrike, { hostile = true }),
 			step("ShieldSlam", W.ShieldSlam, { hostile = true }),
 			step("SunderArmor", W.SunderArmor, { nodebuff = true, hostile = true }),
 			step("ThunderClap", W.ThunderClap, { nodebuff = true, hostile = true }),
@@ -141,12 +155,16 @@ ns.APLDefaults = {
 	HUNTER = {
 		range = {
 			step("CallPet", H.CallPet, { nopet = true }),
+			step("SummonHawk", H.SummonHawk, { nopet = true }, false),
 			step("MendPet", H.MendPet, { pet = true, hp = 40, unit = "pet" }),
 			step("HuntersMark", H.HuntersMark, { nodebuff = true, hostile = true }),
 			step("SerpentSting", H.SerpentSting, { nodebuff = true, anydebuff = hunterStings, hostile = true }),
 			step("ViperSting", H.ViperSting, { nodebuff = true, anydebuff = hunterStings, hostile = true }, false),
 			step("ScorpidSting", H.ScorpidSting, { nodebuff = true, anydebuff = hunterStings, hostile = true }, false),
 			step("AimedShot", H.AimedShot, { hostile = true }),
+			step("SniperShot", H.SniperShot, { hostile = true }),
+			step("HydraShot", H.HydraShot, { hostile = true }, false),
+			step("ScatterShot", H.ScatterShot, { hostile = true }, false),
 			step("MultiShot", H.MultiShot, { hostile = true }),
 			step("ArcaneShot", H.ArcaneShot, { hostile = true }),
 			step("Intimidation", H.Intimidation, { hostile = true }, false),
@@ -155,9 +173,12 @@ ns.APLDefaults = {
 		},
 		melee = {
 			step("CallPet", H.CallPet, { nopet = true }),
+			step("SummonHawk", H.SummonHawk, { nopet = true }, false),
 			step("HuntersMark", H.HuntersMark, { nodebuff = true, hostile = true }),
 			step("Counterattack", H.Counterattack, { proc = "parry", hostile = true }),
 			step("MongooseBite", H.MongooseBite, { proc = "mongoose", hostile = true }),
+			step("StriderKick", H.StriderKick, { hostile = true }),
+			step("Lacerate", H.Lacerate, { nodebuff = true, hostile = true }),
 			step("WingClip", H.WingClip, { nodebuff = true, hostile = true }),
 			step("RaptorStrike", H.RaptorStrike, { filler = true }),
 		},
@@ -175,6 +196,8 @@ ns.APLDefaults = {
 			step("ExposeArmor", R.ExposeArmor, { comboMin = 5, nodebuff = true, hostile = true }, false),
 			step("Hemorrhage", R.Hemorrhage, { hostile = true }),
 			step("GhostlyStrike", R.GhostlyStrike, { hostile = true }),
+			step("Mutilate", R.Mutilate, { usable = true, hostile = true }),
+			step("Venom", R.Venom, { comboMin = 5, hostile = true }, false),
 			step("Backstab", R.Backstab, { usable = true, hostile = true }),
 			step("SinisterStrike", R.SinisterStrike, { filler = true }),
 		},
@@ -182,7 +205,11 @@ ns.APLDefaults = {
 	PRIEST = {
 		damage = {
 			step("ShadowWordPain", Pr.ShadowWordPain, { nodebuff = true, hostile = true }),
+			step("ShadowWordDeath", Pr.ShadowWordDeath, { hp = 20, unit = "target", hostile = true }),
 			step("DevouringPlague", Pr.DevouringPlague, { nodebuff = true, hostile = true }),
+			step("Chastise", Pr.Chastise, { hostile = true }, false),
+			step("ConfoundingFlash", Pr.ConfoundingFlash, { hostile = true }, false),
+			step("Penance", Pr.Penance, { hostile = true }),
 			step("MindBlast", Pr.MindBlast, { hostile = true }),
 			step("MindFlay", Pr.MindFlay, { filler = true, hostile = true }),
 			step("HolyFire", Pr.HolyFire, { nodebuff = true, hostile = true }),
@@ -192,6 +219,10 @@ ns.APLDefaults = {
 		},
 		heal = {
 			step("PowerWordShield", Pr.PowerWordShield, { hp = 90,  nobuff = true, heal = true }),
+			step("Penance", Pr.Penance, { hp = 70, heal = true }),
+			step("PrayerofMending", Pr.PrayerofMending, { hp = 90, heal = true }),
+			step("BindingHeal", Pr.BindingHeal, { hp = 70, heal = true }),
+			step("DivineGrace", Pr.DivineGrace, { hp = 50, heal = true }),
 			step("FlashHeal", Pr.FlashHeal, { hp = 70,  heal = true }),
 			step("GreaterHeal", Pr.GreaterHeal, { hp = 55,  heal = true }),
 			step("Heal", Pr.Heal, { hp = 80,  heal = true }),
@@ -204,6 +235,7 @@ ns.APLDefaults = {
 	SHAMAN = {
 		caster = {
 			step("FlameShock", Sh.FlameShock, { nodebuff = true, hostile = true }),
+			step("LavaBurst", Sh.LavaBurst, { needdebuff = Sh.FlameShock, hostile = true }),
 			step("EarthShock", Sh.EarthShock, { hostile = true }),
 			step("FrostShock", Sh.FrostShock, { nodebuff = true, hostile = true }, false),
 			step("ChainLightning", Sh.ChainLightning, { hostile = true }, false),
@@ -214,12 +246,14 @@ ns.APLDefaults = {
 		melee = {
 			step("Stormstrike", Sh.Stormstrike, { hostile = true }),
 			step("FlameShock", Sh.FlameShock, { nodebuff = true, hostile = true }),
+			step("LavaBurst", Sh.LavaBurst, { needdebuff = Sh.FlameShock, hostile = true }),
 			step("EarthShock", Sh.EarthShock, { hostile = true }),
 			step("FrostShock", Sh.FrostShock, { nodebuff = true, hostile = true }, false),
 			step("LesserHealingWave", Sh.LesserHealingWave, { hp = 70,  heal = true }),
 			step("HealingWave", Sh.HealingWave, { hp = 80,  heal = true }),
 		},
 		heal = {
+			step("Riptide", Sh.Riptide, { hp = 90, heal = true }),
 			step("LesserHealingWave", Sh.LesserHealingWave, { hp = 70,  heal = true }),
 			step("ChainHeal", Sh.ChainHeal, { hp = 75,  heal = true }),
 			step("HealingWave", Sh.HealingWave, { hp = 80,  heal = true }),
@@ -231,9 +265,12 @@ ns.APLDefaults = {
 		damage = {
 			step("Pyroblast", M.Pyroblast, { nocombat = true, hostile = true }),
 			step("FireBlast", M.FireBlast, { hostile = true }),
+			step("IceLance", M.IceLance, { hostile = true }),
 			step("Scorch", M.Scorch, { nodebuff = true, hostile = true }),
 			step("Frostbolt", M.Frostbolt, { filler = true, requireAny = { M.IceBarrier, M.IceBlock } }),
 			step("ArcaneMissiles", M.ArcaneMissiles, { filler = true, requireAny = { M.ArcanePower, M.PresenceofMind } }),
+			step("ArcaneBlast", M.ArcaneBlast, { filler = true, requireAny = { M.ArcanePower, M.PresenceofMind } }),
+			step("FrostfireBolt", M.FrostfireBolt, { filler = true }),
 			step("Fireball", M.Fireball, { filler = true }),
 		},
 	},
@@ -242,14 +279,18 @@ ns.APLDefaults = {
 			step("SummonImp", L.SummonImp, { nopet = true }),
 			step("SummonVoidwalker", L.SummonVoidwalker, { nopet = true }, false),
 			step("SummonSuccubus", L.SummonSuccubus, { nopet = true }, false),
+			step("SummonIncubus", L.SummonIncubus, { nopet = true }, false),
 			step("SummonFelhunter", L.SummonFelhunter, { nopet = true }, false),
 			step("LifeTap", L.LifeTap, { manaMax = 20, hpMin = 40 }),
 			step("CurseofAgony", L.CurseofAgony, { nodebuff = true, anydebuff = lockCurses, hostile = true }),
 			step("CurseofElements", L.CurseofElements, { nodebuff = true, anydebuff = lockCurses, hostile = true }, false),
 			step("CurseofShadow", L.CurseofShadow, { nodebuff = true, anydebuff = lockCurses, hostile = true }, false),
+			step("BaneofHavoc", L.BaneofHavoc, { nodebuff = true, anydebuff = lockCurses, hostile = true }, false),
 			step("Corruption", L.Corruption, { nodebuff = true, hostile = true }),
+			step("Wrack", L.Wrack, { nodebuff = true, hostile = true }),
 			step("SiphonLife", L.SiphonLife, { nodebuff = true, hostile = true }),
 			step("Immolate", L.Immolate, { nodebuff = true, hostile = true }),
+			step("Incinerate", L.Incinerate, { needdebuff = L.Immolate, hostile = true }),
 			step("Conflagrate", L.Conflagrate, { needdebuff = L.Immolate, hostile = true }),
 			step("Shadowburn", L.Shadowburn, { hp = 20, unit = "target", hostile = true }),
 			step("SoulFire", L.SoulFire, { hp = 20, unit = "target", hostile = true }, false),
@@ -283,6 +324,7 @@ ns.APLModes = {
 		heal = {
 			aoe = {
 				step("Tranquility", D.Tranquility, { hp = 70,  heal = true }),
+				step("WildGrowth", D.WildGrowth, { hp = 80, heal = true }),
 				step("Hurricane", D.Hurricane, { hostile = true }),
 				step("Rejuvenation", D.Rejuvenation, { hp = 90,  nobuff = true, heal = true }),
 				step("Regrowth", D.Regrowth, { hp = 70,  heal = true }),
@@ -299,11 +341,14 @@ ns.APLModes = {
 		tank = {
 			aoe = {
 				step("DemoralizingRoar", D.DemoralizingRoar, { nodebuff = true, hostile = true }),
+				step("MangleBear", D.MangleBear, { hostile = true }),
+				step("Lacerate", D.Lacerate, { nodebuff = true, hostile = true }),
 				step("Swipe", D.Swipe, { hostile = true }),
 				step("Maul", D.Maul, { filler = true }),
 			},
 			burst = {
 				step("Enrage", D.Enrage, { combat = true }),
+				step("MangleBear", D.MangleBear, { hostile = true }),
 				step("Swipe", D.Swipe, { hostile = true }),
 				step("Maul", D.Maul, { hostile = true }),
 				step("Bash", D.Bash, { hostile = true }),
@@ -317,6 +362,7 @@ ns.APLModes = {
 				step("Claw", D.Claw, { filler = true }),
 			},
 			burst = {
+				step("Berserk", D.Berserk, { hostile = true }),
 				step("TigersFury", D.TigersFury, { nobuff = true }),
 				step("FerociousBite", D.FerociousBite, { comboMin = 5, hostile = true }),
 				step("Shred", D.Shred, { hostile = true }),
@@ -327,11 +373,14 @@ ns.APLModes = {
 		bear = {
 			aoe = {
 				step("DemoralizingRoar", D.DemoralizingRoar, { nodebuff = true, hostile = true }),
+				step("MangleBear", D.MangleBear, { hostile = true }),
+				step("Lacerate", D.Lacerate, { nodebuff = true, hostile = true }),
 				step("Swipe", D.Swipe, { hostile = true }),
 				step("Maul", D.Maul, { filler = true }),
 			},
 			burst = {
 				step("Enrage", D.Enrage, { combat = true }),
+				step("MangleBear", D.MangleBear, { hostile = true }),
 				step("Maul", D.Maul, { hostile = true }),
 				step("Swipe", D.Swipe, { hostile = true }),
 				step("Bash", D.Bash, { hostile = true }),
@@ -346,6 +395,7 @@ ns.APLModes = {
 				step("SealRighteousness", P.SealRighteousness, { nobuff = true, anybuff = palaSeals }),
 				step("Consecration", P.Consecration, { hostile = true }),
 				step("HolyWrath", P.HolyWrath, { usable = true, hostile = true }),
+				step("HolyStrike", P.HolyStrike, { hostile = true }),
 				step("CrusaderStrike", P.CrusaderStrike, { hostile = true }),
 				step("Judgement", P.Judgement, { hostile = true }),
 				step("Exorcism", P.Exorcism, { usable = true, hostile = true }),
@@ -356,6 +406,7 @@ ns.APLModes = {
 				step("SealCommand", P.SealCommand, { nobuff = true, anybuff = palaSeals }),
 				step("SealFury", P.SealFury, { nobuff = true, anybuff = palaSeals }),
 				step("SealRighteousness", P.SealRighteousness, { nobuff = true, anybuff = palaSeals }),
+				step("HolyStrike", P.HolyStrike, { hostile = true }),
 				step("Judgement", P.Judgement, { hostile = true }),
 				step("CrusaderStrike", P.CrusaderStrike, { hostile = true }),
 				step("HammerofWrath", P.HammerofWrath, { hp = 20, unit = "target", hostile = true }),
@@ -389,11 +440,13 @@ ns.APLModes = {
 			aoe = {
 				step("HolyWrath", P.HolyWrath, { usable = true, hostile = true }),
 				step("Consecration", P.Consecration, { hostile = true }),
+				step("LightsVigil", P.LightsVigil, { hp = 70, heal = true }),
 				step("HolyShock", P.HolyShock, { hp = 80,  heal = true }),
 				step("FlashofLight", P.FlashofLight, { hp = 70,  heal = true }),
 				step("HolyLight", P.HolyLight, { hp = 80,  heal = true }),
 			},
 			burst = {
+				step("LightsVigil", P.LightsVigil, { hp = 70, heal = true }),
 				step("HolyShock", P.HolyShock, { hp = 80,  heal = true }),
 				step("HolyLight", P.HolyLight, { hp = 80,  heal = true }),
 				step("FlashofLight", P.FlashofLight, { hp = 70,  heal = true }),
@@ -417,7 +470,9 @@ ns.APLModes = {
 				step("DeathWish", W.DeathWish, { hostile = true }),
 				step("Bloodrage", W.Bloodrage, { hostile = true }),
 				step("Execute", W.Execute, { hp = 20, unit = "target", hostile = true }),
+				step("VictoryRush", W.VictoryRush, { hostile = true }),
 				step("Overpower", W.Overpower, { proc = "dodge", hostile = true }),
+				step("SpearingStrike", W.SpearingStrike, { hostile = true }),
 				step("Bloodthirst", W.Bloodthirst, { hostile = true }),
 				step("MortalStrike", W.MortalStrike, { hostile = true }),
 				step("Whirlwind", W.Whirlwind, { hostile = true }),
@@ -458,6 +513,7 @@ ns.APLModes = {
 				step("BestialWrath", H.BestialWrath, { hostile = true }),
 				step("Intimidation", H.Intimidation, { hostile = true }),
 				step("AimedShot", H.AimedShot, { hostile = true }),
+				step("SniperShot", H.SniperShot, { hostile = true }),
 				step("MultiShot", H.MultiShot, { hostile = true }),
 				step("ArcaneShot", H.ArcaneShot, { hostile = true }),
 				step("AutoShot", H.AutoShot, { filler = true, swing = true }),
@@ -469,12 +525,14 @@ ns.APLModes = {
 				step("Volley", H.Volley, { hostile = true }),
 				step("Counterattack", H.Counterattack, { proc = "parry", hostile = true }),
 				step("MongooseBite", H.MongooseBite, { proc = "mongoose", hostile = true }),
+				step("StriderKick", H.StriderKick, { hostile = true }),
 				step("RaptorStrike", H.RaptorStrike, { filler = true }),
 			},
 			burst = {
 				step("RapidFire", H.RapidFire, { hostile = true }),
 				step("BestialWrath", H.BestialWrath, { hostile = true }),
 				step("Intimidation", H.Intimidation, { hostile = true }),
+				step("StriderKick", H.StriderKick, { hostile = true }),
 				step("MongooseBite", H.MongooseBite, { proc = "mongoose", hostile = true }),
 				step("RaptorStrike", H.RaptorStrike, { filler = true }),
 			},
@@ -487,6 +545,7 @@ ns.APLModes = {
 				step("SliceandDice", R.SliceandDice, { comboMin = 1, nobuff = true, hostile = true }),
 				step("Eviscerate", R.Eviscerate, { comboMin = 5, hostile = true }),
 				step("Hemorrhage", R.Hemorrhage, { hostile = true }),
+				step("Mutilate", R.Mutilate, { usable = true, hostile = true }),
 				step("SinisterStrike", R.SinisterStrike, { filler = true }),
 			},
 			burst = {
@@ -505,6 +564,7 @@ ns.APLModes = {
 			aoe = {
 				step("HolyNova", Pr.HolyNova, { hostile = true }),
 				step("ShadowWordPain", Pr.ShadowWordPain, { nodebuff = true, hostile = true }),
+				step("ShadowWordDeath", Pr.ShadowWordDeath, { hp = 20, unit = "target", hostile = true }),
 				step("MindFlay", Pr.MindFlay, { hostile = true }),
 				step("MindBlast", Pr.MindBlast, { hostile = true }),
 				step("Smite", Pr.Smite, { filler = true }),
@@ -513,6 +573,8 @@ ns.APLModes = {
 			burst = {
 				step("InnerFocus", Pr.InnerFocus, { hostile = true }),
 				step("PowerInfusion", Pr.PowerInfusion, { hostile = true }),
+				step("ShadowWordDeath", Pr.ShadowWordDeath, { hp = 20, unit = "target", hostile = true }),
+				step("Penance", Pr.Penance, { hostile = true }),
 				step("MindBlast", Pr.MindBlast, { hostile = true }),
 				step("MindFlay", Pr.MindFlay, { hostile = true }),
 				step("HolyFire", Pr.HolyFire, { nodebuff = true, hostile = true }),
@@ -523,6 +585,8 @@ ns.APLModes = {
 		heal = {
 			aoe = {
 				step("PrayerofHealing", Pr.PrayerofHealing, { hp = 75,  heal = true }),
+				step("PrayerofMending", Pr.PrayerofMending, { hp = 90, heal = true }),
+				step("BindingHeal", Pr.BindingHeal, { hp = 70, heal = true }),
 				step("HolyNova", Pr.HolyNova),
 				step("Renew", Pr.Renew, { hp = 90,  nobuff = true, heal = true }),
 				step("FlashHeal", Pr.FlashHeal, { hp = 70,  heal = true }),
@@ -531,6 +595,8 @@ ns.APLModes = {
 			burst = {
 				step("InnerFocus", Pr.InnerFocus),
 				step("PowerInfusion", Pr.PowerInfusion),
+				step("Penance", Pr.Penance, { hp = 70, heal = true }),
+				step("DivineGrace", Pr.DivineGrace, { hp = 50, heal = true }),
 				step("FlashHeal", Pr.FlashHeal, { hp = 70,  heal = true }),
 				step("GreaterHeal", Pr.GreaterHeal, { hp = 55,  heal = true }),
 				step("Heal", Pr.Heal, { hp = 80,  heal = true }),
@@ -552,6 +618,7 @@ ns.APLModes = {
 				step("ElementalMastery", Sh.ElementalMastery, { hostile = true }),
 				step("ChainLightning", Sh.ChainLightning, { hostile = true }),
 				step("FlameShock", Sh.FlameShock, { nodebuff = true, hostile = true }),
+				step("LavaBurst", Sh.LavaBurst, { needdebuff = Sh.FlameShock, hostile = true }),
 				step("LightningBolt", Sh.LightningBolt, { filler = true }),
 				step("LesserHealingWave", Sh.LesserHealingWave, { hp = 70,  heal = true }),
 			},
@@ -576,6 +643,7 @@ ns.APLModes = {
 		},
 		heal = {
 			aoe = {
+				step("Riptide", Sh.Riptide, { hp = 90, heal = true }),
 				step("ChainHeal", Sh.ChainHeal, { hp = 75,  heal = true }),
 				step("HealingStream", Sh.HealingStream),
 				step("LesserHealingWave", Sh.LesserHealingWave, { hp = 70,  heal = true }),
@@ -583,6 +651,7 @@ ns.APLModes = {
 			},
 			burst = {
 				step("NaturesSwiftness", Sh.NaturesSwiftness),
+				step("Riptide", Sh.Riptide, { hp = 90, heal = true }),
 				step("HealingWave", Sh.HealingWave, { hp = 80,  heal = true }),
 				step("ChainHeal", Sh.ChainHeal, { hp = 75,  heal = true }),
 				step("LesserHealingWave", Sh.LesserHealingWave, { hp = 70,  heal = true }),
@@ -605,6 +674,8 @@ ns.APLModes = {
 				step("ArcanePower", M.ArcanePower, { hostile = true }),
 				step("Pyroblast", M.Pyroblast, { hostile = true }),
 				step("FireBlast", M.FireBlast, { hostile = true }),
+				step("IceLance", M.IceLance, { hostile = true }),
+				step("FrostfireBolt", M.FrostfireBolt, { filler = true }),
 				step("Fireball", M.Fireball, { filler = true }),
 			},
 		},
@@ -621,6 +692,7 @@ ns.APLModes = {
 			},
 			burst = {
 				step("Conflagrate", L.Conflagrate, { needdebuff = L.Immolate, hostile = true }),
+				step("Incinerate", L.Incinerate, { needdebuff = L.Immolate, hostile = true }),
 				step("Shadowburn", L.Shadowburn, { hp = 20, unit = "target", hostile = true }),
 				step("ShadowBolt", L.ShadowBolt, { filler = true }),
 			},
@@ -674,6 +746,7 @@ ns.DefDefaults = {
 			step("BlessingMight", P.BlessingMight, { nobuff = true, anybuff = palaBlessings }),
 			step("BlessingKings", P.BlessingKings, { nobuff = true, anybuff = palaBlessings }),
 			step("BlessingWisdom", P.BlessingWisdom, { nobuff = true, anybuff = palaBlessings }),
+			step("VoiceOfTruth", P.VoiceOfTruth, { combat = true, hp = 50 }),
 			step("DivineProtection", P.DivineProtection, { combat = true, hp = 40 }),
 			step("DivineShield", P.DivineShield, { combat = true, hp = 25 }),
 			step("LayonHands", P.LayonHands, { combat = true, hp = 15 }),
@@ -687,6 +760,8 @@ ns.DefDefaults = {
 			step("BlessingKings", P.BlessingKings, { nobuff = true, anybuff = palaBlessings }),
 			step("BlessingMight", P.BlessingMight, { nobuff = true, anybuff = palaBlessings }),
 			step("HolyShield", P.HolyShield, { combat = true, hp = 80 }),
+			step("TemplarsBulwark", P.TemplarsBulwark, { combat = true, hp = 60 }),
+			step("VoiceOfTruth", P.VoiceOfTruth, { combat = true, hp = 50 }),
 			step("DivineProtection", P.DivineProtection, { combat = true, hp = 40 }),
 			step("DivineShield", P.DivineShield, { combat = true, hp = 25 }),
 			step("LayonHands", P.LayonHands, { combat = true, hp = 15 }),
@@ -697,6 +772,7 @@ ns.DefDefaults = {
 			step("RetributionAura", P.RetributionAura, { nobuff = true, anybuff = palaAuras }),
 			step("BlessingWisdom", P.BlessingWisdom, { nobuff = true, anybuff = palaBlessings }),
 			step("BlessingKings", P.BlessingKings, { nobuff = true, anybuff = palaBlessings }),
+			step("VoiceOfTruth", P.VoiceOfTruth, { combat = true, hp = 50 }),
 			step("DivineProtection", P.DivineProtection, { combat = true, hp = 40 }),
 			step("DivineShield", P.DivineShield, { combat = true, hp = 25 }),
 			step("LayonHands", P.LayonHands, { combat = true, hp = 15 }),
@@ -744,6 +820,7 @@ ns.DefDefaults = {
 			step("VampiricEmbrace", Pr.VampiricEmbrace, { nobuff = true }),
 			step("ShadowProtection", Pr.ShadowProtection, { nobuff = true }),
 			step("PowerWordShield", Pr.PowerWordShield, { combat = true, hp = 70, nobuff = true, nodebuff = Pr.WeakenedSoul }),
+			step("DarkSacrifice", Pr.DarkSacrifice, { combat = true, hp = 40 }, false),
 			step("Fade", Pr.Fade, { combat = true, hp = 50 }),
 		},
 		heal = {
@@ -758,11 +835,17 @@ ns.DefDefaults = {
 	SHAMAN = {
 		damage = {
 			step("LightningShield", Sh.LightningShield, { nobuff = true }),
+			step("WaterShield", Sh.WaterShield, { nobuff = true }),
+			step("CalloftheElements", Sh.CalloftheElements, { combat = true }, false),
+			step("CalloftheAncestors", Sh.CalloftheAncestors, { combat = true }, false),
+			step("CalloftheSpirits", Sh.CalloftheSpirits, { combat = true }, false),
+			step("TotemicRecall", Sh.TotemicRecall, { combat = true }, false),
 			step("Stoneclaw", Sh.Stoneclaw, { combat = true, hp = 50 }),
 			step("GroundingTotem", Sh.GroundingTotem, { combat = true, hp = 60 }),
 			step("TremorTotem", Sh.TremorTotem, { combat = true, hp = 70 }),
 		},
 		heal = {
+			step("WaterShield", Sh.WaterShield, { nobuff = true }),
 			step("LightningShield", Sh.LightningShield, { nobuff = true }),
 			step("GroundingTotem", Sh.GroundingTotem, { combat = true, hp = 60 }),
 			step("Stoneclaw", Sh.Stoneclaw, { combat = true, hp = 40 }),

@@ -820,7 +820,7 @@ function ns.RefreshOptions()
 				frame.weaponBoxes[i] = box
 			end
 			box.wepKey = entry.key
-			box.label:SetText(API.SpellName(entry.id) or entry.key)
+			box.label:SetText(API.SpellLabel(entry.id) or entry.key)
 			box:SetChecked(ns.db.weaponBuff == entry.key or (not ns.db.weaponBuff and i == 1))
 			box:Show()
 		end
@@ -921,7 +921,7 @@ function ns.RefreshOptions()
 			row.del.mode = mode
 		end
 		row.icon:SetTexture(API.SpellIcon(step.id) or (IMG .. "skull"))
-		local name = API.SpellName(step.id) or step.key
+		local name = API.SpellLabel(step.id) or step.key
 		if step.racial then
 			name = ns.T("RACIAL_PREFIX"):format(name)
 		end

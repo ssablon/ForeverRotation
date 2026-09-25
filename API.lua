@@ -110,11 +110,24 @@ local function readBookItem(index, bank)
 	return nil, nil
 end
 
+local function normSpellName(name)
+	name = safe(name, nil)
+	if type(name) ~= "string" or name == "" then
+		return nil
+	end
+	name = name:lower()
+	name = name:gsub("%s*%([^%)]*%)", "")
+	name = name:gsub("%s*rank%s*%d+", "")
+	name = name:gsub("%s+", " "):gsub("^%s+", ""):gsub("%s+$", "")
+	return name
+end
+
 local function findPlayerSpellByName(name)
 	name = safe(name, nil)
 	if type(name) ~= "string" or name == "" then
 		return nil
 	end
+	local want = normSpellName(name)
 	if C_SpellBook and C_SpellBook.GetNumSpellBookSkillLines then
 		local okNum, num = pcall(C_SpellBook.GetNumSpellBookSkillLines)
 		if okNum and type(num) == "number" then
@@ -126,7 +139,7 @@ local function findPlayerSpellByName(name)
 					for i = off + 1, off + count do
 						for _, bank in ipairs(bookBanks()) do
 							local bookName, bookId = readBookItem(i, bank)
-							if bookName == name and type(bookId) == "number" and not junkSpellName(bookName) then
+							if type(bookId) == "number" and not junkSpellName(bookName) and (bookName == name or normSpellName(bookName) == want) then
 								return bookId
 							end
 						end
@@ -138,7 +151,7 @@ local function findPlayerSpellByName(name)
 	for i = 1, 400 do
 		for _, bank in ipairs(bookBanks()) do
 			local bookName, bookId = readBookItem(i, bank)
-			if bookName == name and type(bookId) == "number" and not junkSpellName(bookName) then
+			if type(bookId) == "number" and not junkSpellName(bookName) and (bookName == name or normSpellName(bookName) == want) then
 				return bookId
 			end
 		end
@@ -269,6 +282,84 @@ function ns.API.SpellName(spellID)
 	return info and safe(info.name, nil)
 end
 
+local HINT_LOCALES = { "enUS", "frFR", "deDE", "esES", "esMX", "ruRU", "zhCN", "zhTW", "ptBR", "itIT", "koKR" }
+
+local function pushHintName(out, seen, name)
+	if type(name) == "table" then
+		for i = 1, #name do
+			pushHintName(out, seen, name[i])
+		end
+		return
+	end
+	if type(name) == "string" and name ~= "" and not seen[name] then
+		seen[name] = true
+		out[#out + 1] = name
+	end
+end
+
+local function hintLocale()
+	local loc = GetLocale and GetLocale() or "enUS"
+	if loc == "enGB" then
+		return "enUS"
+	end
+	return loc
+end
+
+function ns.API.HintNames(...)
+	local out, seen = {}, {}
+	for n = 1, select("#", ...) do
+		local spellID = select(n, ...)
+		local pack = spellID and ns.SPELL_NAME_HINT and ns.SPELL_NAME_HINT[spellID]
+		if type(pack) == "string" then
+			pushHintName(out, seen, pack)
+		elseif type(pack) == "table" then
+			local loc = hintLocale()
+			pushHintName(out, seen, pack[loc])
+			if loc == "esES" then
+				pushHintName(out, seen, pack.esMX)
+			elseif loc == "esMX" then
+				pushHintName(out, seen, pack.esES)
+			end
+			for i = 1, #HINT_LOCALES do
+				local code = HINT_LOCALES[i]
+				if code ~= loc then
+					pushHintName(out, seen, pack[code])
+				end
+			end
+			for i = 1, #pack do
+				pushHintName(out, seen, pack[i])
+			end
+		end
+	end
+	return out
+end
+
+function ns.API.HintName(spellID)
+	local pack = spellID and ns.SPELL_NAME_HINT and ns.SPELL_NAME_HINT[spellID]
+	if type(pack) == "string" then
+		return pack
+	end
+	if type(pack) ~= "table" then
+		return nil
+	end
+	local loc = hintLocale()
+	if ns.db and ns.db.locale and ns.db.locale ~= "" and ns.db.locale ~= "auto" then
+		loc = ns.db.locale
+		if loc == "enGB" then
+			loc = "enUS"
+		end
+	end
+	local hit = pack[loc] or pack.enUS or pack[1]
+	if type(hit) == "table" then
+		return hit[1]
+	end
+	return hit
+end
+
+function ns.API.SpellLabel(spellID)
+	return ns.API.SpellName(spellID) or ns.API.HintName(spellID)
+end
+
 function ns.API.SpellIcon(spellID)
 	local info = ns.API.SpellInfo(spellID)
 	if not info then
@@ -357,17 +448,24 @@ function ns.API.Resolve(spellID)
 		resolveCache[spellID] = spellID
 		return spellID
 	end
-	local name = ns.API.SpellName(id) or ns.API.SpellName(spellID)
-	if name then
-		local fromName = spellIdFromName(name)
-		if fromName and playerKnows(fromName) then
-			resolveCache[spellID] = fromName
-			return fromName
-		end
-		local bookId = findPlayerSpellByName(name)
-		if bookId then
-			resolveCache[spellID] = bookId
-			return bookId
+	local names = { ns.API.SpellName(id) or ns.API.SpellName(spellID) }
+	local hints = ns.API.HintNames(spellID, id)
+	for i = 1, #hints do
+		names[#names + 1] = hints[i]
+	end
+	for i = 1, #names do
+		local name = names[i]
+		if type(name) == "string" and name ~= "" then
+			local fromName = spellIdFromName(name)
+			if fromName and playerKnows(fromName) then
+				resolveCache[spellID] = fromName
+				return fromName
+			end
+			local bookId = findPlayerSpellByName(name)
+			if bookId then
+				resolveCache[spellID] = bookId
+				return bookId
+			end
 		end
 	end
 	resolveCache[spellID] = false

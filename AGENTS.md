@@ -2,7 +2,7 @@
 
 Addon d'aide à la rotation pour **WoW Forever** (combat Classic Era, client camelot, interface `16001`). Il affiche les prochains sorts et surligne les boutons. Il ne lance aucun sort.
 
-Version actuelle : **1.5.38**. Auteur : Vohnka — https://wow-forever.fr  
+Version actuelle : **1.5.39**. Auteur : Vohnka — https://wow-forever.fr  
 Dépôt : https://github.com/ssablon/WoWForeverRot (privé, branche `main`).
 
 La carte complète du code est dans [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md). Ce fichier dit seulement par où commencer.
@@ -15,7 +15,7 @@ La carte complète du code est dans [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md)
 
 Si les deux divergent, le dépôt gagne : recopier le dépôt vers AddOns. Ne pas écraser GitHub avec le dossier du jeu. Le guide joueur est `README.md` (anglais uniquement).
 
-Après chaque changement demandé : bumper `VERSION.txt` + les deux TOC, recopier vers AddOns, commiter, `git push origin HEAD`, puis publier le zip sur CurseForge (projet `1708963`). Voir `.cursor/rules/publish-curseforge.mdc`.
+Après chaque changement demandé : bumper `VERSION.txt` + les deux TOC, recopier vers AddOns, commiter, `git push origin HEAD`, publier le zip sur CurseForge (projet `1708963`), puis poster la version sur Discord (`#changelog` + annonce dans `#announcements` avec le lien CurseForge). Voir `.cursor/rules/publish-curseforge.mdc`.
 
 ## Ordre de chargement
 

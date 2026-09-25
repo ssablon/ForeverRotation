@@ -16,7 +16,7 @@ License:              Custom
 License text:         All Rights Reserved. © Vohnka — https://wow-forever.fr
 Website:              https://wow-forever.fr
 Source:               dépôt privé GitHub (ne pas rendre public si tu veux le garder privé)
-Issues:               laisser vide, ou ton Discord / wow-forever.fr
+Issues / Support:     https://discord.gg/qmb2uDu8Z3  (English only: #support, #bugs, #suggestions)
 
 Fichier à uploader:   F:\Github\addons\wow\WoWForeverRot-<VERSION.txt>.zip
 Display name:         WoWForeverRot <VERSION.txt>

@@ -1,3 +1,8 @@
+# 1.5.39
+
+- Forever 1-60 combat spells and racials are added on top of Classic Era lists. Unknown spells stay hidden until you learn them.
+- Spell match uses all 11 client languages when a lab id is remapped.
+
 # 1.5.38
 
 - The action bar scan no longer clears the rotation. A button that can be read one moment and not the next was emptying the queue, then filling it again, with no cast and no target.

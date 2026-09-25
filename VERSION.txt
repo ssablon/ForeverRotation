@@ -1,3 +1,9 @@
+1.5.39
+
+2026-09-25
+- Forever 1-60 combat spells and racials are added on top of Classic Era lists. Unknown spells stay hidden until you learn them.
+- Spell match uses all 11 client languages when a lab id is remapped.
+
 1.5.38
 
 2026-09-25
