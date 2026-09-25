@@ -1,3 +1,8 @@
+# 1.5.34
+
+- Rotation suggestions, the red out-of-range tint, and the skull overlay work again when the client hides action-bar spell ids.
+- Spells are matched from the button tooltip. Range uses the action slot itself.
+
 # 1.5.33
 
 - Language follows the WoW client (English, French, German, Spanish, Russian, Simplified Chinese, Traditional Chinese, Portuguese, Italian, Korean). Mexican Spanish uses Spanish, and British English uses English.

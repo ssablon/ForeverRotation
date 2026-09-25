@@ -47,8 +47,62 @@ local function addonLoaded(name)
 	return loaded
 end
 
+local barSpellCount = 0
 local nameOwner = {}
 local badNames = {}
+
+local function isToken(value, expected)
+	if value == nil or expected == nil then
+		return false
+	end
+	if issecretvalue and issecretvalue(value) then
+		return false
+	end
+	local ok, same = pcall(function()
+		return value == expected
+	end)
+	return ok and same == true
+end
+
+local function actionSpellName(slot)
+	if not slot or not C_TooltipInfo or not C_TooltipInfo.GetAction then
+		return nil
+	end
+	local ok, data = pcall(C_TooltipInfo.GetAction, slot)
+	if not ok or type(data) ~= "table" or type(data.lines) ~= "table" then
+		return nil
+	end
+	local line = data.lines[1]
+	local text = line and line.leftText
+	if type(text) ~= "string" or text == "" then
+		return nil
+	end
+	if issecretvalue and issecretvalue(text) then
+		return nil
+	end
+	text = text:gsub("%s*%([^)]*%)%s*$", "")
+	if text == "" or not C_Spell or not C_Spell.GetSpellInfo then
+		return nil
+	end
+	local okInfo, info = pcall(C_Spell.GetSpellInfo, text)
+	if not okInfo or type(info) ~= "table" or not plainID(info.spellID) then
+		return nil
+	end
+	local name = info.name
+	if type(name) == "string" and name ~= "" then
+		return name
+	end
+	return text
+end
+
+local function addSpellName(name, button)
+	if type(name) ~= "string" or name == "" or badNames[name] or not button then
+		return
+	end
+	spellsByName[name] = spellsByName[name] or {}
+	spellsByName[name][#spellsByName[name] + 1] = button
+	barSpellCount = barSpellCount + 1
+end
 
 local function plainID(value)
 	if value == nil or value == 0 or value == "" then
@@ -260,10 +314,10 @@ local function addStandard(button)
 			local okHas, has = pcall(HasAction, slot)
 			if okHas and has then
 				local okInfo, t, actionID, _, spellFromAction = pcall(GetActionInfo, slot)
-				if okInfo and t == "spell" then
+				if okInfo and isToken(t, "spell") then
 					actionType = "spell"
 					id = plainID(spellFromAction) or plainID(actionID)
-				elseif okInfo and t == "macro" then
+				elseif okInfo and isToken(t, "macro") then
 					actionType, id = "macro", actionID
 				end
 			end
@@ -289,6 +343,10 @@ local function addStandard(button)
 	if slot then
 		buttonSlots[button] = slot
 		rangeButtons[button] = true
+		local tipName = actionSpellName(slot)
+		if tipName then
+			addSpellName(tipName, button)
+		end
 	end
 	if actionType == "spell" and id then
 		local info = API.SpellInfo(id)
@@ -318,6 +376,7 @@ function ns.GlowFetch(force)
 	wipe(buttonSpells)
 	wipe(nameOwner)
 	wipe(badNames)
+	barSpellCount = 0
 	lastFetch = GetTime()
 	for _, bar in ipairs(BARS) do
 		for i = 1, 12 do
@@ -648,14 +707,17 @@ local function rangeUnitFor(spellID)
 end
 
 function ns.SpellInRange(spellID, slot)
-	if not spellID then
-		return nil
-	end
 	if slot and IsActionInRange then
 		local ok, result = pcall(IsActionInRange, slot)
-		if ok and readableFlag(result) == false then
-			return false
+		if ok then
+			local flag = readableFlag(result)
+			if flag ~= nil then
+				return flag
+			end
 		end
+	end
+	if not spellID then
+		return nil
 	end
 	local unit = rangeUnitFor(spellID)
 	local flag = spellInRangeOn(spellID, unit)
@@ -748,6 +810,9 @@ function ns.SpellOnBar(spellID)
 		return true
 	end
 	if not next(spells) and not next(spellsByName) then
+		return true
+	end
+	if barSpellCount == 0 then
 		return true
 	end
 	return false
