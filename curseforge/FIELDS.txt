@@ -2,7 +2,7 @@
 
 Game:                 World of Warcraft
 Project name:         WoW Forever Rot
-Slug (si demandé):    wow-forever-rot
+Slug (si demandé):    forever-rot
 Logo:                 curseforge/logo-512.png
 Summary (FR):         Aide de rotation pour WoW Forever Classic. HUD des 3 prochains sorts, tête de mort sur le bon bouton, plus soins, défense, interrupts, purges, dissipations et enchant d'arme. Pas un bot — vous appuyez toujours.
 Summary (EN):         Rotation helper for WoW Forever Classic. See the next 3 spells on a HUD, a skull on the matching action-bar button, plus heals, defense, interrupts, purges, cleanses and weapon buffs. Not a bot — you still press the keys.

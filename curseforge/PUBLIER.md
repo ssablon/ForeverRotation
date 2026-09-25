@@ -15,7 +15,7 @@ https://authors.curseforge.com → **Create Project**
 
 Valeurs dans `FIELDS.txt`. Logo : `logo-512.png`. Description : coller `DESCRIPTION.html` (WYSIWYG).
 
-Attends l’approbation (souvent quelques heures). L’**ID numérique** est dans la colonne de droite de la fiche (« About Project » / Project ID). Ce n’est pas le slug `wow-forever-rot`.
+Attends l’approbation (souvent quelques heures). L’**ID numérique** est dans la colonne de droite de la fiche (« About Project » / Project ID). Le slug public est `forever-rot` : https://www.curseforge.com/wow/addons/forever-rot
 
 ## 3. Zip
 

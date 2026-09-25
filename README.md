@@ -156,6 +156,8 @@ The git repository is the source of truth. The copy under `World of Warcraft\_cl
 
 ## Support
 
+Download: [https://www.curseforge.com/wow/addons/forever-rot](https://www.curseforge.com/wow/addons/forever-rot).
+
 Support is on Discord only, in English: [https://discord.gg/qmb2uDu8Z3](https://discord.gg/qmb2uDu8Z3) (`#support`, `#bugs`, `#suggestions`). Website: [https://wow-forever.fr](https://wow-forever.fr).
 
 ## License
