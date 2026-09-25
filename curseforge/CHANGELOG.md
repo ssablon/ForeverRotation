@@ -1,3 +1,7 @@
+# 1.5.38
+
+- The action bar scan no longer clears the rotation. A button that can be read one moment and not the next was emptying the queue, then filling it again, with no cast and no target.
+
 # 1.5.37
 
 - The suggested spell no longer vanishes while you are casting it or while it is still traveling to the target.

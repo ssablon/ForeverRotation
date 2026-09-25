@@ -1012,16 +1012,9 @@ function ns.SpellOnBar(spellID)
 	if resolved and resolved ~= spellID and found(resolved) then
 		return true
 	end
-	if slotsOccupied == 0 or slotsKnown < slotsOccupied then
-		return true
-	end
-	if not next(spells) and not next(spellsByName) and not next(spellsByNorm) then
-		return true
-	end
-	if barSpellCount == 0 then
-		return true
-	end
-	return false
+	-- A bar scan that sometimes reads every button and sometimes does not
+	-- was clearing the rotation, then bringing it back, with no cast and no target.
+	return true
 end
 
 local function slotCommand(slot)
