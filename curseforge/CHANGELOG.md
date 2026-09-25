@@ -1,3 +1,9 @@
+# 1.5.35
+
+- A partial action-bar scan no longer hides the rotation. If a button cannot be read, its spells stay suggested for every class and race.
+- Macro buttons are matched from the macro text, and several ranks of the same spell stay on the same button.
+- Hunters always have Auto Shot between Aimed Shot, Multi-Shot, and Arcane Shot. Warrior AoE and burst keep Heroic Strike.
+
 # 1.5.34
 
 - Rotation suggestions, the red out-of-range tint, and the skull overlay work again when the client hides action-bar spell ids.

@@ -334,6 +334,7 @@ ns.Spell = {
 	},
 	Hunter = {
 		RaptorStrike = 2973,
+		AutoShot = 75,
 		SerpentSting = 1978,
 		ArcaneShot = 3044,
 		AimedShot = 19434,

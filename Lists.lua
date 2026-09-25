@@ -151,6 +151,7 @@ ns.APLDefaults = {
 			step("ArcaneShot", H.ArcaneShot, { hostile = true }),
 			step("Intimidation", H.Intimidation, { hostile = true }, false),
 			step("ConcussiveShot", H.ConcussiveShot, { nodebuff = true, hostile = true }, false),
+			step("AutoShot", H.AutoShot, { filler = true, swing = true }),
 		},
 		melee = {
 			step("CallPet", H.CallPet, { nopet = true }),
@@ -420,6 +421,7 @@ ns.APLModes = {
 				step("Bloodthirst", W.Bloodthirst, { hostile = true }),
 				step("MortalStrike", W.MortalStrike, { hostile = true }),
 				step("Whirlwind", W.Whirlwind, { hostile = true }),
+				step("HeroicStrike", W.HeroicStrike, { filler = true }),
 			},
 		},
 		tank = {
@@ -429,6 +431,7 @@ ns.APLModes = {
 				step("Cleave", W.Cleave, { hostile = true }),
 				step("Revenge", W.Revenge, { proc = "revenge", hostile = true }),
 				step("SunderArmor", W.SunderArmor, { hostile = true }),
+				step("HeroicStrike", W.HeroicStrike, { filler = true }),
 			},
 			burst = {
 				step("ShieldSlam", W.ShieldSlam, { hostile = true }),
@@ -436,6 +439,7 @@ ns.APLModes = {
 				step("SunderArmor", W.SunderArmor, { hostile = true }),
 				step("ThunderClap", W.ThunderClap, { hostile = true }),
 				step("ShieldBlock", W.ShieldBlock, { combat = true }),
+				step("HeroicStrike", W.HeroicStrike, { filler = true }),
 			},
 		},
 	},
@@ -447,6 +451,7 @@ ns.APLModes = {
 				step("Volley", H.Volley, { hostile = true }),
 				step("ArcaneShot", H.ArcaneShot, { hostile = true }),
 				step("SerpentSting", H.SerpentSting, { nodebuff = true, hostile = true }),
+				step("AutoShot", H.AutoShot, { filler = true, swing = true }),
 			},
 			burst = {
 				step("RapidFire", H.RapidFire, { hostile = true }),
@@ -455,6 +460,7 @@ ns.APLModes = {
 				step("AimedShot", H.AimedShot, { hostile = true }),
 				step("MultiShot", H.MultiShot, { hostile = true }),
 				step("ArcaneShot", H.ArcaneShot, { hostile = true }),
+				step("AutoShot", H.AutoShot, { filler = true, swing = true }),
 			},
 		},
 		melee = {

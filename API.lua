@@ -942,16 +942,16 @@ function ns.API.StepOk(spellID, opt, timeShift)
 	if gate < 0.2 then
 		gate = 0.2
 	end
-	if ns.API.Cooldown(spellID) > gate then
+	if not opt.swing and ns.API.Cooldown(spellID) > gate then
 		return false
 	end
 	if opt.ready == false then
 		return true
 	end
-	if ns.Physics and ns.Physics.Blocks and ns.Physics.Blocks(spellID) then
+	if not opt.swing and ns.Physics and ns.Physics.Blocks and ns.Physics.Blocks(spellID) then
 		return false
 	end
-	if ns.API.Ready(spellID, opt, true) or opt.filler == true then
+	if ns.API.Ready(spellID, opt, true) or opt.filler == true or opt.swing == true then
 		return true
 	end
 	if ns.Physics and ns.Physics.EnergySoon and ns.Physics.EnergySoon(spellID) then

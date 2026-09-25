@@ -48,6 +48,11 @@ local function addonLoaded(name)
 end
 
 local barSpellCount = 0
+local slotsOccupied = 0
+local slotsKnown = 0
+local knownSlot = {}
+local countedSlot = {}
+local spellsByNorm = {}
 local nameOwner = {}
 local badNames = {}
 
@@ -95,13 +100,56 @@ local function actionSpellName(slot)
 	return text
 end
 
+local function normKey(name)
+	if type(name) ~= "string" or name == "" then
+		return
+	end
+	if issecretvalue and issecretvalue(name) then
+		return
+	end
+	local n = name:gsub("%s*%([^)]*%)%s*$", "")
+	local ok, lower = pcall(string.lower, n)
+	if not ok or type(lower) ~= "string" then
+		return
+	end
+	if strtrim then
+		lower = strtrim(lower)
+	end
+	if lower == "" then
+		return
+	end
+	return lower
+end
+
+local function markKnown(button)
+	if not button or knownSlot[button] then
+		return
+	end
+	knownSlot[button] = true
+	slotsKnown = slotsKnown + 1
+end
+
+local function noteOccupied(button)
+	if not button or countedSlot[button] then
+		return
+	end
+	countedSlot[button] = true
+	slotsOccupied = slotsOccupied + 1
+end
+
 local function addSpellName(name, button)
 	if type(name) ~= "string" or name == "" or badNames[name] or not button then
 		return
 	end
 	spellsByName[name] = spellsByName[name] or {}
 	spellsByName[name][#spellsByName[name] + 1] = button
+	local key = normKey(name)
+	if key then
+		spellsByNorm[key] = spellsByNorm[key] or {}
+		spellsByNorm[key][#spellsByNorm[key] + 1] = button
+	end
 	barSpellCount = barSpellCount + 1
+	markKnown(button)
 end
 
 local function plainID(value)
@@ -254,18 +302,21 @@ local function addButton(spellID, button, slot)
 	spells[id][#spells[id] + 1] = button
 	buttonSpells[button] = id
 	local name = spellName(id)
+	markKnown(button)
 	if not name or badNames[name] then
+		if slot then
+			buttonSlots[button] = slot
+		end
 		return
 	end
-	if nameOwner[name] and nameOwner[name] ~= id then
-		badNames[name] = true
-		spellsByName[name] = nil
-		nameOwner[name] = nil
-		return
-	end
-	nameOwner[name] = id
+	nameOwner[name] = nameOwner[name] or id
 	spellsByName[name] = spellsByName[name] or {}
 	spellsByName[name][#spellsByName[name] + 1] = button
+	local key = normKey(name)
+	if key then
+		spellsByNorm[key] = spellsByNorm[key] or {}
+		spellsByNorm[key][#spellsByNorm[key] + 1] = button
+	end
 	if slot then
 		buttonSlots[button] = slot
 	end
@@ -333,11 +384,50 @@ local function addStandard(button)
 			id = value
 		end
 	end
-	if actionType == "macro" and id and GetMacroSpell then
-		local ok, spellID = pcall(GetMacroSpell, id)
-		if ok then
-			id = spellID
+	local macroId = actionType == "macro" and id or nil
+	if macroId and GetMacroSpell then
+		local ok, spellID = pcall(GetMacroSpell, macroId)
+		local macroSpell = ok and plainID(spellID)
+		if macroSpell then
+			id = macroSpell
 			actionType = "spell"
+		end
+	end
+	if macroId and GetMacroBody then
+		local okBody, body = pcall(GetMacroBody, macroId)
+		if okBody and type(body) == "string" then
+			for line in body:gmatch("[^\r\n]+") do
+				local payload = line:match("^%s*#showtooltip%s+(.+)$") or line:match("^%s*/%S+%s+(.+)$")
+				if payload then
+					payload = payload:gsub("%b[]", " ")
+					for token in payload:gmatch("[^,;]+") do
+						token = token:gsub("^%s+", ""):gsub("%s+$", ""):gsub("^!", "")
+						token = token:gsub("%s*%([^)]*%)%s*$", "")
+						if token ~= "" and C_Spell and C_Spell.GetSpellInfo then
+							local okInfo, info = pcall(C_Spell.GetSpellInfo, token)
+							if okInfo and type(info) == "table" then
+								local spellId = plainID(info.spellID)
+								local spellLabel = info.name
+								if issecretvalue and issecretvalue(spellLabel) then
+									spellLabel = nil
+								end
+								if type(spellLabel) == "string" and spellLabel ~= "" then
+									addSpellName(spellLabel, button)
+								end
+								if spellId then
+									addButton(spellId, button, slot)
+								end
+							end
+						end
+					end
+				end
+			end
+		end
+	end
+	if slot and HasAction then
+		local okHas, has = pcall(HasAction, slot)
+		if okHas and has then
+			noteOccupied(button)
 		end
 	end
 	if slot then
@@ -376,7 +466,12 @@ function ns.GlowFetch(force)
 	wipe(buttonSpells)
 	wipe(nameOwner)
 	wipe(badNames)
+	wipe(spellsByNorm)
+	wipe(knownSlot)
+	wipe(countedSlot)
 	barSpellCount = 0
+	slotsOccupied = 0
+	slotsKnown = 0
 	lastFetch = GetTime()
 	for _, bar in ipairs(BARS) do
 		for i = 1, 12 do
@@ -442,6 +537,10 @@ local function buttonsFor(spellID)
 	local name = spellName(id) or spellName(resolved)
 	if name and not badNames[name] then
 		take(spellsByName[name])
+		local key = normKey(name)
+		if key then
+			take(spellsByNorm[key])
+		end
 	end
 	return out
 end
@@ -800,7 +899,11 @@ function ns.SpellOnBar(spellID)
 			return true
 		end
 		local name = spellName(id)
-		return name and spellsByName[name] and #spellsByName[name] > 0
+		if name and spellsByName[name] and #spellsByName[name] > 0 then
+			return true
+		end
+		local key = name and normKey(name)
+		return key and spellsByNorm[key] and #spellsByNorm[key] > 0
 	end
 	if found(spellID) then
 		return true
@@ -809,7 +912,10 @@ function ns.SpellOnBar(spellID)
 	if resolved and resolved ~= spellID and found(resolved) then
 		return true
 	end
-	if not next(spells) and not next(spellsByName) then
+	if slotsOccupied == 0 or slotsKnown < slotsOccupied then
+		return true
+	end
+	if not next(spells) and not next(spellsByName) and not next(spellsByNorm) then
 		return true
 	end
 	if barSpellCount == 0 then
