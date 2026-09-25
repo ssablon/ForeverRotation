@@ -1,3 +1,8 @@
+# 1.5.26
+
+- Swing bars sit under the spell icons, with a white mark for the cast window.
+- The HUD loads again on the Forever beta when attack speed is hidden by the client.
+
 # 1.5.19
 
 - English-only player README. UI strings complete in all 11 locales.
