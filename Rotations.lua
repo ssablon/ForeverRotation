@@ -7,6 +7,9 @@ local weaponNames
 function ns.InvalidateBuffCaches()
 	maintNames = nil
 	weaponNames = nil
+	if ns.API and ns.API.WipeAuraScans then
+		ns.API.WipeAuraScans()
+	end
 end
 
 local function maintNameSet()
@@ -58,7 +61,7 @@ function ns.IsMaintenanceBuff(spellID)
 end
 
 function ns.IsWeaponBuff(spellID)
-	if not spellID then
+	if not spellID or (issecretvalue and issecretvalue(spellID)) then
 		return false
 	end
 	if ns.WEAPON_BUFF_IDS and ns.WEAPON_BUFF_IDS[spellID] then
@@ -264,18 +267,54 @@ function ns.SelectedWeaponBuff()
 	return choices[1], knownWeaponID(choices[1])
 end
 
-function ns.NoteWeaponCast(spellID)
-	if not ns.IsWeaponBuff(spellID) then
+local function rememberWeaponApply(entry)
+	if not entry then
 		return
 	end
-	-- Le sort vient d'être lancé : courte grâce, le temps que l'enchant apparaisse.
-	-- La durée réelle vient de GetWeaponEnchantInfo, pas de ce lancement.
-	ns.weaponGrace = GetTime() + 5
+	local now = GetTime()
+	ns.weaponGrace = now + 3
+	ns.weaponCastAt = now
+	ns.weaponSeenUntil = now + (entry.duration or 3600)
+	ns.weaponRecheckDrop = nil
+end
+
+function ns.NoteWeaponCast(spellID)
+	local entry
+	if spellID and not (issecretvalue and issecretvalue(spellID)) then
+		entry = ns.WEAPON_BUFF_IDS and ns.WEAPON_BUFF_IDS[spellID]
+		if not entry and ns.IsWeaponBuff(spellID) then
+			entry = select(1, ns.SelectedWeaponBuff())
+		end
+	elseif ns.weaponNeedLast then
+		entry = select(1, ns.SelectedWeaponBuff())
+	end
+	if not entry then
+		return
+	end
+	rememberWeaponApply(entry)
+end
+
+function ns.NoteWeaponEnchantChanged()
+	local entry = select(1, ns.SelectedWeaponBuff())
+	if not entry then
+		return
+	end
+	local now = GetTime()
+	if ns.weaponNeedLast then
+		rememberWeaponApply(entry)
+		return
+	end
+	if now < (ns.weaponGrace or 0) or ((ns.weaponCastAt or 0) > 0 and (now - ns.weaponCastAt) < 8) then
+		return
+	end
+	ns.weaponRecheckDrop = true
 end
 
 function ns.ClearWeaponMemory()
 	ns.weaponGrace = 0
 	ns.weaponSeenUntil = 0
+	ns.weaponCastAt = 0
+	ns.weaponRecheckDrop = nil
 end
 
 local function entryHasEnchant(entry, enchId)
@@ -309,6 +348,41 @@ local function handState(entry, offhand)
 	return "unknown", 0
 end
 
+local function weaponMatchTokens(entry)
+	local tokens, seen = {}, {}
+	local function add(token)
+		if type(token) ~= "string" or token == "" then
+			return
+		end
+		local key = strlower(token)
+		if seen[key] then
+			return
+		end
+		seen[key] = true
+		tokens[#tokens + 1] = key
+	end
+	if entry.match then
+		for _, token in ipairs(entry.match) do
+			add(token)
+		end
+	end
+	local ids = { entry.id }
+	if entry.ranks then
+		for _, id in ipairs(entry.ranks) do
+			ids[#ids + 1] = id
+		end
+	end
+	for _, id in ipairs(ids) do
+		add(API.SpellName(id))
+		if API.HintNames then
+			for _, name in ipairs(API.HintNames(id)) do
+				add(name)
+			end
+		end
+	end
+	return tokens
+end
+
 local function detectSelected(entry)
 	local auraOn, auraRemain = API.HasWeaponBuff(entry)
 	if auraOn then
@@ -319,7 +393,7 @@ local function detectSelected(entry)
 	if main == "up" or off == "up" then
 		return "up", main == "up" and mainLeft or offLeft
 	end
-	if API.WeaponTooltipHas(entry.match) then
+	if API.WeaponTooltipHas(weaponMatchTokens(entry)) then
 		return "up", 9999
 	end
 	if main == "no" and (off == "no" or off == "other") then
@@ -337,30 +411,57 @@ end
 function ns.BuildWeapon()
 	local entry, spellID = ns.SelectedWeaponBuff()
 	if not entry or not spellID then
+		ns.weaponNeedLast = nil
 		return
 	end
 	local status, remain = detectSelected(entry)
 	if status == "up" then
+		ns.weaponRecheckDrop = nil
 		local hold = remain
 		if not hold or hold <= 0 or hold >= 9000 then
-			hold = 15
+			hold = entry.duration or 3600
 		end
 		ns.weaponSeenUntil = GetTime() + hold
 		ns.weaponGrace = 0
-		return spellID, remain, remain > 0 and remain < 9000 and remain <= 30
+		local need = remain > 0 and remain < 9000 and remain <= 30
+		ns.weaponNeedLast = need
+		return spellID, remain, need
 	end
+	if ns.weaponRecheckDrop then
+		ns.weaponRecheckDrop = nil
+		if status ~= "up" then
+			ns.weaponSeenUntil = 0
+			ns.weaponGrace = 0
+			ns.weaponNeedLast = true
+			return spellID, 0, true
+		end
+	end
+	local now = GetTime()
 	if status == "missing" then
+		if now < (ns.weaponGrace or 0) then
+			ns.weaponNeedLast = false
+			return spellID, 0, false
+		end
+		if (ns.weaponCastAt or 0) > 0 and (now - ns.weaponCastAt) < 8 and now < (ns.weaponSeenUntil or 0) then
+			ns.weaponNeedLast = false
+			return spellID, ns.weaponSeenUntil - now, false
+		end
 		ns.weaponSeenUntil = 0
 		ns.weaponGrace = 0
+		ns.weaponNeedLast = true
 		return spellID, 0, true
 	end
-	if GetTime() < (ns.weaponGrace or 0) then
+	if now < (ns.weaponGrace or 0) then
+		ns.weaponNeedLast = false
 		return spellID, 0, false
 	end
 	local seen = ns.weaponSeenUntil or 0
-	if GetTime() < seen then
-		local left = seen - GetTime()
-		return spellID, left, left <= 30
+	if now < seen then
+		local left = seen - now
+		local need = left <= 30
+		ns.weaponNeedLast = need
+		return spellID, left, need
 	end
+	ns.weaponNeedLast = true
 	return spellID, 0, true
 end

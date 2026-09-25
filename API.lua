@@ -374,9 +374,15 @@ end
 
 local resolveCache = {}
 local healNames
+local auraScans = {}
+
+function ns.API.WipeAuraScans()
+	wipe(auraScans)
+end
 
 function ns.API.InvalidateSpells()
 	wipe(resolveCache)
+	wipe(auraScans)
 	healNames = nil
 	if ns.InvalidateBuffCaches then
 		ns.InvalidateBuffCaches()
@@ -1097,7 +1103,6 @@ local AURA_FAMILIES = {
 local heldNames = {}
 local heldFamilies = {}
 local buffCastAt = {}
-local auraScans = {}
 
 local FAMILY_SECONDS = {
 	seal = 30,
@@ -1747,14 +1752,15 @@ local function readWeaponEnchant(offhand)
 			packs[#packs + 1] = { a, b, c, d, e, f, g, h }
 		end
 	end
-	if C_Item and C_Item.GetWeaponEnchantInfo then
-		push(pcall(C_Item.GetWeaponEnchantInfo))
-	end
 	if GetWeaponEnchantInfo then
 		push(pcall(GetWeaponEnchantInfo))
 	end
+	if C_Item and C_Item.GetWeaponEnchantInfo then
+		push(pcall(C_Item.GetWeaponEnchantInfo))
+	end
 	local bestHas, bestRemain, bestId
 	local sawFalse = false
+	local sawUnknown = false
 	for _, src in ipairs(packs) do
 		local has, remain, enchId
 		if type(src[1]) == "table" then
@@ -1774,9 +1780,15 @@ local function readWeaponEnchant(offhand)
 		end
 		if has == false then
 			sawFalse = true
-		elseif bestHas == nil then
-			bestHas, bestRemain, bestId = has, remain, enchId
+		else
+			sawUnknown = true
+			if bestHas == nil then
+				bestHas, bestRemain, bestId = has, remain, enchId
+			end
 		end
+	end
+	if sawUnknown then
+		return bestHas, bestRemain or 0, bestId
 	end
 	if sawFalse then
 		return false, 0, 0
@@ -1788,10 +1800,9 @@ function ns.API.WeaponEnchant(offhand)
 	return readWeaponEnchant(offhand and true or false)
 end
 
-function ns.API.WeaponTooltipHas(tokens)
-	if not tokens or #tokens == 0 then
-		return false
-	end
+local weaponTip
+
+local function collectWeaponTooltipTexts()
 	local texts = {}
 	local function readSlot(slot)
 		if not C_TooltipInfo or not C_TooltipInfo.GetInventoryItem then
@@ -1809,12 +1820,53 @@ function ns.API.WeaponTooltipHas(tokens)
 	end
 	readSlot(16)
 	readSlot(17)
+	if #texts > 0 then
+		return texts
+	end
+	if not CreateFrame then
+		return texts
+	end
+	if not weaponTip then
+		local okTip, tip = pcall(CreateFrame, "GameTooltip", "WFRWeaponTip", nil, "GameTooltipTemplate")
+		if okTip then
+			weaponTip = tip
+		end
+	end
+	if not weaponTip or not weaponTip.SetInventoryItem then
+		return texts
+	end
+	weaponTip:SetOwner(UIParent, "ANCHOR_NONE")
+	for _, slot in ipairs({ 16, 17 }) do
+		weaponTip:ClearLines()
+		local ok = pcall(weaponTip.SetInventoryItem, weaponTip, "player", slot)
+		if ok then
+			local n = weaponTip:NumLines()
+			if type(n) == "number" then
+				for i = 1, n do
+					local fs = _G["WFRWeaponTipTextLeft" .. i]
+					local text = fs and safe(fs.GetText and fs:GetText(), nil)
+					if text then
+						texts[#texts + 1] = strlower(text)
+					end
+				end
+			end
+		end
+	end
+	weaponTip:Hide()
+	return texts
+end
+
+function ns.API.WeaponTooltipHas(tokens)
+	if not tokens or #tokens == 0 then
+		return false
+	end
+	local texts = collectWeaponTooltipTexts()
 	if #texts == 0 then
 		return false
 	end
 	for _, text in ipairs(texts) do
 		for _, token in ipairs(tokens) do
-			if text:find(token, 1, true) then
+			if type(token) == "string" and token ~= "" and text:find(token, 1, true) then
 				return true
 			end
 		end

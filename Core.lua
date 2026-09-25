@@ -646,6 +646,8 @@ frame:RegisterEvent("ACTIONBAR_SLOT_CHANGED")
 frame:RegisterEvent("ACTIONBAR_PAGE_CHANGED")
 frame:RegisterEvent("PLAYER_EQUIPMENT_CHANGED")
 pcall(frame.RegisterEvent, frame, "WEAPON_ENCHANT_CHANGED")
+pcall(frame.RegisterEvent, frame, "UNIT_AURA")
+pcall(frame.RegisterEvent, frame, "UNIT_INVENTORY_CHANGED")
 pcall(frame.RegisterEvent, frame, "LEARNED_SPELL_IN_TAB")
 pcall(frame.RegisterEvent, frame, "PLAYER_TALENT_UPDATE")
 pcall(frame.RegisterEvent, frame, "PLAYER_LOGOUT")
@@ -697,6 +699,14 @@ local function flushSpells()
 	ns.Tick()
 end
 
+local function forceTick()
+	if ns.API and ns.API.WipeAuraScans then
+		ns.API.WipeAuraScans()
+	end
+	lastTickSig = nil
+	ns.Tick()
+end
+
 local function flushBars()
 	barsPending = nil
 	if ns.GlowFetch then
@@ -705,6 +715,26 @@ local function flushBars()
 	if ns.GlowInvalidate then
 		ns.GlowInvalidate()
 	end
+	forceTick()
+end
+
+local function weaponItemId(slot)
+	if not GetInventoryItemID then
+		return nil
+	end
+	local ok, id = pcall(GetInventoryItemID, "player", slot)
+	if ok and type(id) == "number" then
+		return id
+	end
+	return nil
+end
+
+local function liveAuraUnit(unit)
+	return unit == "player"
+		or unit == "target"
+		or unit == "focus"
+		or unit == "mouseover"
+		or (type(unit) == "string" and strsub(unit, 1, 5) == "party")
 end
 
 frame:SetScript("OnEvent", function(_, event, unit, _, spellID)
@@ -749,6 +779,8 @@ frame:SetScript("OnEvent", function(_, event, unit, _, spellID)
 			end
 			startTicker()
 		end
+		ns.weaponItemMain = weaponItemId(16)
+		ns.weaponItemOff = weaponItemId(17)
 		if ns.ApplyAutoProfile then
 			ns.ApplyAutoProfile()
 		end
@@ -762,12 +794,20 @@ frame:SetScript("OnEvent", function(_, event, unit, _, spellID)
 		if ns.ApplyAutoProfile then
 			ns.ApplyAutoProfile()
 		end
+		forceTick()
 	elseif event == "PLAYER_DEAD" or event == "PLAYER_ALIVE" or event == "PLAYER_UNGHOST" or event == "PLAYER_UPDATE_RESTING" or event == "PLAYER_MOUNT_DISPLAY_CHANGED" then
-		lastTickSig = nil
-		ns.Tick()
+		forceTick()
 	elseif event == "PLAYER_TARGET_CHANGED" then
 		ns.API.castTarget = false
-		ns.Tick()
+		forceTick()
+	elseif event == "UNIT_AURA" then
+		if liveAuraUnit(unit) then
+			forceTick()
+		end
+	elseif event == "UNIT_INVENTORY_CHANGED" then
+		if unit == "player" then
+			forceTick()
+		end
 	elseif event == "UNIT_SPELLCAST_SUCCEEDED" then
 		if unit == "player" then
 			if ns.API and ns.API.NoteSelfBuff then
@@ -779,13 +819,30 @@ frame:SetScript("OnEvent", function(_, event, unit, _, spellID)
 			if ns.NoteWeaponCast then
 				ns.NoteWeaponCast(spellID)
 			end
+			forceTick()
 		end
-	elseif event == "PLAYER_EQUIPMENT_CHANGED" or event == "WEAPON_ENCHANT_CHANGED" then
-		if event == "PLAYER_EQUIPMENT_CHANGED" and ns.ClearWeaponMemory then
-			ns.ClearWeaponMemory()
-		elseif event == "WEAPON_ENCHANT_CHANGED" then
-			ns.weaponSeenUntil = 0
+	elseif event == "PLAYER_EQUIPMENT_CHANGED" then
+		local slot = unit
+		if slot == 16 or slot == 17 then
+			local id = weaponItemId(slot)
+			local prev = slot == 16 and ns.weaponItemMain or ns.weaponItemOff
+			if id ~= prev then
+				if slot == 16 then
+					ns.weaponItemMain = id
+				else
+					ns.weaponItemOff = id
+				end
+				if ns.ClearWeaponMemory then
+					ns.ClearWeaponMemory()
+				end
+			end
 		end
+		forceTick()
+	elseif event == "WEAPON_ENCHANT_CHANGED" then
+		if ns.NoteWeaponEnchantChanged then
+			ns.NoteWeaponEnchantChanged()
+		end
+		forceTick()
 	elseif event == "ACTIONBAR_SLOT_CHANGED" or event == "ACTIONBAR_PAGE_CHANGED" or event == "UPDATE_SHAPESHIFT_FORM" then
 		if barsPending then
 			return
