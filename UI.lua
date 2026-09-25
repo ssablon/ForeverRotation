@@ -171,7 +171,7 @@ function ns.UI.Create()
 	end
 
 	local root = CreateFrame("Frame", "WoWForeverRotFrame", UIParent, "BackdropTemplate")
-	root:SetSize(SIZE * 3 + GAP * 2 + 16, SIZE + 28)
+	root:SetSize(SIZE * 3 + GAP * 2 + 16, SIZE + 52)
 	root:SetFrameStrata("MEDIUM")
 	applyChrome(root)
 	makeMovable(root, "queue")
@@ -186,7 +186,7 @@ function ns.UI.Create()
 	for i = 1, 3 do
 		local slot = makeIcon("WoWForeverRotSlot" .. i, root, i == 1 and SIZE or 40)
 		if i == 1 then
-			slot:SetPoint("LEFT", root, "LEFT", 8, 6)
+			slot:SetPoint("TOPLEFT", root, "TOPLEFT", 8, -8)
 		else
 			slot:SetPoint("LEFT", ns.UI.slots[i - 1], "RIGHT", GAP, i == 2 and -4 or 0)
 		end
@@ -329,7 +329,7 @@ function ns.UI.Create()
 
 	local kick = makeIcon("WoWForeverRotInterrupt", UIParent, 26)
 	kick:ClearAllPoints()
-	kick:SetPoint("RIGHT", root, "LEFT", -8, 12)
+	kick:SetPoint("RIGHT", ns.UI.slots[1], "LEFT", -8, 10)
 	kick.texture:SetTexture(IMG .. "lightning-interrupt")
 	kick.texture:SetVertexColor(0.2, 0.2, 0.2)
 	makeMovable(kick, "interrupt")
@@ -338,7 +338,7 @@ function ns.UI.Create()
 
 	local purge = makeIcon("WoWForeverRotPurge", UIParent, 26)
 	purge:ClearAllPoints()
-	purge:SetPoint("RIGHT", root, "LEFT", -8, -12)
+	purge:SetPoint("RIGHT", ns.UI.slots[1], "LEFT", -8, -14)
 	purge.texture:SetTexture(IMG .. "magiccircle-purge")
 	purge.texture:SetVertexColor(0.2, 0.2, 0.2)
 	makeMovable(purge, "purge")
@@ -347,7 +347,7 @@ function ns.UI.Create()
 
 	local cleanse = makeIcon("WoWForeverRotCleanse", UIParent, 26)
 	cleanse:ClearAllPoints()
-	cleanse:SetPoint("LEFT", root, "RIGHT", 8, 12)
+	cleanse:SetPoint("LEFT", ns.UI.slots[3], "RIGHT", 8, 6)
 	paintIdle(cleanse, 0.2, 0.85, 0.35)
 	makeMovable(cleanse, "cleanse")
 	bindTip(cleanse, "TIP_CLEANSE", "TIP_CLEANSE_DESC")
@@ -355,7 +355,7 @@ function ns.UI.Create()
 
 	local weapon = makeIcon("WoWForeverRotWeapon", UIParent, 26)
 	weapon:ClearAllPoints()
-	weapon:SetPoint("LEFT", root, "RIGHT", 8, -12)
+	weapon:SetPoint("LEFT", ns.UI.slots[3], "RIGHT", 8, -16)
 	weapon.texture:SetTexture("Interface\\Icons\\INV_Axe_02")
 	weapon.texture:SetVertexColor(1, 1, 1, 0.45)
 	makeMovable(weapon, "weapon")
