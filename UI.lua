@@ -195,11 +195,11 @@ function ns.UI.Create()
 		ns.UI.slots[i] = slot
 	end
 
-	local gauge = CreateFrame("Frame", "WoWForeverRotGauge", UIParent, "BackdropTemplate")
-	gauge:SetFrameStrata("HIGH")
-	gauge:SetFrameLevel(40)
-	gauge:SetHeight(16)
-	applyChrome(gauge)
+	local gauge = CreateFrame("Frame", "WoWForeverRotGauge", root)
+	gauge:SetFrameLevel(root:GetFrameLevel() + 5)
+	gauge:SetPoint("BOTTOMLEFT", root, "BOTTOMLEFT", 8, 5)
+	gauge:SetPoint("BOTTOMRIGHT", root, "BOTTOMRIGHT", -8, 5)
+	gauge:SetHeight(12)
 	gauge.rows = {}
 	local function gaugeRow(parent, index)
 		local row = parent.rows[index]
@@ -211,7 +211,7 @@ function ns.UI.Create()
 		local bg = row:CreateTexture(nil, "BACKGROUND")
 		bg:SetAllPoints()
 		bg:SetTexture("Interface\\Buttons\\WHITE8x8")
-		bg:SetVertexColor(0, 0, 0, 0.55)
+		bg:SetVertexColor(0.45, 0.18, 0.02, 0.95)
 		local fill = row:CreateTexture(nil, "ARTWORK")
 		fill:SetPoint("TOPLEFT", 1, -1)
 		fill:SetPoint("BOTTOMLEFT", 1, 1)
@@ -231,24 +231,26 @@ function ns.UI.Create()
 			return
 		end
 		self._acc = 0
-		if not ns.UI.root or not ns.UI.root:IsShown() or not ns.Physics or not ns.Physics.Enabled or not ns.Physics.Enabled() or not ns.Physics.Status then
+		if not ns.UI.root or not ns.UI.root:IsShown() or (ns.Physics and ns.Physics.Enabled and not ns.Physics.Enabled()) then
 			self:Hide()
 			return
 		end
-		local st = ns.Physics.Status()
-		local bars = st and (st.bars or { st })
+		local bars
+		if ns.Physics and ns.Physics.Status then
+			local ok, st = pcall(ns.Physics.Status)
+			bars = ok and st and (st.bars or { st })
+		end
 		if not bars or #bars == 0 then
-			self:Hide()
-			return
+			local speed = 2
+			local progress = (GetTime() % speed) / speed
+			bars = {
+				{ kind = "swing", progress = progress, hot = progress > 0.8, label = "" },
+			}
 		end
 		self:Show()
-		self:ClearAllPoints()
-		self:SetPoint("TOPLEFT", ns.UI.root, "BOTTOMLEFT", 0, -4)
-		self:SetPoint("TOPRIGHT", ns.UI.root, "BOTTOMRIGHT", 0, -4)
-		local n = #bars
-		local rowH, gap = 14, 2
-		local gh = n * rowH + (n - 1) * gap + 6
-		self:SetHeight(gh)
+		local n = math.min(#bars, 2)
+		local rowH, gap = 10, 2
+		self:SetHeight(n * rowH + (n - 1) * gap)
 		local inner = math.max(8, self:GetWidth() - 2)
 		local cr, cg, cb = classColor()
 		for i = 1, n do
@@ -292,7 +294,7 @@ function ns.UI.Create()
 			self.rows[i]:Hide()
 		end
 	end)
-	gauge:Hide()
+	gauge:Show()
 	ns.UI.gauge = gauge
 
 	local function makeDefense()

@@ -210,20 +210,29 @@ local function itemInSlot(slot)
 	return ok and type(id) == "number" and id > 0
 end
 
+local function flagOn(fn, spellID)
+	if type(fn) ~= "function" then
+		return false
+	end
+	local ok, on = pcall(function()
+		return fn(spellID) == true
+	end)
+	return ok and on == true
+end
+
 local function spellIsOn(spellID)
-	if IsCurrentSpell then
-		local ok, on = pcall(IsCurrentSpell, spellID)
-		if ok and on == true then
-			return true
-		end
+	return flagOn(IsCurrentSpell, spellID) or flagOn(IsAutoRepeatSpell, spellID)
+end
+
+local function fightingNow()
+	if spellIsOn(6603) then
+		return true
 	end
-	if IsAutoRepeatSpell then
-		local ok, on = pcall(IsAutoRepeatSpell, spellID)
-		if ok and on == true then
-			return true
-		end
+	if not ns.API or not ns.API.InCombat then
+		return false
 	end
-	return false
+	local ok, yes = pcall(ns.API.InCombat)
+	return ok and yes == true
 end
 
 local function restartIfDue(at, speed, live)
@@ -249,17 +258,13 @@ local function restartIfDue(at, speed, live)
 end
 
 local function ensureLive()
-	local fighting = spellIsOn(6603) or (ns.API and ns.API.InCombat and ns.API.InCombat())
-	if fighting and itemInSlot(16) then
+	if fightingNow() then
 		local main, off = attackSpeeds()
 		if main <= 0 then
 			main = 2
 		end
 		mhAt, mhSpeed = restartIfDue(mhAt, mhSpeed, main)
-		if off > 0 or itemInSlot(17) then
-			if off <= 0 then
-				off = main
-			end
+		if off > 0 then
 			ohAt, ohSpeed = restartIfDue(ohAt, ohSpeed, off)
 		end
 	end
@@ -450,14 +455,10 @@ function ns.Physics.Status()
 	if not ns.Physics.Enabled() then
 		return
 	end
-	ensureLive()
+	pcall(ensureLive)
 	local bars = {}
-	if itemInSlot(16) and mhSpeed <= 0 then
-		local main = attackSpeeds()
-		if not main or main <= 0 then
-			main = 2
-		end
-		mhSpeed = main
+	if mhSpeed <= 0 then
+		mhSpeed = 2
 	end
 	local token = ns.ClassToken and ns.ClassToken()
 	local role = ns.db and ns.db.role
@@ -466,7 +467,7 @@ function ns.Physics.Status()
 		addBar(bars, "shot", left, speed, CLIP_WINDOW, ns.T("PHYS_SHOT"))
 	end
 	local mhLeft, mhSp = handRemain(mhAt, mhSpeed)
-	if not mhLeft and itemInSlot(16) and mhSpeed > 0 then
+	if not mhLeft then
 		mhLeft, mhSp = mhSpeed, mhSpeed
 	end
 	addBar(bars, "swing", mhLeft, mhSp, SWING_WINDOW, ns.T("PHYS_SWING"))
