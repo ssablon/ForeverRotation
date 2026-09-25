@@ -195,10 +195,11 @@ function ns.UI.Create()
 		ns.UI.slots[i] = slot
 	end
 
-	local gauge = CreateFrame("Frame", "WoWForeverRotGauge", root)
-	gauge:SetPoint("BOTTOMLEFT", root, "BOTTOMLEFT", 8, 6)
-	gauge:SetPoint("BOTTOMRIGHT", root, "BOTTOMRIGHT", -8, 6)
-	gauge:SetHeight(8)
+	local gauge = CreateFrame("Frame", "WoWForeverRotGauge", UIParent, "BackdropTemplate")
+	gauge:SetFrameStrata("HIGH")
+	gauge:SetFrameLevel(40)
+	gauge:SetHeight(16)
+	applyChrome(gauge)
 	gauge.rows = {}
 	local function gaugeRow(parent, index)
 		local row = parent.rows[index]
@@ -217,6 +218,10 @@ function ns.UI.Create()
 		fill:SetWidth(1)
 		fill:SetTexture("Interface\\Buttons\\WHITE8x8")
 		row.fill = fill
+		local label = row:CreateFontString(nil, "OVERLAY", "GameFontHighlightSmall")
+		label:SetPoint("LEFT", 4, 0)
+		label:SetJustifyH("LEFT")
+		row.label = label
 		parent.rows[index] = row
 		return row
 	end
@@ -226,30 +231,24 @@ function ns.UI.Create()
 			return
 		end
 		self._acc = 0
-		if not ns.Physics or not ns.Physics.Enabled or not ns.Physics.Enabled() or not ns.Physics.Status then
+		if not ns.UI.root or not ns.UI.root:IsShown() or not ns.Physics or not ns.Physics.Enabled or not ns.Physics.Enabled() or not ns.Physics.Status then
 			self:Hide()
-			if ns.UI.root then
-				ns.UI.root:SetHeight(SIZE + 28)
-			end
 			return
 		end
 		local st = ns.Physics.Status()
 		local bars = st and (st.bars or { st })
 		if not bars or #bars == 0 then
 			self:Hide()
-			if ns.UI.root then
-				ns.UI.root:SetHeight(SIZE + 28)
-			end
 			return
 		end
 		self:Show()
+		self:ClearAllPoints()
+		self:SetPoint("TOPLEFT", ns.UI.root, "BOTTOMLEFT", 0, -4)
+		self:SetPoint("TOPRIGHT", ns.UI.root, "BOTTOMRIGHT", 0, -4)
 		local n = #bars
-		local rowH, gap = 8, 2
-		local gh = n * rowH + (n - 1) * gap
+		local rowH, gap = 14, 2
+		local gh = n * rowH + (n - 1) * gap + 6
 		self:SetHeight(gh)
-		if ns.UI.root then
-			ns.UI.root:SetHeight(SIZE + 20 + gh)
-		end
 		local inner = math.max(8, self:GetWidth() - 2)
 		local cr, cg, cb = classColor()
 		for i = 1, n do
@@ -265,6 +264,9 @@ function ns.UI.Create()
 			end
 			row:Show()
 			local bar = bars[i]
+			if row.label then
+				row.label:SetText(bar.label or "")
+			end
 			row.fill:SetWidth(math.max(1, inner * (bar.progress or 0)))
 			if bar.kind == "offhand" then
 				if bar.hot then

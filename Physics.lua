@@ -202,6 +202,14 @@ local function rangedSpeed()
 	return 0
 end
 
+local function itemInSlot(slot)
+	if not GetInventoryItemID then
+		return false
+	end
+	local ok, id = pcall(GetInventoryItemID, "player", slot)
+	return ok and type(id) == "number" and id > 0
+end
+
 local function spellIsOn(spellID)
 	if IsCurrentSpell then
 		local ok, on = pcall(IsCurrentSpell, spellID)
@@ -241,10 +249,19 @@ local function restartIfDue(at, speed, live)
 end
 
 local function ensureLive()
-	if spellIsOn(6603) then
+	local fighting = spellIsOn(6603) or (ns.API and ns.API.InCombat and ns.API.InCombat())
+	if fighting and itemInSlot(16) then
 		local main, off = attackSpeeds()
+		if main <= 0 then
+			main = 2
+		end
 		mhAt, mhSpeed = restartIfDue(mhAt, mhSpeed, main)
-		ohAt, ohSpeed = restartIfDue(ohAt, ohSpeed, off)
+		if off > 0 or itemInSlot(17) then
+			if off <= 0 then
+				off = main
+			end
+			ohAt, ohSpeed = restartIfDue(ohAt, ohSpeed, off)
+		end
 	end
 	if spellIsOn(AUTO_SHOT) then
 		local speed = rangedSpeed()
@@ -435,6 +452,13 @@ function ns.Physics.Status()
 	end
 	ensureLive()
 	local bars = {}
+	if itemInSlot(16) and mhSpeed <= 0 then
+		local main = attackSpeeds()
+		if not main or main <= 0 then
+			main = 2
+		end
+		mhSpeed = main
+	end
 	local token = ns.ClassToken and ns.ClassToken()
 	local role = ns.db and ns.db.role
 	if token == "HUNTER" and role ~= "melee" then
@@ -442,6 +466,9 @@ function ns.Physics.Status()
 		addBar(bars, "shot", left, speed, CLIP_WINDOW, ns.T("PHYS_SHOT"))
 	end
 	local mhLeft, mhSp = handRemain(mhAt, mhSpeed)
+	if not mhLeft and itemInSlot(16) and mhSpeed > 0 then
+		mhLeft, mhSp = mhSpeed, mhSpeed
+	end
 	addBar(bars, "swing", mhLeft, mhSp, SWING_WINDOW, ns.T("PHYS_SWING"))
 	local ohLeft, ohSp = handRemain(ohAt, ohSpeed)
 	addBar(bars, "offhand", ohLeft, ohSp, SWING_WINDOW, ns.T("PHYS_OFFHAND"))
