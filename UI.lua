@@ -171,7 +171,7 @@ function ns.UI.Create()
 	end
 
 	local root = CreateFrame("Frame", "WoWForeverRotFrame", UIParent, "BackdropTemplate")
-	root:SetSize(SIZE * 3 + GAP * 2 + 16, SIZE + 52)
+	root:SetSize(SIZE * 3 + GAP * 2 + 16, 8 + SIZE + 8 + (3 * 12 + 2 * 3) + 8)
 	root:SetFrameStrata("MEDIUM")
 	applyChrome(root)
 	makeMovable(root, "queue")
@@ -197,8 +197,8 @@ function ns.UI.Create()
 
 	local gauge = CreateFrame("Frame", "WoWForeverRotGauge", root)
 	gauge:SetFrameLevel(root:GetFrameLevel() + 5)
-	gauge:SetPoint("BOTTOMLEFT", root, "BOTTOMLEFT", 8, 5)
-	gauge:SetPoint("BOTTOMRIGHT", root, "BOTTOMRIGHT", -8, 5)
+	gauge:SetPoint("TOPLEFT", ns.UI.slots[1], "BOTTOMLEFT", 0, -8)
+	gauge:SetPoint("RIGHT", root, "RIGHT", -8, 0)
 	gauge:SetHeight(12)
 	gauge.rows = {}
 	local function gaugeRow(parent, index)
@@ -240,6 +240,9 @@ function ns.UI.Create()
 		self._acc = 0
 		if not ns.UI.root or not ns.UI.root:IsShown() or (ns.Physics and ns.Physics.Enabled and not ns.Physics.Enabled()) then
 			self:Hide()
+			if ns.UI.FitFrame then
+				ns.UI.FitFrame()
+			end
 			return
 		end
 		local bars
@@ -254,32 +257,9 @@ function ns.UI.Create()
 				{ kind = "swing", progress = progress, hot = progress > 0.8, mark = 0.8, label = "" },
 			}
 		end
-		if #bars > 2 then
-			local energy
-			local kept = {}
-			for i = 1, #bars do
-				local bar = bars[i]
-				if bar.kind == "energy" then
-					energy = bar
-				elseif bar.kind ~= "offhand" then
-					kept[#kept + 1] = bar
-				end
-			end
-			if energy then
-				kept[#kept + 1] = energy
-			end
-			if #kept > 2 then
-				local trimmed = { kept[1] }
-				trimmed[2] = energy or kept[2]
-				kept = trimmed
-			end
-			if #kept > 0 then
-				bars = kept
-			end
-		end
 		self:Show()
-		local n = math.min(#bars, 2)
-		local rowH, gap = 10, 2
+		local n = #bars
+		local rowH, gap = 12, 3
 		self:SetHeight(n * rowH + (n - 1) * gap)
 		local inner = math.max(8, self:GetWidth() - 2)
 		local cr, cg, cb = classColor()
@@ -346,6 +326,27 @@ function ns.UI.Create()
 	end)
 	gauge:Show()
 	ns.UI.gauge = gauge
+
+	function ns.UI.FitFrame()
+		if not ns.UI.root then
+			return
+		end
+		local physics = ns.Physics and ns.Physics.Enabled and ns.Physics.Enabled()
+		local height = 8 + SIZE + 8
+		if physics then
+			height = height + (3 * 12 + 2 * 3) + 8
+		end
+		local rootFrame = ns.UI.root
+		if math.abs((rootFrame:GetHeight() or 0) - height) < 0.5 then
+			return
+		end
+		local top, left = rootFrame:GetTop(), rootFrame:GetLeft()
+		rootFrame:SetHeight(height)
+		if top and left then
+			rootFrame:ClearAllPoints()
+			rootFrame:SetPoint("TOPLEFT", UIParent, "BOTTOMLEFT", left, top)
+		end
+	end
 
 	local function makeDefense()
 		local frame = CreateFrame("Frame", "WoWForeverRotDefense", UIParent, "BackdropTemplate")

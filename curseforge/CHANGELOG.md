@@ -1,3 +1,8 @@
+# 1.5.28
+
+- Main hand, off hand and energy can show together, under the spell icons.
+- Turning off classic combat timing hides those bars again.
+
 # 1.5.27
 
 - Energy stays on the swing gauge when both weapons are shown.

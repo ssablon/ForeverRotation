@@ -12,7 +12,7 @@
 ## Notes-koKR: WoW Forever 순환 도우미.
 ## Notes-zhCN: WoW Forever 循环助手。
 ## Notes-zhTW: WoW Forever 循環助手。
-## Version: 1.5.27
+## Version: 1.5.28
 ## Author: Vohnka
 ## IconTexture: Interface\AddOns\WoWForeverRot\images\logo.tga
 ## Category: WoW Forever

@@ -472,6 +472,9 @@ function ns.ApplyFeatureFlags()
 	if ns.db.showRange ~= false and ns.RangeUpdate then
 		ns.RangeUpdate()
 	end
+	if ns.UI and ns.UI.FitFrame then
+		ns.UI.FitFrame()
+	end
 end
 
 local lastAlertKick, lastAlertCleanse, lastAlertWeapon
