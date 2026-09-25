@@ -1423,6 +1423,60 @@ function ns.API.TargetCasting()
 	return ns.API.castTarget == true
 end
 
+function ns.API.TargetCastProgress()
+	if not UnitExists or not UnitExists("target") then
+		return nil
+	end
+	local function millis(value)
+		if not readable(value) then
+			return nil
+		end
+		local ok, n = pcall(function()
+			local v = tonumber(value)
+			if type(v) ~= "number" then
+				return nil
+			end
+			return v + 0
+		end)
+		if ok and type(n) == "number" then
+			return n
+		end
+		return nil
+	end
+	local function slice(fn, channel)
+		if type(fn) ~= "function" then
+			return nil
+		end
+		local pack = { pcall(fn, "target") }
+		if not pack[1] or not readable(pack[2]) then
+			return nil
+		end
+		local notKick = channel and pack[8] or pack[9]
+		if readable(notKick) and notKick then
+			return nil
+		end
+		local startMS = millis(pack[5])
+		local endMS = millis(pack[6])
+		if not startMS or not endMS or endMS <= startMS then
+			return nil
+		end
+		local span = endMS - startMS
+		local progress = ((GetTime() * 1000) - startMS) / span
+		if progress < 0 then
+			progress = 0
+		end
+		if progress > 1 then
+			progress = 1
+		end
+		return progress
+	end
+	local cast = slice(UnitCastingInfo, false)
+	if cast then
+		return cast
+	end
+	return slice(UnitChannelInfo, true)
+end
+
 function ns.API.Purgable(stealableOnly)
 	if not UnitExists("target") or not C_UnitAuras or not C_UnitAuras.GetAuraDataByIndex then
 		return false

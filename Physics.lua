@@ -304,6 +304,31 @@ local function refreshSpeeds()
 	end
 end
 
+local function handDue(at, speed)
+	if at <= 0 or speed <= 0 then
+		return true
+	end
+	return GetTime() >= at + speed - 0.15
+end
+
+local function noteDueHands()
+	local main, off = attackSpeeds()
+	if main > 0 and handDue(mhAt, mhSpeed) then
+		mhSpeed = main
+		mhAt = GetTime()
+	elseif main > 0 then
+		mhAt, mhSpeed = rescale(mhAt, mhSpeed, main)
+	end
+	if off > 0 and handDue(ohAt, ohSpeed) then
+		ohSpeed = off
+		ohAt = GetTime()
+	elseif off > 0 then
+		ohAt, ohSpeed = rescale(ohAt, ohSpeed, off)
+	else
+		ohAt, ohSpeed = 0, 0
+	end
+end
+
 local function noteHand(hand)
 	local main, off = attackSpeeds()
 	if hand ~= "off" and main > 0 then
@@ -426,6 +451,32 @@ function ns.Physics.EnergySoon(spellID)
 	return tick ~= nil and tick <= ENERGY_WAIT
 end
 
+function ns.Physics.Cue(spellID)
+	if not ns.Physics.Enabled() or not spellID then
+		return false
+	end
+	if ns.Physics.IsSwing(spellID) then
+		return ns.Physics.SwingWindow()
+	end
+	if ns.Physics.IsClip(spellID) then
+		local left = shotRemain()
+		return left ~= nil and not ns.Physics.WouldClip()
+	end
+	local cost = spellEnergyCost(spellID)
+	if cost <= 0 then
+		return false
+	end
+	local ok, cur = pcall(UnitPower, "player", ENERGY)
+	cur = ok and plainNumber(cur)
+	if not cur then
+		return false
+	end
+	if cur >= cost then
+		return true
+	end
+	return ns.Physics.EnergySoon(spellID)
+end
+
 function ns.Physics.Blocks(spellID)
 	if not ns.Physics.Enabled() or not spellID then
 		return false
@@ -531,7 +582,7 @@ frame:SetScript("OnEvent", function(_, event, unit, _, spellID)
 		return
 	end
 	if event == "UNIT_ATTACK" and unit == "player" then
-		noteHand()
+		noteDueHands()
 		return
 	end
 	if event == "UNIT_ATTACK_SPEED" and (not unit or unit == "player") then

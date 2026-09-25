@@ -150,7 +150,7 @@ Le client camelot masque souvent `GetSpellCooldown` en combat. Au lancement réu
 
 Fulgurance, Revanche, Riposte, Contre-attaque et Morsure de la mangouste (`opt.proc`) ne sont proposés que si `IsSpellUsable` répond vrai. Une réponse masquée saute le pas. Le journal de combat n'est pas lu.
 
-`Physics.lua` (option Extra `showPhysics`, défaut vrai) : coups blancs pour **toutes** les classes via `PLAYER_ENTER_COMBAT` / `UNIT_ATTACK` + `UnitAttackSpeed` (main + main gauche si dual wield). La fenêtre next-swing (Frappe héroïque, Enchaînement, Attaque du raptor, Mutiler) lit seulement la main droite. `UNIT_SPELLCAST_SUCCEEDED` + Auto Shot 75 pour le clip chasseur ; `UNIT_POWER_UPDATE` pour le tick d'énergie 2 s. Sans swing observé, le next-swing n'est pas caché. Pas de `CombatLogGetCurrentEventInfo` : les deux mains partent ensemble à l'auto-attaque puis se décalent par leur vitesse.
+`Physics.lua` (option Extra `showPhysics`, défaut vrai) : coups blancs pour **toutes** les classes via `PLAYER_ENTER_COMBAT` / `UNIT_ATTACK` + `UnitAttackSpeed` (main + main gauche si dual wield). La fenêtre next-swing (Frappe héroïque, Enchaînement, Attaque du raptor, Mutiler) lit seulement la main droite. `UNIT_SPELLCAST_SUCCEEDED` + Auto Shot 75 pour le clip chasseur ; `UNIT_POWER_UPDATE` pour le tick d'énergie 2 s. Sans swing observé, le next-swing n'est pas caché. Pas de `CombatLogGetCurrentEventInfo`. `UNIT_ATTACK` ne relance que la main dont le timer est échu ; un changement de vitesse recale la progression. La jauge montre deux barres et garde l'énergie plutôt que la main gauche.
 
 Un sort seulement utile (`IsHelpful` et pas `IsHarmful`) peut passer via le coût de puissance si `IsSpellUsable` est faux ou absent. Un sort nuisible avec `usable == false` est refusé.
 
@@ -288,7 +288,7 @@ Overlays `button.WFROverlays`, blend `ADD`, tête de mort :
 
 `ns.db.glow == false` coupe les têtes de mort de rotation et de défense. Interrupt, purge, cleanse et arme ont leur propre `Glow*` appelé depuis `Tick` sans retester `glow` dans ces fonctions : ils suivent surtout `showInterrupt` / `showPurge` / `showCleanse` / `showWeapon`, qui court-circuitent le builder.
 
-`ns.RangeUpdate` teinte en rouge les boutons **de la barre de sorts** déjà connus (`rangeButtons` rempli par GlowFetch, pas un second scan). Soins : `HealRangeUnit`. Pas de filtre rouge sur le HUD. Coupé par `showRange == false`.
+`ns.RangeUpdate` teinte en rouge les boutons **de la barre de sorts** déjà connus (`rangeButtons` rempli par GlowFetch, pas un second scan). Le HUD (file, défense, interrupt, purge) utilise le même `ns.SpellInRange`. Soins : `HealRangeUnit`. Coupé par `showRange == false`.
 
 ## Résolution d'un sort
 

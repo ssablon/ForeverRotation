@@ -254,6 +254,29 @@ function ns.UI.Create()
 				{ kind = "swing", progress = progress, hot = progress > 0.8, mark = 0.8, label = "" },
 			}
 		end
+		if #bars > 2 then
+			local energy
+			local kept = {}
+			for i = 1, #bars do
+				local bar = bars[i]
+				if bar.kind == "energy" then
+					energy = bar
+				elseif bar.kind ~= "offhand" then
+					kept[#kept + 1] = bar
+				end
+			end
+			if energy then
+				kept[#kept + 1] = energy
+			end
+			if #kept > 2 then
+				local trimmed = { kept[1] }
+				trimmed[2] = energy or kept[2]
+				kept = trimmed
+			end
+			if #kept > 0 then
+				bars = kept
+			end
+		end
 		self:Show()
 		local n = math.min(#bars, 2)
 		local rowH, gap = 10, 2
@@ -317,6 +340,9 @@ function ns.UI.Create()
 		for i = n + 1, #self.rows do
 			self.rows[i]:Hide()
 		end
+		if ns.UI.RefreshCue then
+			ns.UI.RefreshCue()
+		end
 	end)
 	gauge:Show()
 	ns.UI.gauge = gauge
@@ -358,6 +384,39 @@ function ns.UI.Create()
 	kick.texture:SetVertexColor(0.2, 0.2, 0.2)
 	makeMovable(kick, "interrupt")
 	bindTip(kick, "TIP_INTERRUPT", "TIP_INTERRUPT_DESC")
+	local cast = CreateFrame("StatusBar", nil, kick)
+	cast:SetSize(26, 4)
+	cast:SetPoint("TOP", kick, "BOTTOM", 0, -2)
+	cast:SetStatusBarTexture("Interface\\Buttons\\WHITE8x8")
+	cast:SetStatusBarColor(1, 0.82, 0.2, 1)
+	cast:SetMinMaxValues(0, 1)
+	cast:SetValue(0)
+	local castBg = cast:CreateTexture(nil, "BACKGROUND")
+	castBg:SetAllPoints()
+	castBg:SetTexture("Interface\\Buttons\\WHITE8x8")
+	castBg:SetVertexColor(0, 0, 0, 0.65)
+	cast:Hide()
+	kick.cast = cast
+	kick:SetScript("OnUpdate", function(self, elapsed)
+		self._castAcc = (self._castAcc or 0) + elapsed
+		if self._castAcc < 0.05 then
+			return
+		end
+		self._castAcc = 0
+		if not self.cast or not self:IsShown() or not ns.API.TargetCastProgress then
+			if self.cast then
+				self.cast:Hide()
+			end
+			return
+		end
+		local ok, progress = pcall(ns.API.TargetCastProgress)
+		if not ok or type(progress) ~= "number" then
+			self.cast:Hide()
+			return
+		end
+		self.cast:Show()
+		self.cast:SetValue(progress)
+	end)
 	ns.UI.interrupt = kick
 
 	local purge = makeIcon("WoWForeverRotPurge", UIParent, 26)
@@ -785,6 +844,46 @@ function ns.UI.SetLocked(locked)
 	ns.UI.ApplyMouse()
 end
 
+local function paintRange(slot, spellID)
+	if not slot or not slot.filter then
+		return
+	end
+	if not spellID or (ns.db and ns.db.showRange == false) then
+		slot.filter:Hide()
+		return
+	end
+	if ns.SpellInRange and ns.SpellInRange(spellID) == false then
+		local r, g, b = 0.9, 0.08, 0.08
+		if ns.Color then
+			r, g, b = ns.Color("range")
+		end
+		slot.filter:SetVertexColor(r, g, b, 0.5)
+		slot.filter:Show()
+	else
+		slot.filter:Hide()
+	end
+end
+
+function ns.UI.RefreshCue()
+	if not ns.UI.slots then
+		return
+	end
+	local cue = ns.Physics and ns.Physics.Enabled and ns.Physics.Enabled() and ns.Physics.Cue
+	for _, slot in ipairs(ns.UI.slots) do
+		if slot.shine then
+			local hot = cue and slot.spellID and ns.Physics.Cue(slot.spellID)
+			if hot then
+				slot.shine:SetVertexColor(1, 1, 1, 0.9)
+				slot.shine:Show()
+				slot.tipHint = ns.T("TIP_CUE")
+			else
+				slot.shine:Hide()
+				slot.tipHint = nil
+			end
+		end
+	end
+end
+
 local function setBind(slot, spellID)
 	if not slot or not slot.bind then
 		return
@@ -819,9 +918,7 @@ local function paint(slot, spellID, dim)
 		slot.texture:SetTexture(IMG .. "skull")
 	end
 	slot.texture:SetVertexColor(1, 1, 1, dim and 0.55 or 1)
-	if slot.filter then
-		slot.filter:Hide()
-	end
+	paintRange(slot, spellID)
 	local remain, duration = API.Cooldown(spellID)
 	if duration and duration > 1.5 and remain > 0 then
 		slot.cooldown:Show()
@@ -876,6 +973,7 @@ function ns.UI.Update(queue, defenseID, interruptID, purgeID, cleanseID, weaponI
 		ns.UI.interrupt.texture:SetVertexColor(0.2, 0.2, 0.2, 0.8)
 	end
 	setBind(ns.UI.interrupt, interruptID)
+	paintRange(ns.UI.interrupt, interruptID)
 	if purgeID then
 		ns.UI.purge.spellID = purgeID
 		ns.UI.purge.texture:SetTexture(API.SpellIcon(purgeID) or (IMG .. "magiccircle-purge"))
@@ -886,6 +984,7 @@ function ns.UI.Update(queue, defenseID, interruptID, purgeID, cleanseID, weaponI
 		ns.UI.purge.texture:SetVertexColor(0.2, 0.2, 0.2, 0.8)
 	end
 	setBind(ns.UI.purge, purgeID)
+	paintRange(ns.UI.purge, purgeID)
 	paintSide(ns.UI.cleanse, cleanseID, 0.2, 0.85, 0.35)
 	if not cleanseID then
 		ns.UI.cleanse.texture:SetColorTexture(0.15, 0.45, 0.22, 0.55)
@@ -953,4 +1052,5 @@ function ns.UI.Update(queue, defenseID, interruptID, purgeID, cleanseID, weaponI
 		setBind(ns.UI.weapon, weaponNeed and weaponID or nil)
 	end
 	ns.UI.RefreshRoles()
+	ns.UI.RefreshCue()
 end

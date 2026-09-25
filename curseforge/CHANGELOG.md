@@ -1,3 +1,8 @@
+# 1.5.27
+
+- Energy stays on the swing gauge when both weapons are shown.
+- A white outline marks when to press. Out-of-range tints the HUD, and a yellow bar tracks the enemy cast.
+
 # 1.5.26
 
 - Swing bars sit under the spell icons, with a white mark for the cast window.
