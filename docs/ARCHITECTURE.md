@@ -1,4 +1,4 @@
-# Architecture de WoW Forever Rot
+# Architecture de Forever Rotation
 
 Aide de rotation Classic Era pour le client **camelot** de WoW Forever (interface `16001`, dossier `_classic_beta_`). Le joueur appuie toujours sur les touches. L'addon propose jusqu'à 3 sorts, un rappel de défense, d'interruption, de purge, de dissipation et d'enchantement d'arme, puis pose une tête de mort sur le bouton de barre correspondant.
 

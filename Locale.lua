@@ -3,7 +3,7 @@ local addonName, ns = ...
 local L = {}
 
 L.enUS = {
-	TITLE = "WoW Forever Rot",
+	TITLE = "Forever Rotation",
 	INIT = "Initialized",
 	MODULE = "%s module initialized",
 	LOCKED = "Windows locked.",
@@ -26,7 +26,7 @@ L.enUS = {
 	LOCK = "Lock",
 	MOVE = "Move",
 	HELP = "/wfr lock | unlock | reset | resetall | role | mode | profile | menu | options",
-	OPTIONS_TITLE = "WoW Forever Rot — Options",
+	OPTIONS_TITLE = "Forever Rotation — Options",
 	TAB_GENERAL = "General",
 	TAB_ROTATION = "Rotation",
 	TAB_DEFENSE = "Defense",
@@ -141,7 +141,7 @@ L.enUS = {
 }
 
 L.frFR = {
-	TITLE = "WoW Forever Rot",
+	TITLE = "Forever Rotation",
 	INIT = "Initialisé",
 	MODULE = "Module %s initialisé",
 	LOCKED = "Fenêtres verrouillées.",
@@ -164,7 +164,7 @@ L.frFR = {
 	LOCK = "Verrou",
 	MOVE = "Bouger",
 	HELP = "/wfr lock | unlock | reset | resetall | role | mode | profile | menu | options",
-	OPTIONS_TITLE = "WoW Forever Rot — Options",
+	OPTIONS_TITLE = "Forever Rotation — Options",
 	TAB_GENERAL = "Général",
 	TAB_ROTATION = "Rotation",
 	TAB_DEFENSE = "Défense",
@@ -279,7 +279,7 @@ L.frFR = {
 }
 
 L.deDE = {
-	TITLE = "WoW Forever Rot",
+	TITLE = "Forever Rotation",
 	INIT = "Initialisiert",
 	MODULE = "%s-Modul initialisiert",
 	LOCKED = "Fenster gesperrt.",
@@ -302,7 +302,7 @@ L.deDE = {
 	LOCK = "Sperre",
 	MOVE = "Bewegen",
 	HELP = "/wfr lock | unlock | reset | resetall | role | mode | profile | menu | options",
-	OPTIONS_TITLE = "WoW Forever Rot — Optionen",
+	OPTIONS_TITLE = "Forever Rotation — Optionen",
 	TAB_GENERAL = "Allgemein",
 	TAB_ROTATION = "Rotation",
 	TAB_DEFENSE = "Verteidigung",
@@ -417,7 +417,7 @@ L.deDE = {
 }
 
 L.esES = {
-	TITLE = "WoW Forever Rot",
+	TITLE = "Forever Rotation",
 	INIT = "Inicializado",
 	MODULE = "Módulo %s inicializado",
 	LOCKED = "Ventanas bloqueadas.",
@@ -440,7 +440,7 @@ L.esES = {
 	LOCK = "Bloq.",
 	MOVE = "Mover",
 	HELP = "/wfr lock | unlock | reset | resetall | role | mode | profile | menu | options",
-	OPTIONS_TITLE = "WoW Forever Rot — Opciones",
+	OPTIONS_TITLE = "Forever Rotation — Opciones",
 	TAB_GENERAL = "General",
 	TAB_ROTATION = "Rotación",
 	TAB_DEFENSE = "Defensa",
@@ -557,7 +557,7 @@ L.esES = {
 L.esMX = CopyTable and CopyTable(L.esES) or L.esES
 
 L.ruRU = {
-	TITLE = "WoW Forever Rot",
+	TITLE = "Forever Rotation",
 	INIT = "Инициализировано",
 	MODULE = "Модуль %s инициализирован",
 	LOCKED = "Окна зафиксированы.",
@@ -580,7 +580,7 @@ L.ruRU = {
 	LOCK = "Замок",
 	MOVE = "Двигать",
 	HELP = "/wfr lock | unlock | reset | resetall | role | mode | profile | menu | options",
-	OPTIONS_TITLE = "WoW Forever Rot — Настройки",
+	OPTIONS_TITLE = "Forever Rotation — Настройки",
 	TAB_GENERAL = "Общее",
 	TAB_ROTATION = "Ротация",
 	TAB_DEFENSE = "Защита",
@@ -695,7 +695,7 @@ L.ruRU = {
 }
 
 L.zhCN = {
-	TITLE = "WoW Forever Rot",
+	TITLE = "Forever Rotation",
 	INIT = "已初始化",
 	MODULE = "%s 模块已初始化",
 	LOCKED = "窗口已锁定。",
@@ -718,7 +718,7 @@ L.zhCN = {
 	LOCK = "锁定",
 	MOVE = "移动",
 	HELP = "/wfr lock | unlock | reset | resetall | role | mode | profile | menu | options",
-	OPTIONS_TITLE = "WoW Forever Rot — 选项",
+	OPTIONS_TITLE = "Forever Rotation — 选项",
 	TAB_GENERAL = "常规",
 	TAB_ROTATION = "循环",
 	TAB_DEFENSE = "防御",
@@ -833,7 +833,7 @@ L.zhCN = {
 }
 
 L.zhTW = {
-	TITLE = "WoW Forever Rot",
+	TITLE = "Forever Rotation",
 	INIT = "已初始化",
 	MODULE = "%s 模組已初始化",
 	LOCKED = "視窗已鎖定。",
@@ -856,7 +856,7 @@ L.zhTW = {
 	LOCK = "鎖定",
 	MOVE = "移動",
 	HELP = "/wfr lock | unlock | reset | resetall | role | mode | profile | menu | options",
-	OPTIONS_TITLE = "WoW Forever Rot — 選項",
+	OPTIONS_TITLE = "Forever Rotation — 選項",
 	TAB_GENERAL = "一般",
 	TAB_ROTATION = "循環",
 	TAB_DEFENSE = "防禦",
@@ -971,7 +971,7 @@ L.zhTW = {
 }
 
 L.ptBR = {
-	TITLE = "WoW Forever Rot",
+	TITLE = "Forever Rotation",
 	INIT = "Inicializado",
 	MODULE = "Módulo %s inicializado",
 	LOCKED = "Janelas bloqueadas.",
@@ -994,7 +994,7 @@ L.ptBR = {
 	LOCK = "Travar",
 	MOVE = "Mover",
 	HELP = "/wfr lock | unlock | reset | resetall | role | mode | profile | menu | options",
-	OPTIONS_TITLE = "WoW Forever Rot — Opções",
+	OPTIONS_TITLE = "Forever Rotation — Opções",
 	TAB_GENERAL = "Geral",
 	TAB_ROTATION = "Rotação",
 	TAB_DEFENSE = "Defesa",
@@ -1109,7 +1109,7 @@ L.ptBR = {
 }
 
 L.itIT = {
-	TITLE = "WoW Forever Rot",
+	TITLE = "Forever Rotation",
 	INIT = "Inizializzato",
 	MODULE = "Modulo %s inizializzato",
 	LOCKED = "Finestre bloccate.",
@@ -1132,7 +1132,7 @@ L.itIT = {
 	LOCK = "Blocca",
 	MOVE = "Muovi",
 	HELP = "/wfr lock | unlock | reset | resetall | role | mode | profile | menu | options",
-	OPTIONS_TITLE = "WoW Forever Rot — Opzioni",
+	OPTIONS_TITLE = "Forever Rotation — Opzioni",
 	TAB_GENERAL = "Generale",
 	TAB_ROTATION = "Rotazione",
 	TAB_DEFENSE = "Difesa",
@@ -1247,7 +1247,7 @@ L.itIT = {
 }
 
 L.koKR = {
-	TITLE = "WoW Forever Rot",
+	TITLE = "Forever Rotation",
 	INIT = "초기화됨",
 	MODULE = "%s 모듈 초기화됨",
 	LOCKED = "창이 잠겼습니다.",
@@ -1270,7 +1270,7 @@ L.koKR = {
 	LOCK = "잠금",
 	MOVE = "이동",
 	HELP = "/wfr lock | unlock | reset | resetall | role | mode | profile | menu | options",
-	OPTIONS_TITLE = "WoW Forever Rot — 설정",
+	OPTIONS_TITLE = "Forever Rotation — 설정",
 	TAB_GENERAL = "일반",
 	TAB_ROTATION = "순환",
 	TAB_DEFENSE = "방어",
@@ -1469,4 +1469,8 @@ ns.ApplyLocale()
 
 function ns.T(key)
 	return ns.L[key] or L.enUS[key] or key
+end
+
+function ns.Print(msg)
+	print("|cff66ccff" .. ns.T("TITLE") .. "|r: " .. tostring(msg))
 end

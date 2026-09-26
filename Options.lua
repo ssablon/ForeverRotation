@@ -579,15 +579,15 @@ local function ensureOptions()
 		end
 		local ok, msg, extraArg = ns.ImportProfile(edit:GetText() or "")
 		if ok then
-			print("|cff66ccffWoW Forever Rot|r: " .. ns.T(msg))
+			ns.Print(ns.T(msg))
 			ns.RefreshOptions()
 			return
 		end
 		if msg == "OPT_IMPORT_CLASS" then
-			print("|cff66ccffWoW Forever Rot|r: " .. ns.T("OPT_IMPORT_CLASS"):format(extraArg or "?"))
+			ns.Print(ns.T("OPT_IMPORT_CLASS"):format(extraArg or "?"))
 			return
 		end
-		print("|cff66ccffWoW Forever Rot|r: " .. ns.T(msg or "OPT_IMPORT_BAD"))
+		ns.Print(ns.T(msg or "OPT_IMPORT_BAD"))
 	end)
 
 	local function showTab(which)

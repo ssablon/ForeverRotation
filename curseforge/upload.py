@@ -31,7 +31,7 @@ def main():
     if not zip_path.is_file():
         print("missing zip", zip_path, file=sys.stderr)
         sys.exit(2)
-    name = f"WoWForeverRot {ver}"
+    name = f"Forever Rotation {ver}"
     metadata = {
         "changelog": CHANGELOG.read_text(encoding="utf-8"),
         "changelogType": "markdown",

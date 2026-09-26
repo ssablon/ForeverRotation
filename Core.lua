@@ -290,7 +290,7 @@ function ns.ResetCurrentProfile()
 	if ns.Tick then
 		ns.Tick()
 	end
-	print("|cff66ccffWoW Forever Rot|r: " .. ns.T("OPT_RESET_ALL_DONE"))
+	ns.Print(ns.T("OPT_RESET_ALL_DONE"))
 end
 
 function ns.ResetAll()
@@ -766,12 +766,12 @@ frame:SetScript("OnEvent", function(_, event, unit, _, spellID)
 			end
 			local okCreate, errCreate = pcall(ns.UI.Create)
 			if not okCreate then
-				print("|cff66ccffWoW Forever Rot|r: " .. tostring(errCreate))
+				ns.Print(errCreate)
 			end
 			if ns.CreateMinimap then
 				local okMini, errMini = pcall(ns.CreateMinimap)
 				if not okMini then
-					print("|cff66ccffWoW Forever Rot|r: " .. tostring(errMini))
+					ns.Print(errMini)
 				end
 			end
 			if ns.GlowFetch then
@@ -786,8 +786,8 @@ frame:SetScript("OnEvent", function(_, event, unit, _, spellID)
 		end
 		if event == "PLAYER_LOGIN" then
 			local token, _, localized = ns.ClassToken()
-			print("|cff66ccffWoW Forever Rot|r: " .. ns.T("INIT"))
-			print("|cff66ccffWoW Forever Rot|r: " .. format(ns.T("MODULE"), localized or token or "?"))
+			ns.Print(ns.T("INIT"))
+			ns.Print(format(ns.T("MODULE"), localized or token or "?"))
 		end
 		ns.Tick()
 	elseif event == "ZONE_CHANGED_NEW_AREA" then
@@ -858,14 +858,15 @@ end)
 
 SLASH_WFR1 = "/wfr"
 SLASH_WFR2 = "/foreverrot"
+SLASH_WFR3 = "/foreverrotation"
 SlashCmdList.WFR = function(msg)
 	msg = strtrim(strlower(msg or ""))
 	if msg == "unlock" then
 		ns.UI.SetLocked(false)
-		print("|cff66ccffWoW Forever Rot|r: " .. ns.T("UNLOCKED"))
+		ns.Print(ns.T("UNLOCKED"))
 	elseif msg == "lock" then
 		ns.UI.SetLocked(true)
-		print("|cff66ccffWoW Forever Rot|r: " .. ns.T("LOCKED"))
+		ns.Print(ns.T("LOCKED"))
 	elseif msg == "reset" then
 		ns.db.pos = nil
 		ns.db.point = nil
@@ -889,6 +890,6 @@ SlashCmdList.WFR = function(msg)
 	elseif msg == "menu" or msg == "options" or msg == "opt" then
 		ns.ToggleOptions()
 	else
-		print("|cff66ccffWoW Forever Rot|r: " .. ns.T("HELP"))
+		ns.Print(ns.T("HELP"))
 	end
 end

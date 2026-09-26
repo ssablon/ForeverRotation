@@ -5,7 +5,7 @@ alwaysApply: true
 
 # Pousser sur GitHub
 
-Le dépôt `ssablon/WoWForeverRot` est la source de vérité. Ne jamais remplacer ses fichiers par la copie du dossier AddOns.
+Le dépôt `ssablon/ForeverRotation` est la source de vérité. Le dossier local reste `WoWForeverRot`. Ne jamais remplacer ses fichiers par la copie du dossier AddOns.
 
 Après une modification demandée par l'utilisateur :
 

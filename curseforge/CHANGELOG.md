@@ -1,3 +1,7 @@
+# 1.5.41
+
+- The addon is now named Forever Rotation. Same helper, clearer name. /wfr and /foreverrot still work; /foreverrotation is added.
+
 # 1.5.40
 
 - Weapon buffs, heals, defense, interrupts, racials, and the rest of the HUD refresh as soon as the game reports a change. You no longer need /reload after an imbue, poison, or stone. This is for every class and race.

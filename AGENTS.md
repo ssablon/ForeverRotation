@@ -1,9 +1,9 @@
-# WoW Forever Rot — guide agent
+# Forever Rotation — guide agent
 
 Addon d'aide à la rotation pour **WoW Forever** (combat Classic Era, client camelot, interface `16001`). Il affiche les prochains sorts et surligne les boutons. Il ne lance aucun sort.
 
-Version actuelle : **1.5.40**. Auteur : Vohnka — https://wow-forever.fr  
-Dépôt : https://github.com/ssablon/WoWForeverRot (privé, branche `main`).
+Version actuelle : **1.5.41**. Auteur : Vohnka — https://wow-forever.fr  
+Dépôt : https://github.com/ssablon/ForeverRotation (privé, branche `main`). Le dossier local et le dossier AddOns restent `WoWForeverRot` (sauvegardes et install).
 
 La carte complète du code est dans [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md). Ce fichier dit seulement par où commencer.
 

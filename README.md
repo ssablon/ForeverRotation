@@ -1,10 +1,10 @@
-# WoW Forever Rot
+# Forever Rotation
 
 Rotation helper for **WoW Forever** (Classic Era combat on the camelot / Midnight-family client, interface `16001`).
 
 It shows the next abilities on a small HUD and flashes the matching action-bar buttons. It does **not** cast spells for you.
 
-Author: [Vohnka](https://wow-forever.fr) · Current version: **1.5.38**
+Author: [Vohnka](https://wow-forever.fr) · Current version: **1.5.41**
 
 Player-facing text is translated for `enUS`, `frFR`, `deDE`, `esES`, `esMX`, `ruRU`, `zhCN`, `zhTW`, `ptBR`, `itIT`, and `koKR`. Missing strings fall back to English.
 
@@ -23,7 +23,7 @@ Forever uses its own spell IDs for some abilities (for example Devotion Aura). T
    `World of Warcraft\_classic_beta_\Interface\AddOns\WoWForeverRot`
 
 2. Restart the client or type `/reload`.
-3. Enable **WoW Forever Rot** in the add-on list.
+3. Enable **Forever Rotation** in the add-on list.
 
 The folder must contain both `.toc` files, the `.lua` files, and the `images/` directory.
 
@@ -101,7 +101,7 @@ Per class: damage, tank, heal, and the extra Classic styles (hunter range/melee,
 
 ## Slash commands
 
-`/wfr` or `/foreverrot`
+`/wfr`, `/foreverrot`, or `/foreverrotation`
 
 | Command | Action |
 | --- | --- |

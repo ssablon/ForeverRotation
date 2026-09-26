@@ -1,4 +1,4 @@
-# Publier WoW Forever Rot sur CurseForge
+# Publier Forever Rotation sur CurseForge
 
 Le jeton API **n’ouvre pas un projet**. Il sert uniquement à envoyer un zip **après** que la fiche existe (modération CurseForge).
 

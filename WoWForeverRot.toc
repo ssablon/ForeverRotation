@@ -1,6 +1,6 @@
 ## Interface: 16001
 ## AllowLoadGameType: camelot
-## Title: |cffd4a017WoW Forever|r |cff66ccffRot|r
+## Title: |cffd4a017Forever|r |cff66ccffRotation|r
 ## Notes: Rotation helper for WoW Forever (Classic content, camelot client).
 ## Notes-frFR: Aide de rotation pour WoW Forever (contenu Classic, client camelot).
 ## Notes-deDE: Rotationshilfe für WoW Forever.
@@ -12,7 +12,7 @@
 ## Notes-koKR: WoW Forever 순환 도우미.
 ## Notes-zhCN: WoW Forever 循环助手。
 ## Notes-zhTW: WoW Forever 循環助手。
-## Version: 1.5.40
+## Version: 1.5.41
 ## Author: Vohnka
 ## IconTexture: Interface\AddOns\WoWForeverRot\images\logo.tga
 ## Category: WoW Forever

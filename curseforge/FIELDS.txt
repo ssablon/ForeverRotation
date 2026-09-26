@@ -1,7 +1,7 @@
 À coller dans le formulaire CurseForge (Create Project)
 
 Game:                 World of Warcraft
-Project name:         WoW Forever Rot
+Project name:         Forever Rotation
 Slug (si demandé):    forever-rot
 Logo:                 curseforge/logo-512.png
 Summary (FR):         Aide de rotation pour WoW Forever Classic. HUD des 3 prochains sorts, tête de mort sur le bon bouton, plus soins, défense, interrupts, purges, dissipations et enchant d'arme. Pas un bot — vous appuyez toujours.
@@ -19,7 +19,7 @@ Source:               dépôt privé GitHub (ne pas rendre public si tu veux le 
 Issues / Support:     https://discord.gg/qmb2uDu8Z3  (English only: #support, #bugs, #suggestions)
 
 Fichier à uploader:   F:\Github\addons\wow\WoWForeverRot-<VERSION.txt>.zip
-Display name:         WoWForeverRot <VERSION.txt>
+Display name:         Forever Rotation <VERSION.txt>
 Release type:         Release
 Changelog:            curseforge/CHANGELOG.md
 Supported versions:   1.60.1  (API id 17053, type 88568)
