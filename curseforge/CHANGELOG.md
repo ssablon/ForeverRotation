@@ -1,3 +1,30 @@
+# 1.5.64
+
+## Rotation reliability (summary of 1.5.58 → 1.5.63)
+
+### List order is respected
+- Your list order is authoritative for every class, race, mode (Auto / Single / AoE / Burst) and for both default and manually edited lists.
+- Talent-school gates (`require` / `requireAny`) no longer hide a filler. Example: if Frostbolt is above Fireball and ready, Frostbolt is suggested — not Fireball.
+- Forever FR name matching folds accents (Éclair ↔ Eclair) so class spells and racials resolve correctly in the spellbook.
+- Class rotations stay class-only; racials stay race-only (Human ≠ Orc ≠ Aeolid). Mage burst includes Frostbolt above Fireball like single-target.
+
+### Re-suggest delay (hold)
+- After you cast a spell, it can stay off the queue for N seconds (DoT, HoT, snare). Defaults come from Forever/Classic aura durations (e.g. Frostbolt chill = 5s, Corruption = 12s, Shadow Word: Pain = 18s, Serpent Sting = 15s, Flame Shock = 12s, …).
+- Every spell row in Rotation and Defense has an editable delay box — including spells with no known aura (default **0**).
+- **0** means no aura re-cast delay only. It does **not** mean spam one spell in a loop. The queue still follows list order and conditions (spell 1 → 2 → 3); each spell appears at most once per queue (except next-swing fillers).
+- Hold tip text is translated in all supported languages (enUS, frFR, deDE, esES/esMX, ruRU, zhCN, zhTW, ptBR, itIT, koKR).
+
+### Rotation pass (advance & wrap)
+- Casting any spell that is on your list marks it used for the current pass — even if you cast it before the HUD had shown it.
+- The HUD then offers the **next** usable spell in the list.
+- When nothing usable remains in that pass, the queue **restarts from the top**.
+- The pass clears on target change and when leaving combat.
+- Real cooldowns, `hold` delays, range, and other StepOk conditions still apply on top of this.
+
+### Queue behaviour kept
+- Up to three different next spells; fillers still yield to a ready shock / DoT / cooldown lower in the list when that is correct.
+- Slot 1 prefers confirmed in-range; out-of-range stays in slots 2–3.
+
 # 1.5.63
 
 - Rotation pass tracking: casting any list spell (even before it was shown) marks it used and advances to the next usable spell. When the pass is exhausted, the queue restarts from the top. Clears on target change and leaving combat.
@@ -12,7 +39,7 @@
 
 # 1.5.60
 
-- Per-spell re-suggest delay (hold): after you cast, the spell stays off the queue for N seconds. Defaults from Forever/Classic DoT, HoT and snare durations (Frostbolt chill = 5). Editable next to each spell in options; 0 allows spam.
+- Per-spell re-suggest delay (hold): after you cast, the spell stays off the queue for N seconds. Defaults from Forever/Classic DoT, HoT and snare durations (Frostbolt chill = 5). Editable next to each spell in options; 0 = no aura delay (rotation order still applies).
 
 # 1.5.59
 
