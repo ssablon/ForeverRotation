@@ -1,3 +1,7 @@
+# 1.5.53
+
+- A ready in-range shock, DoT, or cooldown becomes the spell to press even if a filler is listed first. Rotation edits apply at once (Apply button); no /reload.
+
 # 1.5.52
 
 - Queue lookahead works for every class: combo, stealth finishers, current cast pinned, positional spells during the GCD, and a filler after shocks so the HUD never sticks on one icon.

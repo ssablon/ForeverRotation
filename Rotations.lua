@@ -132,9 +132,72 @@ function ns.BuildQueue()
 	local function consider(step)
 		return ns.IsStepEnabled(step) and step.id and not ns.IsWeaponBuff(step.id) and not ns.IsMaintenanceBuff(step.id) and onBar(step.id)
 	end
-	-- ConROC: pick, assume pressed, restart from the top. Pin the current cast first.
+	-- Actions (shocks, DoTs, CDs) beat fillers when they are ready and in range.
+	-- List order still ranks those actions. Fillers only fill empty slots.
 	if API.PredictBegin then
 		API.PredictBegin()
+	end
+	local function isFallback(opt)
+		opt = opt or {}
+		return opt.filler == true or opt.swing == true
+	end
+	local function inQueue(id)
+		if not id then
+			return false
+		end
+		for i = 1, #q do
+			if q[i] == id then
+				return true
+			end
+		end
+		return false
+	end
+	local function rangeNow(id, opt)
+		if not ns.SpellInRange then
+			return true
+		end
+		opt = opt or {}
+		local need = opt.hostile or opt.heal
+		if not need and API.IsHarmful then
+			need = API.IsHarmful(id)
+		end
+		if not need then
+			return true
+		end
+		return ns.SpellInRange(id) ~= false
+	end
+	local function tryPick(step, shift, mustRange, allowDup)
+		if not consider(step) then
+			return false
+		end
+		if not API.StepOk(step.id, step.opt, shift) then
+			return false
+		end
+		local id = (API.Resolve and API.Resolve(step.id)) or step.id
+		if not allowDup and inQueue(id) then
+			return false
+		end
+		if mustRange and not rangeNow(id, step.opt) then
+			return false
+		end
+		if take(step) then
+			if API.PredictConsume then
+				API.PredictConsume(step.id, step.opt)
+			end
+			return true
+		end
+		return false
+	end
+	local function scan(shift, mustRange, wantFallback, allowDup)
+		for _, step in ipairs(apl) do
+			local fb = isFallback(step.opt)
+			if wantFallback == nil or fb == wantFallback then
+				if tryPick(step, shift, mustRange, allowDup) then
+					return true
+				end
+			end
+		end
+		return false
 	end
 	local function fillSlots()
 		local shift = 0.2
@@ -154,20 +217,13 @@ function ns.BuildQueue()
 				end
 			end
 		end
-		while #q < 3 do
-			local taken = false
-			for _, step in ipairs(apl) do
-				if consider(step) and API.StepOk(step.id, step.opt, shift) then
-					if take(step) then
-						if API.PredictConsume then
-							API.PredictConsume(step.id, step.opt)
-						end
-						taken = true
-						break
-					end
-				end
+		if #q == 0 then
+			if not scan(shift, true, false, false) then
+				scan(shift, true, true, false)
 			end
-			if not taken then
+		end
+		while #q < 3 do
+			if not (scan(shift, false, false, false) or scan(shift, false, true, false) or scan(shift, false, true, true)) then
 				break
 			end
 		end

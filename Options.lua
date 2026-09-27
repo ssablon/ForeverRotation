@@ -717,6 +717,17 @@ local function ensureOptions()
 	local resetApl = makeGoldBtn(rotation, 120, 22, ns.T("OPT_RESET_APL"))
 	resetApl:SetPoint("TOPRIGHT", rotation, "TOPRIGHT", -8, -22)
 	frame.resetApl = resetApl
+	local applyApl = makeGoldBtn(rotation, 100, 22, ns.T("OPT_APPLY"))
+	applyApl:SetPoint("RIGHT", resetApl, "LEFT", -6, 0)
+	frame.applyApl = applyApl
+	applyApl:SetScript("OnClick", function()
+		if ns.ApplyRotationEdit then
+			ns.ApplyRotationEdit()
+		end
+		if ns.Print then
+			ns.Print(ns.T("OPT_APPLY_DONE"))
+		end
+	end)
 	resetApl:SetScript("OnClick", function()
 		if listKind == "def" then
 			ns.ResetDef(nil, editSpec)
@@ -1091,6 +1102,9 @@ local function ensureOptions()
 		end
 		if frame.resetApl then
 			frame.resetApl:SetText(ns.T("OPT_RESET_APL"))
+		end
+		if frame.applyApl then
+			frame.applyApl:SetText(ns.T("OPT_APPLY"))
 		end
 		if frame.exportBtn then
 			frame.exportBtn:SetText(ns.T("OPT_EXPORT"))

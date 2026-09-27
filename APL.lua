@@ -451,6 +451,21 @@ function ns.InvalidateAPLCache()
 	defMemoAt = nil
 end
 
+function ns.ApplyRotationEdit()
+	if ns.FlushProfile then
+		ns.FlushProfile()
+	end
+	if ns.InvalidateAPLCache then
+		ns.InvalidateAPLCache()
+	end
+	if ns.InvalidateTick then
+		ns.InvalidateTick()
+	end
+	if ns.Tick then
+		ns.Tick()
+	end
+end
+
 function ns.GetAPL(classFile, spec, mode)
 	classFile = classFile or (ns.ClassToken and ns.ClassToken()) or ""
 	spec = spec or ns.ActiveSpec()
@@ -483,10 +498,9 @@ function ns.SaveAPL(steps, classFile, spec, mode)
 	end
 	local bucket = ensureModeBucket(classFile, spec)
 	bucket[mode] = packRows(steps)
-	if ns.InvalidateAPLCache then
-		ns.InvalidateAPLCache()
-	end
-	if ns.Tick then
+	if ns.ApplyRotationEdit then
+		ns.ApplyRotationEdit()
+	elseif ns.Tick then
 		ns.Tick()
 	end
 end
@@ -511,11 +525,8 @@ function ns.ResetAPL(classFile, spec, mode)
 		ns.db.apl[classFile][spec] = nil
 	end
 	clearDropped("apl", classFile, spec, mode)
-	if ns.InvalidateAPLCache then
-		ns.InvalidateAPLCache()
-	end
-	if ns.Tick then
-		ns.Tick()
+	if ns.ApplyRotationEdit then
+		ns.ApplyRotationEdit()
 	end
 end
 
@@ -524,7 +535,7 @@ function ns.MoveAPL(index, delta, classFile, spec, mode)
 	if not mode then
 		return
 	end
-	local steps = ns.GetAPL(classFile, spec, mode)
+	local steps = copyList(ns.GetAPL(classFile, spec, mode))
 	local dest = index + delta
 	if dest < 1 or dest > #steps then
 		return
@@ -538,7 +549,7 @@ function ns.SetAPLEnabled(key, enabled, classFile, spec, mode)
 	if not mode then
 		return
 	end
-	local steps = ns.GetAPL(classFile, spec, mode)
+	local steps = copyList(ns.GetAPL(classFile, spec, mode))
 	for _, s in ipairs(steps) do
 		if s.key == key then
 			s.on = ns.CoerceChecked(enabled)
@@ -609,7 +620,7 @@ function ns.AddAPL(spellID, classFile, spec, mode, atIndex)
 		step = {
 			key = customKey(spellID),
 			id = spellID,
-			opt = (ns.API.IsHelpful and ns.API.IsHelpful(spellID)) and { heal = true } or {},
+			opt = (ns.API.IsHelpful and ns.API.IsHelpful(spellID) and not (ns.API.IsHarmful and ns.API.IsHarmful(spellID))) and { heal = true } or { hostile = true },
 			on = true,
 			custom = true,
 		}
@@ -660,11 +671,8 @@ function ns.SaveDef(steps, classFile, spec)
 	ns.db.def = ns.db.def or {}
 	ns.db.def[classFile] = ns.db.def[classFile] or {}
 	ns.db.def[classFile][spec] = packRows(steps)
-	if ns.InvalidateAPLCache then
-		ns.InvalidateAPLCache()
-	end
-	if ns.Tick then
-		ns.Tick()
+	if ns.ApplyRotationEdit then
+		ns.ApplyRotationEdit()
 	end
 end
 
@@ -675,16 +683,13 @@ function ns.ResetDef(classFile, spec)
 		ns.db.def[classFile][spec] = nil
 	end
 	clearDropped("def", classFile, spec)
-	if ns.InvalidateAPLCache then
-		ns.InvalidateAPLCache()
-	end
-	if ns.Tick then
-		ns.Tick()
+	if ns.ApplyRotationEdit then
+		ns.ApplyRotationEdit()
 	end
 end
 
 function ns.MoveDef(index, delta, classFile, spec)
-	local steps = ns.GetDef(classFile, spec)
+	local steps = copyList(ns.GetDef(classFile, spec))
 	local dest = index + delta
 	if dest < 1 or dest > #steps then
 		return
@@ -694,7 +699,7 @@ function ns.MoveDef(index, delta, classFile, spec)
 end
 
 function ns.SetDefEnabled(key, enabled, classFile, spec)
-	local steps = ns.GetDef(classFile, spec)
+	local steps = copyList(ns.GetDef(classFile, spec))
 	for _, s in ipairs(steps) do
 		if s.key == key then
 			s.on = ns.CoerceChecked(enabled)

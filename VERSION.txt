@@ -1,3 +1,8 @@
+1.5.53
+
+2026-09-27
+- A ready in-range shock, DoT, or cooldown becomes the spell to press even if a filler is listed first. Rotation edits apply at once (Apply button); no /reload.
+
 1.5.52
 
 2026-09-27
