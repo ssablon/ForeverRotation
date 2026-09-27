@@ -1407,6 +1407,89 @@ do
 	end
 end
 
+-- Seconds to wait after a successful cast before suggesting the spell again.
+-- Values from Forever 1.60 lab tooltips (Classic Era aura / DoT / HoT / snare
+-- durations). Players can override per row in options (opt.hold). 0 disables.
+ns.SPELL_HOLD = {}
+do
+	local P, W, H, R, Pr, Sh, M, L, D =
+		ns.Spell.Paladin, ns.Spell.Warrior, ns.Spell.Hunter, ns.Spell.Rogue,
+		ns.Spell.Priest, ns.Spell.Shaman, ns.Spell.Mage, ns.Spell.Warlock, ns.Spell.Druid
+	local hold = {
+		-- Mage
+		[M.Frostbolt] = 5, -- chill 40% (rank 1 Forever; higher ranks 6–9s)
+		[M.FrostfireBolt] = 9,
+		[M.Pyroblast] = 12,
+		[M.Flamestrike] = 8,
+		[M.FrostNova] = 8,
+		[M.ConeofCold] = 6,
+		[M.BlastWave] = 6,
+		-- Mage Scorch: no hold (spam filler; Improved Scorch is talent-only)
+		-- Warlock
+		[L.Corruption] = 12,
+		[L.Immolate] = 15,
+		[L.CurseofAgony] = 24,
+		[L.SiphonLife] = 30,
+		[L.DrainLife] = 5,
+		[L.DrainSoul] = 15,
+		[L.Fear] = 10,
+		[L.HowlofTerror] = 10,
+		[L.DeathCoil] = 3,
+		[L.Shadowburn] = 5,
+		-- Priest
+		[Pr.ShadowWordPain] = 18,
+		[Pr.DevouringPlague] = 24,
+		[Pr.HolyFire] = 10,
+		[Pr.Renew] = 15,
+		[Pr.PowerWordShield] = 15, -- Weakened Soul window-ish; shield itself longer
+		[Pr.PsychicScream] = 8,
+		[Pr.VampiricEmbrace] = 30,
+		-- Shaman
+		[Sh.FlameShock] = 12,
+		[Sh.FrostShock] = 8,
+		-- Hunter
+		[H.SerpentSting] = 15,
+		[H.ViperSting] = 8,
+		[H.ScorpidSting] = 20,
+		[H.HuntersMark] = 120,
+		[H.ConcussiveShot] = 4,
+		[H.WingClip] = 10,
+		[H.ScatterShot] = 4,
+		-- Warrior
+		[W.Rend] = 9,
+		[W.SunderArmor] = 30,
+		[W.Hamstring] = 15,
+		[W.ThunderClap] = 10,
+		[W.DemoralizingShout] = 30,
+		-- Rogue
+		[R.Rupture] = 6, -- base 1 CP; player raises with CP
+		[R.Garrote] = 18,
+		[R.SliceandDice] = 6,
+		[R.ExposeArmor] = 30,
+		[R.Hemorrhage] = 15,
+		[R.Gouge] = 4,
+		-- Druid
+		[D.Moonfire] = 9,
+		[D.InsectSwarm] = 12,
+		[D.FaerieFire] = 40,
+		[D.FaerieFireFeral] = 40,
+		[D.Rake] = 9,
+		[D.Rip] = 12,
+		[D.Lacerate] = 15,
+		[D.Rejuvenation] = 12,
+		[D.Regrowth] = 21,
+		[D.DemoralizingRoar] = 30,
+		-- Paladin seals are maintained via nobuff; short CC / judgements
+		[P.HammerofJustice] = 3,
+		[P.Consecration] = 8,
+	}
+	for id, sec in pairs(hold) do
+		if id and type(sec) == "number" and sec > 0 then
+			ns.SPELL_HOLD[id] = sec
+		end
+	end
+end
+
 -- Secours si GetSpellBaseCooldown ne renvoie rien. Le client prime dès qu'il répond.
 -- Valeurs Classic Era (secondes). Les horions partagent un seul temps de recharge.
 do

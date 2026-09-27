@@ -1,3 +1,7 @@
+# 1.5.60
+
+- Per-spell re-suggest delay (hold): after you cast, the spell stays off the queue for N seconds. Defaults from Forever/Classic DoT, HoT and snare durations (Frostbolt chill = 5). Editable next to each spell in options; 0 allows spam.
+
 # 1.5.59
 
 - Class lists stay class-only; racials stay race-only (no cross-race fallback).

@@ -141,7 +141,7 @@ Les listes viennent d'un noyau Era type ConROC Classic, niveaux 1–60. Pas de S
 | `usable` | Le client doit répondre que le sort est utilisable (Exorcisme, Colère divine, Attaque sournoise dans le dos). Si la réponse est masquée, le pas est sauté. |
 | `manaMax` | Refus si le pourcentage de mana du joueur est au-dessus de ce seuil (Connexion). |
 | `hpMin` | Refus si la vie (joueur, ou `unit`) est sous ce pourcentage. |
-| `require` / `requireAny` | **Retiré** — ne masquent plus un sort de la liste. L’ordre de la liste décide (ex. Éclair de givre au-dessus de Boule de feu). |
+| `hold` | Secondes après un cast réussi pendant lesquelles le sort n'est plus proposé. Défauts = durées Forever/Classic (DoT, HoT, snare). Ex. Éclair de givre = 5. Éditable dans les options à côté de chaque sort ; `0` = spam autorisé. Indépendant du vrai cooldown. |
 | `anydebuff` | Liste d'IDs. Si la cible a **l'un** d'eux, le pas est refusé. Une seule piqûre, une seule malédiction. |
 
 `ns.API.Ready` : sort résolu, pas de cooldown propre en cours, pas de `noMana`. Le GCD (environ 1,5 s) ne retire pas le sort de la file : il reste le prochain bouton à presser. Un cooldown plus long (Jugement, Horion, Visée, Déflagration…) le retire jusqu'à la fin, et le pas suivant de la liste est testé. Ça vaut pour toutes les classes, les raciaux et la défense.
@@ -203,7 +203,7 @@ Un seau de modes est une table avec `auto` / `single` / `aoe` / `burst` et **san
 
 Retirer un pas non `custom_*` écrit sa clé dans `aplDrop` / `defDrop`, pour qu'un défaut ne revienne pas. `custom_` vient du nom du sort (`custom_` + nom sans espaces).
 
-`packRows` ne sauve que `{ key, on = 1|0, id si custom, custom }`. Les `opt` des sorts par défaut restent dans `Lists.lua`. Un sort custom utile reçoit `opt.heal = true` à l'ajout et à la fusion. Un sort custom de défense reçoit `opt.combat = true`.
+`packRows` sauve `{ key, on = 1|0, hold si défini, id si custom, custom }`. Les autres `opt` des sorts par défaut restent dans `Lists.lua` / `ns.SPELL_HOLD`. Un sort custom utile reçoit `opt.heal = true` à l'ajout et à la fusion. Un sort custom de défense reçoit `opt.combat = true`.
 
 `ns.AddAPL` refuse un buff de maintenance. `ns.DropSpellOnList` envoie ces sorts vers `ns.AddDef`. Les noms `TEST`, `(OLD)`, `(PT)` ne sortent pas de `ns.API.CursorSpell`.
 

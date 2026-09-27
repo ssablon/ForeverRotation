@@ -1,16 +1,11 @@
+1.5.60
+
+2026-09-27
+- Per-spell re-suggest delay (hold): after you cast, the spell stays off the queue for N seconds. Defaults from Forever/Classic DoT, HoT and snare durations (Frostbolt chill = 5). Editable next to each spell in options; 0 allows spam.
+
 1.5.59
 
 2026-09-27
 - Class lists stay class-only; racials stay race-only (no cross-race fallback).
 - Spell name matching folds accents (Éclair ↔ Eclair) so Forever FR resolves every class filler and racial correctly.
 - Mage burst includes Frostbolt above Fireball, same list-order rule as single target.
-
-1.5.58
-
-2026-09-27
-- List order is authoritative for fillers: Frostbolt / Arcane / Fireball are no longer hidden by talent-school gates (requireAny). If Frostbolt is above Fireball and ready, Frostbolt is suggested.
-
-1.5.57
-
-2026-09-27
-- Fillers yield again to a ready shock, DoT, or cooldown lower in the list, so that spell becomes slot 1 (e.g. Earth Shock over Lightning Bolt). Unknown range still counts. The HUD still shows each spell only once per queue.

@@ -34,13 +34,26 @@ local function copyOpt(opt)
 	return out
 end
 
+local function injectHold(opt, spellID)
+	if type(opt) ~= "table" then
+		opt = {}
+	end
+	if opt.hold == nil and spellID and ns.SPELL_HOLD then
+		local h = ns.SPELL_HOLD[spellID]
+		if type(h) == "number" then
+			opt.hold = h
+		end
+	end
+	return opt
+end
+
 local function copyList(list)
 	local out = {}
 	for i, s in ipairs(list) do
 		out[i] = {
 			key = s.key,
 			id = s.id,
-			opt = copyOpt(s.opt),
+			opt = injectHold(copyOpt(s.opt), s.id),
 			on = ns.IsStepEnabled(s),
 			racial = s.racial,
 		}
@@ -416,6 +429,17 @@ local function skipCombatOnly(id, skipMaint)
 	return skipMaint and ns.IsMaintenanceBuff and ns.IsMaintenanceBuff(id)
 end
 
+local function applySavedHold(opt, row, spellID)
+	opt = injectHold(opt, spellID)
+	if type(row) == "table" and row.hold ~= nil then
+		local h = tonumber(row.hold)
+		if h and h >= 0 then
+			opt.hold = h
+		end
+	end
+	return opt
+end
+
 local function mergeSteps(defaults, saved, dropped, skipMaint)
 	dropped = dropped or {}
 	if not saved then
@@ -428,7 +452,7 @@ local function mergeSteps(defaults, saved, dropped, skipMaint)
 				out[#out + 1] = {
 					key = def.key,
 					id = def.id,
-					opt = copyOpt(def.opt),
+					opt = injectHold(copyOpt(def.opt), def.id),
 					on = ns.IsStepEnabled(def),
 					racial = def.racial,
 				}
@@ -450,13 +474,13 @@ local function mergeSteps(defaults, saved, dropped, skipMaint)
 				out[#out + 1] = {
 					key = def.key,
 					id = def.id,
-					opt = copyOpt(def.opt),
+					opt = applySavedHold(copyOpt(def.opt), row, def.id),
 					on = ns.IsStepEnabled(row),
 					racial = def.racial,
 				}
 				seen[row.key] = true
 			elseif (row.id or row.custom) and not skipCombatOnly(row.id, skipMaint) then
-				local opt = copyOpt(row.opt)
+				local opt = applySavedHold(copyOpt(row.opt), row, row.id)
 				if ns.API.IsHelpful and ns.API.IsHelpful(row.id, opt) and not opt.heal then
 					opt.heal = true
 				end
@@ -484,7 +508,7 @@ local function mergeSteps(defaults, saved, dropped, skipMaint)
 				out[#out + 1] = {
 					key = def.key,
 					id = def.id,
-					opt = copyOpt(def.opt),
+					opt = injectHold(copyOpt(def.opt), def.id),
 					on = ns.IsStepEnabled(def),
 					racial = def.racial,
 				}
@@ -497,11 +521,13 @@ end
 local function packRows(steps)
 	local rows = {}
 	for _, s in ipairs(steps) do
+		local hold = s.opt and tonumber(s.opt.hold)
 		rows[#rows + 1] = {
 			key = s.key,
 			on = ns.IsStepEnabled(s) and 1 or 0,
 			id = s.custom and s.id or nil,
 			custom = s.custom or nil,
+			hold = hold,
 		}
 	end
 	return rows
@@ -622,6 +648,26 @@ function ns.SetAPLEnabled(key, enabled, classFile, spec, mode)
 	for _, s in ipairs(steps) do
 		if s.key == key then
 			s.on = ns.CoerceChecked(enabled)
+			break
+		end
+	end
+	ns.SaveAPL(steps, classFile, spec, mode)
+end
+
+function ns.SetAPLHold(key, seconds, classFile, spec, mode)
+	mode = validMode(mode)
+	if not mode or not key then
+		return
+	end
+	local steps = copyList(ns.GetAPL(classFile, spec, mode))
+	local hold = tonumber(seconds)
+	if hold then
+		hold = math.max(0, math.floor(hold + 0.5))
+	end
+	for _, s in ipairs(steps) do
+		if s.key == key then
+			s.opt = s.opt or {}
+			s.opt.hold = hold or 0
 			break
 		end
 	end
@@ -772,6 +818,25 @@ function ns.SetDefEnabled(key, enabled, classFile, spec)
 	for _, s in ipairs(steps) do
 		if s.key == key then
 			s.on = ns.CoerceChecked(enabled)
+			break
+		end
+	end
+	ns.SaveDef(steps, classFile, spec)
+end
+
+function ns.SetDefHold(key, seconds, classFile, spec)
+	if not key then
+		return
+	end
+	local steps = copyList(ns.GetDef(classFile, spec))
+	local hold = tonumber(seconds)
+	if hold then
+		hold = math.max(0, math.floor(hold + 0.5))
+	end
+	for _, s in ipairs(steps) do
+		if s.key == key then
+			s.opt = s.opt or {}
+			s.opt.hold = hold or 0
 			break
 		end
 	end

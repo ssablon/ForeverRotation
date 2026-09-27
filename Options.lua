@@ -1222,9 +1222,24 @@ local function aplRow(parent, index)
 
 	local name = row:CreateFontString(nil, "OVERLAY", "GameFontHighlightSmall")
 	name:SetPoint("LEFT", 74, 0)
-	name:SetWidth(280)
+	name:SetWidth(200)
 	name:SetJustifyH("LEFT")
 	row.label = name
+
+	local hold = CreateFrame("EditBox", "WoWForeverRotAPLHold" .. index, row, "InputBoxTemplate")
+	hold:SetSize(34, 18)
+	hold:SetPoint("RIGHT", -152, 0)
+	hold:SetAutoFocus(false)
+	hold:SetNumeric(true)
+	hold:SetMaxLetters(3)
+	hold:SetJustifyH("CENTER")
+	hold:SetTextInsets(2, 2, 0, 0)
+	row.hold = hold
+
+	local holdUnit = row:CreateFontString(nil, "OVERLAY", "GameFontDisableSmall")
+	holdUnit:SetPoint("LEFT", hold, "RIGHT", 2, 0)
+	holdUnit:SetText("s")
+	row.holdUnit = holdUnit
 
 	local up = makeListBtn(row, 44, ns.T("OPT_MOVE_UP"))
 	up:SetPoint("RIGHT", -96, 0)
@@ -1240,6 +1255,29 @@ local function aplRow(parent, index)
 	del:SetPoint("RIGHT", 0, 0)
 	bindSimpleTip(del, ns.T("OPT_REMOVE_SPELL"), ns.T("OPT_REMOVE_SPELL_TIP"))
 	row.del = del
+
+	local function commitHold(self)
+		if not self.stepKey then
+			return
+		end
+		local sec = tonumber(self:GetText()) or 0
+		if listKind == "def" then
+			ns.SetDefHold(self.stepKey, sec, nil, editSpec)
+		else
+			ns.SetAPLHold(self.stepKey, sec, nil, editSpec, self.mode)
+		end
+		ns.RefreshOptions()
+	end
+	hold:SetScript("OnEnterPressed", function(self)
+		self:ClearFocus()
+		commitHold(self)
+	end)
+	hold:SetScript("OnEditFocusLost", commitHold)
+	hold:SetScript("OnEscapePressed", function(self)
+		self:ClearFocus()
+		ns.RefreshOptions()
+	end)
+	bindSimpleTip(hold, ns.T("OPT_HOLD"), ns.T("OPT_HOLD_TIP"))
 
 	box:SetScript("OnClick", function(self)
 		if self.stepKey then
@@ -1513,6 +1551,17 @@ function ns.RefreshOptions()
 		row.label:SetText(name)
 		local known = API.Known(step.id)
 		row.label:SetTextColor(known and 1 or 0.55, known and 1 or 0.55, known and 1 or 0.55)
+		if row.hold then
+			row.hold.stepKey = step.key
+			row.hold.mode = mode
+			local hold = step.opt and tonumber(step.opt.hold)
+			if hold == nil and ns.SPELL_HOLD and step.id then
+				hold = ns.SPELL_HOLD[step.id]
+			end
+			if not row.hold:HasFocus() then
+				row.hold:SetText(tostring(hold or 0))
+			end
+		end
 	end
 
 	local function renderSteps(steps, mode)

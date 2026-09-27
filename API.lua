@@ -550,6 +550,7 @@ end
 
 local cdUntil = {}
 local cdKnown = {}
+local holdUntil = {}
 
 local function cdKey(spellID)
 	local name = ns.API.SpellName(spellID)
@@ -729,6 +730,94 @@ function ns.API.NoteSpellCast(spellID)
 		seconds = fallbackSeconds(spellID)
 	end
 	markCooldown(spellID, seconds)
+	local hold = ns.API.HoldSeconds(spellID)
+	if hold and hold > 0 then
+		ns.API.NoteSpellHold(spellID, hold)
+	end
+end
+
+-- Re-suggest delay after cast (DoT / HoT / snare). Independent from real CD.
+function ns.API.HoldSeconds(spellID)
+	local resolved = ns.API.Resolve(spellID) or spellID
+	if not resolved then
+		return 0
+	end
+	local function fromStep(step)
+		if not step or not step.id then
+			return nil
+		end
+		local sid = ns.API.Resolve(step.id) or step.id
+		if sid ~= resolved and step.id ~= spellID and step.id ~= resolved then
+			return nil
+		end
+		if step.opt and step.opt.hold ~= nil then
+			return tonumber(step.opt.hold) or 0
+		end
+		return nil
+	end
+	if ns.GetAPL then
+		local apl = ns.GetAPL()
+		for i = 1, #(apl or {}) do
+			local hit = fromStep(apl[i])
+			if hit ~= nil then
+				return math.max(0, hit)
+			end
+		end
+	end
+	if ns.GetDef then
+		local def = ns.GetDef()
+		for i = 1, #(def or {}) do
+			local hit = fromStep(def[i])
+			if hit ~= nil then
+				return math.max(0, hit)
+			end
+		end
+	end
+	if ns.SPELL_HOLD then
+		local h = ns.SPELL_HOLD[resolved] or ns.SPELL_HOLD[spellID]
+		if type(h) == "number" then
+			return math.max(0, h)
+		end
+	end
+	return 0
+end
+
+function ns.API.NoteSpellHold(spellID, seconds)
+	seconds = tonumber(seconds)
+	if not spellID or not seconds or seconds <= 0 then
+		return
+	end
+	local exp = GetTime() + seconds
+	holdUntil[cdKey(spellID)] = exp
+	holdUntil["id:" .. tostring(spellID)] = exp
+	local resolved = ns.API.Resolve(spellID)
+	if resolved and resolved ~= spellID then
+		holdUntil[cdKey(resolved)] = exp
+		holdUntil["id:" .. tostring(resolved)] = exp
+	end
+end
+
+function ns.API.HoldRemain(spellID)
+	if not spellID then
+		return 0
+	end
+	local exp = holdUntil[cdKey(spellID)] or holdUntil["id:" .. tostring(spellID)]
+	if not exp then
+		local resolved = ns.API.Resolve(spellID)
+		if resolved then
+			exp = holdUntil[cdKey(resolved)] or holdUntil["id:" .. tostring(resolved)]
+		end
+	end
+	if not exp then
+		return 0
+	end
+	local remain = exp - GetTime()
+	if remain <= 0 then
+		holdUntil[cdKey(spellID)] = nil
+		holdUntil["id:" .. tostring(spellID)] = nil
+		return 0
+	end
+	return remain
 end
 
 local function trackedRemain(spellID)
@@ -1224,6 +1313,15 @@ function ns.API.StepOk(spellID, opt, timeShift)
 		return false
 	end
 	opt = opt or {}
+	local gate = tonumber(timeShift) or 0.2
+	if gate < 0.2 then
+		gate = 0.2
+	end
+	-- Player/configurable reapply delay (Frostbolt chill, DoTs, HoTs…).
+	local holdLeft = ns.API.HoldRemain(spellID)
+	if holdLeft > gate then
+		return false
+	end
 	if opt.hostile and not ns.API.Hostile() then
 		return false
 	end
@@ -1338,10 +1436,6 @@ function ns.API.StepOk(spellID, opt, timeShift)
 				return false
 			end
 		end
-	end
-	local gate = tonumber(timeShift) or 0.2
-	if gate < 0.2 then
-		gate = 0.2
 	end
 	local remain = ns.API.Cooldown(spellID)
 	if ns.API.CastingSpell(spellID) then
