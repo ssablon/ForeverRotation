@@ -1553,4 +1553,14 @@ do
 	ns.COOLDOWN_GROUPS = {
 		{ seconds = 6, ids = { Sh.EarthShock, Sh.FlameShock, Sh.FrostShock } },
 	}
+	ns.COMBO_BUILDERS = {
+		[R.SinisterStrike] = true,
+		[R.Hemorrhage] = true,
+		[R.GhostlyStrike] = true,
+		[R.Mutilate] = true,
+		[R.Backstab] = true,
+		[D.Claw] = true,
+		[D.Shred] = true,
+		[D.MangleCat] = true,
+	}
 end

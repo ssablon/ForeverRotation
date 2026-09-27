@@ -178,6 +178,13 @@ local function acceptSpellId(id, expectedName)
 	return id
 end
 
+function ns.API.ResolveFromName(name)
+	if type(name) ~= "string" or name == "" or junkSpellName(name) then
+		return nil
+	end
+	return findPlayerSpellByName(name) or spellIdFromName(name)
+end
+
 function ns.API.CursorSpell()
 	if not GetCursorInfo then
 		return nil
@@ -612,6 +619,18 @@ local function fallbackSeconds(spellID)
 		end
 	end
 	return 0
+end
+
+function ns.API.SpellCooldownSec(spellID)
+	spellID = ns.API.Resolve(spellID) or spellID
+	if not spellID then
+		return 0
+	end
+	local sec = baseCooldownSec(spellID)
+	if sec and sec > 0.2 then
+		return sec
+	end
+	return fallbackSeconds(spellID) or 0
 end
 
 local function markCooldown(spellID, seconds)
@@ -1061,7 +1080,17 @@ function ns.API.StepOk(spellID, opt, timeShift)
 			usable = readUsable(IsUsableSpell, spellID)
 		end
 		if usable ~= true then
-			return false
+			-- Procs stay strict. Positional spells (Backstab, Exorcism) follow
+			-- the same GCD/cast window as Ready(), so they still enter slot 2–3.
+			if opt.proc then
+				return false
+			end
+			if ns.API.CastRemain() <= 0 then
+				local last = ns.API.lastCastAt
+				if not last or (GetTime() - last) >= 1.55 then
+					return false
+				end
+			end
 		end
 	end
 	if opt.manaMax then
@@ -1169,8 +1198,19 @@ local function normName(name)
 	return n
 end
 
+local function rawCombo()
+	if not GetComboPoints then
+		return 0
+	end
+	local ok, points = pcall(GetComboPoints, "player", "target")
+	if ok and type(points) == "number" then
+		return points
+	end
+	return 0
+end
+
 function ns.API.PredictBegin()
-	predict = { debuffs = {}, buffs = {}, cd = {} }
+	predict = { debuffs = {}, buffs = {}, cd = {}, usedBuffs = {}, combo = rawCombo(), taken = 0 }
 end
 
 function ns.API.PredictEnd()
@@ -1199,12 +1239,33 @@ local function predictMarkBuff(spellID)
 	end
 end
 
+local function isComboBuilder(spellID)
+	local builders = ns.COMBO_BUILDERS
+	if not builders or not spellID then
+		return false
+	end
+	if builders[spellID] then
+		return true
+	end
+	local name = ns.API.SpellName(spellID)
+	if type(name) ~= "string" or name == "" then
+		return false
+	end
+	for id in pairs(builders) do
+		if ns.API.SpellName(id) == name then
+			return true
+		end
+	end
+	return false
+end
+
 function ns.API.PredictConsume(spellID, opt)
 	if not predict then
 		return
 	end
 	spellID = ns.API.Resolve(spellID) or spellID
 	opt = opt or {}
+	predict.taken = (predict.taken or 0) + 1
 	if opt.nodebuff then
 		local debuff = opt.nodebuff == true and spellID or opt.nodebuff
 		predictMarkDebuff(debuff)
@@ -1226,13 +1287,22 @@ function ns.API.PredictConsume(spellID, opt)
 			predictMarkBuff(id)
 		end
 	end
+	if opt.needbuff then
+		predict.usedBuffs[opt.needbuff] = true
+		local name = ns.API.SpellName(opt.needbuff)
+		if type(name) == "string" and name ~= "" then
+			predict.usedBuffs[normName(name)] = true
+		end
+	end
+	if opt.comboMin then
+		predict.combo = 0
+	elseif isComboBuilder(spellID) then
+		predict.combo = math.min(5, (predict.combo or 0) + 1)
+	end
 	if opt.filler == true or opt.swing == true then
 		return
 	end
-	local seconds = baseCooldownSec(spellID)
-	if seconds <= 0 then
-		seconds = fallbackSeconds(spellID)
-	end
+	local seconds = ns.API.SpellCooldownSec(spellID)
 	if not seconds or seconds <= 0.2 then
 		return
 	end
@@ -1486,6 +1556,11 @@ function ns.API.HasAura(spellID, unit, filter)
 		local resolved = ns.API.Resolve(spellID) or spellID
 		local name = ns.API.SpellName(resolved or spellID)
 		local key = type(name) == "string" and name ~= "" and normName(name) or nil
+		if filter == "HELPFUL" and unit == "player" then
+			if (resolved and predict.usedBuffs[resolved]) or (spellID and predict.usedBuffs[spellID]) or (key and predict.usedBuffs[key]) then
+				return false, 0
+			end
+		end
 		if filter == "HARMFUL" and (unit == "target" or unit == "") then
 			if (resolved and predict.debuffs[resolved]) or (spellID and predict.debuffs[spellID]) or (key and predict.debuffs[key]) then
 				return true, 9999
@@ -2040,14 +2115,10 @@ function ns.API.Form(spellID)
 end
 
 function ns.API.Combo()
-	if not GetComboPoints then
-		return 0
+	if predict and predict.combo ~= nil then
+		return predict.combo
 	end
-	local ok, points = pcall(GetComboPoints, "player", "target")
-	if ok and type(points) == "number" then
-		return points
-	end
-	return 0
+	return rawCombo()
 end
 
 function ns.API.Power(kind)

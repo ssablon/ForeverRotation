@@ -1,3 +1,8 @@
+1.5.52
+
+2026-09-27
+- Queue lookahead works for every class: combo, stealth finishers, current cast pinned, positional spells during the GCD, and a filler after shocks so the HUD never sticks on one icon.
+
 1.5.51
 
 2026-09-27

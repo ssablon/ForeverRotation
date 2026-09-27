@@ -661,6 +661,7 @@ pcall(frame.RegisterEvent, frame, "PLAYER_UNGHOST")
 pcall(frame.RegisterEvent, frame, "PLAYER_UPDATE_RESTING")
 pcall(frame.RegisterEvent, frame, "PLAYER_MOUNT_DISPLAY_CHANGED")
 pcall(frame.RegisterEvent, frame, "ZONE_CHANGED_NEW_AREA")
+pcall(frame.RegisterEvent, frame, "UNIT_COMBO_POINTS")
 
 local ticker
 local booted
@@ -883,17 +884,21 @@ frame:SetScript("OnEvent", function(_, event, unit, _, spellID)
 		if unit == "player" then
 			local castName = lastPlayerCastName
 			lastPlayerCastName = nil
+			local id = spellID
+			if (id == nil or (issecretvalue and issecretvalue(id))) and castName and ns.API and ns.API.ResolveFromName then
+				id = ns.API.ResolveFromName(castName)
+			end
 			if ns.API and ns.API.NoteSelfBuff then
-				ns.API.NoteSelfBuff(spellID)
+				ns.API.NoteSelfBuff(id)
 			end
 			if ns.API and ns.API.NoteSpellCast then
-				ns.API.NoteSpellCast(spellID)
+				ns.API.NoteSpellCast(id or spellID)
 			end
-			if ns.API and ns.API.NoteTargetDebuff and ns.API.IsHarmful and spellID and ns.API.IsHarmful(spellID) then
-				ns.API.NoteTargetDebuff(spellID)
+			if ns.API and ns.API.NoteTargetDebuff and ns.API.IsHarmful and id and ns.API.IsHarmful(id) then
+				ns.API.NoteTargetDebuff(id)
 			end
 			if ns.NoteWeaponCast then
-				ns.NoteWeaponCast(spellID, castName)
+				ns.NoteWeaponCast(id or spellID, castName)
 			end
 			if ns.API and ns.API.WipeAuraScan then
 				ns.API.WipeAuraScan("player")
@@ -901,6 +906,9 @@ frame:SetScript("OnEvent", function(_, event, unit, _, spellID)
 			end
 			requestTick()
 		end
+	elseif event == "UNIT_COMBO_POINTS" then
+		lastTickSig = nil
+		requestTick()
 	elseif event == "PLAYER_EQUIPMENT_CHANGED" then
 		local slot = unit
 		if slot == 16 or slot == 17 then

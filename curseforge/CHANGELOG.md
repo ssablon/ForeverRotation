@@ -1,3 +1,7 @@
+# 1.5.52
+
+- Queue lookahead works for every class: combo, stealth finishers, current cast pinned, positional spells during the GCD, and a filler after shocks so the HUD never sticks on one icon.
+
 # 1.5.51
 
 - HUD queue now works like ConROC: after the first spell, the next two assume it was pressed (DoT up, shock on cooldown). Learned shocks and DoTs show again instead of only the filler.

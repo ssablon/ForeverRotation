@@ -161,8 +161,8 @@ Un sort seulement utile (`IsHelpful` et pas `IsHarmful`) peut passer via le coû
 `ns.BuildQueue` imite ConROC : jusqu'à 3 passages, chacun reprend la liste **depuis le début**.
 
 - ignore un pas décoché, un enchant d'arme, un buff de maintenance, et (si `barOnly`) un sort absent des barres déjà indexées par GlowFetch ;
-- le premier pas `StepOk` est pris, puis `PredictConsume` suppose qu'il a été lancé (DoT posé, CD / groupe d'horions, buff perso) ;
-- un `filler` peut revenir aux slots suivants (Éclair, Trait de l'ombre) ; un horion ou un DoT ne se répète pas ;
+- le sort en cours de lancement est épinglé en case 1, puis `PredictConsume` suppose qu'il a été lancé (DoT, CD / horions, buff, stealth, points de combo) ;
+- un filler ou un nuke sans CD peut revenir aux slots suivants ; un horion, un DoT ou un finisher ne se répète pas ;
 - `IsSpellUsable` faux pendant le GCD ou un cast n'empêche plus un horion d'entrer dans la file ;
 - si aucun soin n'est entré dans les 3 cases, le premier soin `StepOk` est inséré en tête et la file est recoupée à 3.
 

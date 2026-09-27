@@ -98,7 +98,10 @@ function ns.BuildQueue()
 			return false
 		end
 		local opt = step.opt or {}
-		local canRepeat = opt.filler == true or opt.swing == true
+		local ownCd = API.SpellCooldownSec and API.SpellCooldownSec(id) or 0
+		local canRepeat = opt.filler == true
+			or opt.swing == true
+			or (not opt.heal and not opt.nodebuff and not opt.nobuff and not opt.comboMin and ownCd <= 0.2)
 		if not canRepeat and (used[id] or used[step.key]) then
 			return false
 		end
@@ -129,34 +132,47 @@ function ns.BuildQueue()
 	local function consider(step)
 		return ns.IsStepEnabled(step) and step.id and not ns.IsWeaponBuff(step.id) and not ns.IsMaintenanceBuff(step.id) and onBar(step.id)
 	end
-	-- ConROC: pick the first valid step, assume it was pressed, restart from the top.
+	-- ConROC: pick, assume pressed, restart from the top. Pin the current cast first.
 	if API.PredictBegin then
 		API.PredictBegin()
 	end
-	local shift = 0.2
-	if API.CastRemain then
-		local left = API.CastRemain()
-		if left > shift then
-			shift = left
+	local function fillSlots()
+		local shift = 0.2
+		if API.CastRemain then
+			local left = API.CastRemain()
+			if left > shift then
+				shift = left
+			end
 		end
-	end
-	for _ = 1, 3 do
-		local taken = false
-		for _, step in ipairs(apl) do
-			if consider(step) and API.StepOk(step.id, step.opt, shift) then
-				if take(step) then
-					if API.PredictConsume then
+		if API.CastingSpell then
+			for _, step in ipairs(apl) do
+				if consider(step) and API.CastingSpell(step.id) then
+					if take(step) and API.PredictConsume then
 						API.PredictConsume(step.id, step.opt)
 					end
-					taken = true
 					break
 				end
 			end
 		end
-		if not taken then
-			break
+		while #q < 3 do
+			local taken = false
+			for _, step in ipairs(apl) do
+				if consider(step) and API.StepOk(step.id, step.opt, shift) then
+					if take(step) then
+						if API.PredictConsume then
+							API.PredictConsume(step.id, step.opt)
+						end
+						taken = true
+						break
+					end
+				end
+			end
+			if not taken then
+				break
+			end
 		end
 	end
+	pcall(fillSlots)
 	if API.PredictEnd then
 		API.PredictEnd()
 	end
