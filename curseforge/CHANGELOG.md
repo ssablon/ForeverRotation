@@ -1,3 +1,7 @@
+# 1.5.61
+
+- Every spell row has an editable re-suggest delay (default 0 when no aura duration is known). Hold strings translated in all supported languages.
+
 # 1.5.60
 
 - Per-spell re-suggest delay (hold): after you cast, the spell stays off the queue for N seconds. Defaults from Forever/Classic DoT, HoT and snare durations (Frostbolt chill = 5). Editable next to each spell in options; 0 allows spam.

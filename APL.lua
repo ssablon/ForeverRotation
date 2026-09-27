@@ -38,11 +38,11 @@ local function injectHold(opt, spellID)
 	if type(opt) ~= "table" then
 		opt = {}
 	end
-	if opt.hold == nil and spellID and ns.SPELL_HOLD then
-		local h = ns.SPELL_HOLD[spellID]
-		if type(h) == "number" then
-			opt.hold = h
-		end
+	-- Every spell gets an editable hold, including fillers with no known aura
+	-- duration (default 0 = may be suggested again immediately).
+	if opt.hold == nil then
+		local h = spellID and ns.SPELL_HOLD and ns.SPELL_HOLD[spellID]
+		opt.hold = (type(h) == "number" and h >= 0) and h or 0
 	end
 	return opt
 end
