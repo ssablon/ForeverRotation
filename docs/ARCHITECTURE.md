@@ -141,7 +141,7 @@ Les listes viennent d'un noyau Era type ConROC Classic, niveaux 1–60. Pas de S
 | `usable` | Le client doit répondre que le sort est utilisable (Exorcisme, Colère divine, Attaque sournoise dans le dos). Si la réponse est masquée, le pas est sauté. |
 | `manaMax` | Refus si le pourcentage de mana du joueur est au-dessus de ce seuil (Connexion). |
 | `hpMin` | Refus si la vie (joueur, ou `unit`) est sous ce pourcentage. |
-| `hold` | Secondes après un cast réussi pendant lesquelles le sort n'est plus proposé. Défauts = durées Forever/Classic (DoT, HoT, snare). Ex. Éclair de givre = 5. Éditable dans les options à côté de chaque sort ; `0` = spam autorisé. Indépendant du vrai cooldown. |
+| `hold` | Secondes après un cast réussi pendant lesquelles le sort n'est plus proposé (DoT, HoT, snare). Défauts Forever/Classic. Éditable à côté de chaque sort. `0` = pas de délai d'aura ; la file suit toujours l'ordre et les conditions (1 → 2 → 3), un même sort n'apparaît qu'une fois dans la file. Indépendant du vrai cooldown. |
 | `anydebuff` | Liste d'IDs. Si la cible a **l'un** d'eux, le pas est refusé. Une seule piqûre, une seule malédiction. |
 
 `ns.API.Ready` : sort résolu, pas de cooldown propre en cours, pas de `noMana`. Le GCD (environ 1,5 s) ne retire pas le sort de la file : il reste le prochain bouton à presser. Un cooldown plus long (Jugement, Horion, Visée, Déflagration…) le retire jusqu'à la fin, et le pas suivant de la liste est testé. Ça vaut pour toutes les classes, les raciaux et la défense.

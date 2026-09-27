@@ -38,8 +38,9 @@ local function injectHold(opt, spellID)
 	if type(opt) ~= "table" then
 		opt = {}
 	end
-	-- Every spell gets an editable hold, including fillers with no known aura
-	-- duration (default 0 = may be suggested again immediately).
+	-- Every spell gets an editable hold. Unknown aura length → 0 (no aura
+	-- re-cast delay). The queue still walks list order and never stacks the
+	-- same non-swing spell three times.
 	if opt.hold == nil then
 		local h = spellID and ns.SPELL_HOLD and ns.SPELL_HOLD[spellID]
 		opt.hold = (type(h) == "number" and h >= 0) and h or 0

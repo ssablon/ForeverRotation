@@ -1,3 +1,7 @@
+# 1.5.62
+
+- Clarify hold = 0: no aura re-cast delay only. Rotation still follows list order and conditions (1 → 2 → 3); it does not mean spam the same spell in a loop.
+
 # 1.5.61
 
 - Every spell row has an editable re-suggest delay (default 0 when no aura duration is known). Hold strings translated in all supported languages.

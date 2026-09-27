@@ -1424,7 +1424,7 @@ do
 		[M.FrostNova] = 8,
 		[M.ConeofCold] = 6,
 		[M.BlastWave] = 6,
-		-- Mage Scorch: no hold (spam filler; Improved Scorch is talent-only)
+		-- Mage Scorch: no aura hold (filler; Improved Scorch is talent-only)
 		-- Warlock
 		[L.Corruption] = 12,
 		[L.Immolate] = 15,
