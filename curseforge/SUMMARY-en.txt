@@ -1,1 +1,1 @@
-Forever Rotation (Multi language) — rotation helper for WoW Forever Classic. HUD of the next 3 spells, skull on the matching button, plus heals, defense, interrupts and weapon buffs. Not a bot. 11 languages.
+Forever Rotation (Multi language) by Vohnka — wow-forever.fr. HUD of the next 3 spells and a skull on the matching button for WoW Forever Classic. Not a bot. 11 languages.
