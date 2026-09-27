@@ -650,6 +650,8 @@ pcall(frame.RegisterEvent, frame, "UNIT_AURA")
 pcall(frame.RegisterEvent, frame, "UNIT_INVENTORY_CHANGED")
 pcall(frame.RegisterEvent, frame, "UNIT_SPELLCAST_START")
 pcall(frame.RegisterEvent, frame, "LEARNED_SPELL_IN_TAB")
+pcall(frame.RegisterEvent, frame, "SPELLS_CHANGED")
+pcall(frame.RegisterEvent, frame, "SPELL_PUSHED_TO_ACTIONBAR")
 pcall(frame.RegisterEvent, frame, "PLAYER_TALENT_UPDATE")
 pcall(frame.RegisterEvent, frame, "PLAYER_LEVEL_UP")
 pcall(frame.RegisterEvent, frame, "PLAYER_LOGOUT")
@@ -694,7 +696,7 @@ local function stopTicker()
 end
 
 local tickQueued
-local spellFlushGen = 0
+local spellsFullWipe
 local barFlushGen = 0
 local lastPlayerCastName
 
@@ -718,23 +720,23 @@ end
 local function flushSpells()
 	spellsPending = nil
 	if ns.API and ns.API.InvalidateSpells then
-		ns.API.InvalidateSpells(false)
+		ns.API.InvalidateSpells(spellsFullWipe == true)
 	end
+	spellsFullWipe = nil
 	lastTickSig = nil
 	ns.Tick()
 end
 
-local function scheduleSpellFlush()
+local function scheduleSpellFlush(full)
+	if full then
+		spellsFullWipe = true
+	end
+	if spellsPending then
+		return
+	end
 	spellsPending = true
-	spellFlushGen = spellFlushGen + 1
-	local gen = spellFlushGen
 	if C_Timer and C_Timer.After then
-		C_Timer.After(1.2, function()
-			if gen ~= spellFlushGen then
-				return
-			end
-			flushSpells()
-		end)
+		C_Timer.After(1.2, flushSpells)
 	else
 		flushSpells()
 	end
@@ -801,8 +803,12 @@ frame:SetScript("OnEvent", function(_, event, unit, _, spellID)
 		end
 		return
 	end
-	if event == "LEARNED_SPELL_IN_TAB" or event == "PLAYER_TALENT_UPDATE" or event == "PLAYER_LEVEL_UP" then
-		scheduleSpellFlush()
+	if event == "LEARNED_SPELL_IN_TAB" or event == "PLAYER_TALENT_UPDATE" or event == "PLAYER_LEVEL_UP" or event == "SPELL_PUSHED_TO_ACTIONBAR" then
+		scheduleSpellFlush(true)
+		return
+	end
+	if event == "SPELLS_CHANGED" then
+		scheduleSpellFlush(false)
 		return
 	end
 	if event == "PLAYER_LOGIN" or event == "PLAYER_ENTERING_WORLD" then
@@ -847,6 +853,9 @@ frame:SetScript("OnEvent", function(_, event, unit, _, spellID)
 		forceTick()
 	elseif event == "PLAYER_TARGET_CHANGED" then
 		ns.API.castTarget = false
+		if ns.API and ns.API.ClearTargetDebuffs then
+			ns.API.ClearTargetDebuffs()
+		end
 		forceTick()
 	elseif event == "UNIT_AURA" then
 		if liveAuraUnit(unit) then
@@ -854,6 +863,7 @@ frame:SetScript("OnEvent", function(_, event, unit, _, spellID)
 				ns.API.WipeAuraScan(unit)
 			end
 			lastTickSig = nil
+			requestTick()
 		end
 	elseif event == "UNIT_INVENTORY_CHANGED" then
 		if unit == "player" then
@@ -879,11 +889,15 @@ frame:SetScript("OnEvent", function(_, event, unit, _, spellID)
 			if ns.API and ns.API.NoteSpellCast then
 				ns.API.NoteSpellCast(spellID)
 			end
+			if ns.API and ns.API.NoteTargetDebuff and ns.API.IsHarmful and spellID and ns.API.IsHarmful(spellID) then
+				ns.API.NoteTargetDebuff(spellID)
+			end
 			if ns.NoteWeaponCast then
 				ns.NoteWeaponCast(spellID, castName)
 			end
 			if ns.API and ns.API.WipeAuraScan then
 				ns.API.WipeAuraScan("player")
+				ns.API.WipeAuraScan("target")
 			end
 			requestTick()
 		end

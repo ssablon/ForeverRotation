@@ -94,20 +94,27 @@ function ns.BuildQueue()
 	end
 	local function take(step)
 		local id = (API.Resolve and API.Resolve(step.id)) or step.id
-		if not id or used[id] or used[step.key] then
+		if not id then
 			return false
 		end
-		local group = step.opt and (step.opt.anybuff or step.opt.anydebuff)
+		local opt = step.opt or {}
+		local canRepeat = opt.filler == true or opt.swing == true
+		if not canRepeat and (used[id] or used[step.key]) then
+			return false
+		end
+		local group = opt.anybuff or opt.anydebuff
 		if group and blocked[group] then
 			return false
 		end
 		q[#q + 1] = id
-		used[id] = true
-		used[step.key] = true
+		if not canRepeat then
+			used[id] = true
+			used[step.key] = true
+		end
 		if group then
 			blocked[group] = true
 		end
-		markHeal(id, step.opt)
+		markHeal(id, opt)
 		return true
 	end
 	local function onBar(id)
@@ -122,19 +129,36 @@ function ns.BuildQueue()
 	local function consider(step)
 		return ns.IsStepEnabled(step) and step.id and not ns.IsWeaponBuff(step.id) and not ns.IsMaintenanceBuff(step.id) and onBar(step.id)
 	end
-	-- Comme ConROC : un passage maintenant, un second pour le GCD suivant.
-	for _, shift in ipairs({ 0.2, 1.5 }) do
-		if #q >= 3 then
+	-- ConROC: pick the first valid step, assume it was pressed, restart from the top.
+	if API.PredictBegin then
+		API.PredictBegin()
+	end
+	local shift = 0.2
+	if API.CastRemain then
+		local left = API.CastRemain()
+		if left > shift then
+			shift = left
+		end
+	end
+	for _ = 1, 3 do
+		local taken = false
+		for _, step in ipairs(apl) do
+			if consider(step) and API.StepOk(step.id, step.opt, shift) then
+				if take(step) then
+					if API.PredictConsume then
+						API.PredictConsume(step.id, step.opt)
+					end
+					taken = true
+					break
+				end
+			end
+		end
+		if not taken then
 			break
 		end
-		for _, step in ipairs(apl) do
-			if #q >= 3 then
-				break
-			end
-			if consider(step) and not used[step.key] and API.StepOk(step.id, step.opt, shift) then
-				take(step)
-			end
-		end
+	end
+	if API.PredictEnd then
+		API.PredictEnd()
 	end
 	local healFirst = false
 	for _, id in ipairs(q) do

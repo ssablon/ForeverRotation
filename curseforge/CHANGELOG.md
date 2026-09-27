@@ -1,3 +1,8 @@
+# 1.5.51
+
+- HUD queue now works like ConROC: after the first spell, the next two assume it was pressed (DoT up, shock on cooldown). Learned shocks and DoTs show again instead of only the filler.
+- New trainer spells are picked up without /reload. Target DoTs stay known when the client hides auras.
+
 # 1.5.50
 
 - Missing Forever 1-60 combat spells from the lab: Swift Judgement, Enchanted Flare, Tranquilizing Shot, Preparation, and the rest of the editor list. Classic IDs that do not exist on this client now use the Forever ones.

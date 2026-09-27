@@ -158,11 +158,12 @@ Un sort seulement utile (`IsHelpful` et pas `IsHarmful`) peut passer via le coû
 
 ## Files (`Rotations.lua`)
 
-`ns.BuildQueue` parcourt `ns.GetAPL()` :
+`ns.BuildQueue` imite ConROC : jusqu'à 3 passages, chacun reprend la liste **depuis le début**.
 
 - ignore un pas décoché, un enchant d'arme, un buff de maintenance, et (si `barOnly`) un sort absent des barres déjà indexées par GlowFetch ;
-- sépare les soins ;
-- `API.Add` pour chaque autre pas ;
+- le premier pas `StepOk` est pris, puis `PredictConsume` suppose qu'il a été lancé (DoT posé, CD / groupe d'horions, buff perso) ;
+- un `filler` peut revenir aux slots suivants (Éclair, Trait de l'ombre) ; un horion ou un DoT ne se répète pas ;
+- `IsSpellUsable` faux pendant le GCD ou un cast n'empêche plus un horion d'entrer dans la file ;
 - si aucun soin n'est entré dans les 3 cases, le premier soin `StepOk` est inséré en tête et la file est recoupée à 3.
 
 `ns.queueHeal[id]` (ID de liste et ID résolu) sert au surlignage vert.
@@ -292,7 +293,7 @@ Overlays `button.WFROverlays`, blend `ADD`, tête de mort :
 
 ## Résolution d'un sort
 
-`ns.API.Resolve(spellID)` cache dans `resolveCache` (vidé par `InvalidateSpells` au login, `LEARNED_SPELL_IN_TAB`, `PLAYER_TALENT_UPDATE`). `SPELLS_CHANGED` est ignoré : le client camelot le déclenche trop souvent.
+`ns.API.Resolve(spellID)` cache dans `resolveCache` (vidé au login). `LEARNED_SPELL_IN_TAB`, `SPELL_PUSHED_TO_ACTIONBAR`, `PLAYER_TALENT_UPDATE` et `PLAYER_LEVEL_UP` vident tout le cache après 1,2 s. `SPELLS_CHANGED` ne vide que les misses, une seule fois par salve (le client camelot le spam).
 
 1. Override `C_Spell.GetOverrideSpell` si c'est un nombre lisible.
 2. Si le joueur connaît cet ID, le garder.
@@ -307,9 +308,9 @@ Auras : `C_UnitAuras.GetPlayerAuraBySpellID` pour le joueur, puis `GetAuraDataBy
 
 Un buff perso (`nobuff` sans `heal`) est toujours lu sur le joueur. Le sceau est un buff utile : le chercher sur la cible hostile le fait réapparaître dans la file.
 
-Sur le client camelot, choisir une cible peut rendre les auras illisibles (*secret values*). Une lecture qui échoue n'est pas une absence. Le sceau est retenu **30 secondes** après le lancement (durée Classic), puis il est à nouveau proposé même en combat. Les bénédictions durent 5 minutes dans cette mémoire, les auras et aspects 30 minutes, sauf si le jeu donne une durée réelle plus courte. Les soins (`opt.heal`) continuent de regarder l'allié à soigner.
+Sur le client camelot, choisir une cible peut rendre les auras illisibles (*secret values*). Une lecture qui échoue n'est pas une absence. Le sceau est retenu **30 secondes** après le lancement (durée Classic), puis il est à nouveau proposé même en combat. Les bénédictions durent 5 minutes dans cette mémoire, les auras et aspects 30 minutes, sauf si le jeu donne une durée réelle plus courte. Un DoT lancé sur la cible est retenu **18 secondes** (ou jusqu'au changement de cible) si l'aura cible est illisible. Les soins (`opt.heal`) continuent de regarder l'allié à soigner.
 
-La file imite ConROC : le 1er sort est celui qui est lançable maintenant, le 2e celui du prochain GCD, le 3e celui d'après. Un sort hors liste ne coupe pas la suggestion : au tick suivant, la priorité est recalculée. Le HUD se met à jour toutes les 0,05 s.
+La file imite ConROC : le 1er sort est celui à lancer maintenant, le 2e et le 3e sont les suivants **après** ce pressage simulé. Un sort hors liste ne coupe pas la suggestion : au tick suivant, la priorité est recalculée.
 
 Soins — unité : `opt.unit` s'il existe, sinon `mouseover`, `target`, `focus`, `targettarget`, sinon `player`. `HealHealth` utilise `LowestFriendly` (joueur, mouseover, target, focus, targettarget, pet, party1–4) quand aucun de mouseover/target/focus n'est allié. Unité morte ou attaquable = pas alliée.
 

@@ -381,6 +381,9 @@ end
 local resolveCache = {}
 local healNames
 local auraScans = {}
+local predict
+local heldHarmful = {}
+local heldHarmfulGuid
 
 function ns.API.WipeAuraScans()
 	wipe(auraScans)
@@ -630,6 +633,7 @@ local function markCooldown(spellID, seconds)
 end
 
 function ns.API.NoteSpellCast(spellID)
+	ns.API.lastCastAt = GetTime()
 	if spellID == nil or (issecretvalue and issecretvalue(spellID)) then
 		return
 	end
@@ -694,6 +698,15 @@ function ns.API.Cooldown(spellID)
 		cdKnown[key] = apiDuration
 	end
 	local tracked = trackedRemain(spellID)
+	if predict then
+		local pred = predict.cd[cdKey(spellID)] or predict.cd["id:" .. tostring(spellID)]
+		if pred then
+			local predRemain = pred - GetTime()
+			if predRemain > tracked then
+				tracked = predRemain
+			end
+		end
+	end
 	if tracked > 0.2 then
 		return tracked, apiDuration > 0 and apiDuration or tracked
 	end
@@ -941,7 +954,16 @@ function ns.API.Ready(spellID, opt, ignoreCooldown)
 	if helpfulOnly then
 		return hasResources(id)
 	end
+	-- Camelot marks other spells unusable during a cast or GCD. Fillers
+	-- already bypass this; shocks and DoTs must still enter the lookahead.
 	if usable == false then
+		if ns.API.CastRemain() > 0 then
+			return hasResources(id)
+		end
+		local last = ns.API.lastCastAt
+		if last and (GetTime() - last) < 1.55 then
+			return hasResources(id)
+		end
 		return false
 	end
 	return hasResources(id)
@@ -1147,6 +1169,142 @@ local function normName(name)
 	return n
 end
 
+function ns.API.PredictBegin()
+	predict = { debuffs = {}, buffs = {}, cd = {} }
+end
+
+function ns.API.PredictEnd()
+	predict = nil
+end
+
+local function predictMarkDebuff(spellID)
+	if not predict or not spellID then
+		return
+	end
+	predict.debuffs[spellID] = true
+	local name = ns.API.SpellName(spellID)
+	if type(name) == "string" and name ~= "" then
+		predict.debuffs[normName(name)] = true
+	end
+end
+
+local function predictMarkBuff(spellID)
+	if not predict or not spellID then
+		return
+	end
+	predict.buffs[spellID] = true
+	local name = ns.API.SpellName(spellID)
+	if type(name) == "string" and name ~= "" then
+		predict.buffs[normName(name)] = true
+	end
+end
+
+function ns.API.PredictConsume(spellID, opt)
+	if not predict then
+		return
+	end
+	spellID = ns.API.Resolve(spellID) or spellID
+	opt = opt or {}
+	if opt.nodebuff then
+		local debuff = opt.nodebuff == true and spellID or opt.nodebuff
+		predictMarkDebuff(debuff)
+		predictMarkDebuff(spellID)
+	end
+	if type(opt.anydebuff) == "table" then
+		for _, id in ipairs(opt.anydebuff) do
+			predictMarkDebuff(id)
+		end
+	end
+	if opt.needdebuff then
+		predictMarkDebuff(opt.needdebuff)
+	end
+	if opt.nobuff then
+		predictMarkBuff(spellID)
+	end
+	if type(opt.anybuff) == "table" then
+		for _, id in ipairs(opt.anybuff) do
+			predictMarkBuff(id)
+		end
+	end
+	if opt.filler == true or opt.swing == true then
+		return
+	end
+	local seconds = baseCooldownSec(spellID)
+	if seconds <= 0 then
+		seconds = fallbackSeconds(spellID)
+	end
+	if not seconds or seconds <= 0.2 then
+		return
+	end
+	local exp = GetTime() + seconds
+	predict.cd[cdKey(spellID)] = exp
+	predict.cd["id:" .. tostring(spellID)] = exp
+	local group = groupOf(spellID)
+	if not group then
+		return
+	end
+	for _, id in ipairs(group.ids) do
+		predict.cd[cdKey(id)] = exp
+		predict.cd["id:" .. tostring(id)] = exp
+	end
+end
+
+local function targetGuid()
+	local ok, guid = pcall(UnitGUID, "target")
+	if ok and readable(guid) and type(guid) == "string" then
+		return guid
+	end
+	return nil
+end
+
+function ns.API.ClearTargetDebuffs()
+	wipe(heldHarmful)
+	heldHarmfulGuid = nil
+end
+
+function ns.API.NoteTargetDebuff(spellID)
+	if spellID == nil or (issecretvalue and issecretvalue(spellID)) then
+		return
+	end
+	local okExists, exists = pcall(UnitExists, "target")
+	if not okExists or not exists then
+		return
+	end
+	local guid = targetGuid()
+	if heldHarmfulGuid and guid and heldHarmfulGuid ~= guid then
+		wipe(heldHarmful)
+	end
+	heldHarmfulGuid = guid
+	local name = ns.API.SpellName(spellID)
+	local exp = GetTime() + 18
+	if type(name) == "string" and name ~= "" then
+		heldHarmful[normName(name)] = exp
+	end
+	if type(spellID) == "number" then
+		heldHarmful["id:" .. tostring(spellID)] = exp
+		local resolved = ns.API.Resolve(spellID)
+		if resolved and resolved ~= spellID then
+			heldHarmful["id:" .. tostring(resolved)] = exp
+		end
+	end
+end
+
+local function heldHarmfulAura(spellID)
+	local now = GetTime()
+	if type(spellID) == "number" then
+		local exp = heldHarmful["id:" .. tostring(spellID)]
+		if exp and now < exp then
+			return true
+		end
+	end
+	local name = ns.API.SpellName(spellID)
+	if type(name) ~= "string" or name == "" then
+		return false
+	end
+	local exp = heldHarmful[normName(name)]
+	return exp and now < exp or false
+end
+
 local function familyOf(name)
 	if type(name) ~= "string" or name == "" then
 		return nil
@@ -1322,17 +1480,46 @@ local function auraBySpellName(unit, name, filter)
 end
 
 function ns.API.HasAura(spellID, unit, filter)
-	local found, remain, unreadable, familiesSeen = ns.API.FindAura(spellID, unit, filter)
 	unit = unit or "player"
 	filter = filter or "HELPFUL"
+	if predict then
+		local resolved = ns.API.Resolve(spellID) or spellID
+		local name = ns.API.SpellName(resolved or spellID)
+		local key = type(name) == "string" and name ~= "" and normName(name) or nil
+		if filter == "HARMFUL" and (unit == "target" or unit == "") then
+			if (resolved and predict.debuffs[resolved]) or (spellID and predict.debuffs[spellID]) or (key and predict.debuffs[key]) then
+				return true, 9999
+			end
+		end
+		if filter == "HELPFUL" and unit == "player" then
+			if (resolved and predict.buffs[resolved]) or (spellID and predict.buffs[spellID]) or (key and predict.buffs[key]) then
+				return true, 9999
+			end
+		end
+	end
+	local found, remain, unreadable, familiesSeen = ns.API.FindAura(spellID, unit, filter)
 	local selfBuff = unit == "player" and filter == "HELPFUL"
+	local targetHarm = unit == "target" and filter == "HARMFUL"
+	if targetHarm then
+		local guid = targetGuid()
+		if heldHarmfulGuid and guid and heldHarmfulGuid ~= guid then
+			wipe(heldHarmful)
+			heldHarmfulGuid = guid
+		end
+	end
 	if found then
 		if selfBuff then
 			rememberAura(spellID, nil, remain, false)
 		end
+		if targetHarm then
+			ns.API.NoteTargetDebuff(spellID)
+		end
 		return true, remain
 	end
 	if selfBuff and unreadable and heldAura(spellID) then
+		return true, 9999
+	end
+	if targetHarm and unreadable and heldHarmfulAura(spellID) then
 		return true, 9999
 	end
 	if selfBuff and not unreadable then

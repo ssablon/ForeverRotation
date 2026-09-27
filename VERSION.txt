@@ -1,3 +1,9 @@
+1.5.51
+
+2026-09-27
+- HUD queue now works like ConROC: after the first spell, the next two assume it was pressed (DoT up, shock on cooldown). Learned shocks and DoTs show again instead of only the filler.
+- New trainer spells are picked up without /reload. Target DoTs stay known when the client hides auras.
+
 1.5.50
 
 2026-09-27
