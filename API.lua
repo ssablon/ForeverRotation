@@ -66,7 +66,12 @@ local function spellIdFromName(name)
 	return nil
 end
 
+local cachedBanks
+
 local function bookBanks()
+	if cachedBanks then
+		return cachedBanks
+	end
 	local banks = {}
 	if Enum and Enum.SpellBookSpellBank then
 		banks[#banks + 1] = Enum.SpellBookSpellBank.Player
@@ -82,6 +87,7 @@ local function bookBanks()
 	banks[#banks + 1] = 1
 	banks[#banks + 1] = "spell"
 	banks[#banks + 1] = "pet"
+	cachedBanks = banks
 	return banks
 end
 
@@ -380,8 +386,29 @@ function ns.API.WipeAuraScans()
 	wipe(auraScans)
 end
 
-function ns.API.InvalidateSpells()
-	wipe(resolveCache)
+function ns.API.WipeAuraScan(unit)
+	if not unit then
+		wipe(auraScans)
+		return
+	end
+	local prefix = unit .. "\0"
+	for key in pairs(auraScans) do
+		if strsub(key, 1, #prefix) == prefix then
+			auraScans[key] = nil
+		end
+	end
+end
+
+function ns.API.InvalidateSpells(full)
+	if full then
+		wipe(resolveCache)
+	else
+		for id, resolved in pairs(resolveCache) do
+			if not resolved then
+				resolveCache[id] = nil
+			end
+		end
+	end
 	wipe(auraScans)
 	healNames = nil
 	if ns.InvalidateBuffCaches then
@@ -1372,42 +1399,10 @@ function ns.API.HasWeaponBuff(entry)
 			ids[#ids + 1] = id
 		end
 	end
-	local names = {}
 	for _, id in ipairs(ids) do
 		local found, remain = ns.API.FindAura(id, "player", "HELPFUL")
 		if found then
 			return true, remain
-		end
-		local name = ns.API.SpellName(id)
-		if name then
-			names[strlower(name)] = true
-		end
-	end
-	if not C_UnitAuras or not C_UnitAuras.GetAuraDataByIndex then
-		return false, 0
-	end
-	for i = 1, 40 do
-		local ok, aura = pcall(C_UnitAuras.GetAuraDataByIndex, "player", i, "HELPFUL")
-		if not ok or not aura then
-			break
-		end
-		local auraID = safe(aura.spellId, nil)
-		if auraID and ns.WEAPON_BUFF_IDS and ns.WEAPON_BUFF_IDS[auraID] == entry then
-			return true, auraRemain(aura)
-		end
-		local auraName = safe(aura.name, nil)
-		if auraName then
-			local lower = strlower(auraName)
-			if names[lower] then
-				return true, auraRemain(aura)
-			end
-			if entry.match then
-				for _, token in ipairs(entry.match) do
-					if lower:find(token, 1, true) then
-						return true, auraRemain(aura)
-					end
-				end
-			end
 		end
 	end
 	return false, 0
@@ -1800,9 +1795,14 @@ function ns.API.WeaponEnchant(offhand)
 	return readWeaponEnchant(offhand and true or false)
 end
 
-local weaponTip
+local tooltipCacheAt = 0
+local tooltipCacheTexts
 
 local function collectWeaponTooltipTexts()
+	local now = GetTime()
+	if tooltipCacheTexts and (now - tooltipCacheAt) < 1 then
+		return tooltipCacheTexts
+	end
 	local texts = {}
 	local function readSlot(slot)
 		if not C_TooltipInfo or not C_TooltipInfo.GetInventoryItem then
@@ -1820,40 +1820,14 @@ local function collectWeaponTooltipTexts()
 	end
 	readSlot(16)
 	readSlot(17)
-	if #texts > 0 then
-		return texts
-	end
-	if not CreateFrame then
-		return texts
-	end
-	if not weaponTip then
-		local okTip, tip = pcall(CreateFrame, "GameTooltip", "WFRWeaponTip", nil, "GameTooltipTemplate")
-		if okTip then
-			weaponTip = tip
-		end
-	end
-	if not weaponTip or not weaponTip.SetInventoryItem then
-		return texts
-	end
-	weaponTip:SetOwner(UIParent, "ANCHOR_NONE")
-	for _, slot in ipairs({ 16, 17 }) do
-		weaponTip:ClearLines()
-		local ok = pcall(weaponTip.SetInventoryItem, weaponTip, "player", slot)
-		if ok then
-			local n = weaponTip:NumLines()
-			if type(n) == "number" then
-				for i = 1, n do
-					local fs = _G["WFRWeaponTipTextLeft" .. i]
-					local text = fs and safe(fs.GetText and fs:GetText(), nil)
-					if text then
-						texts[#texts + 1] = strlower(text)
-					end
-				end
-			end
-		end
-	end
-	weaponTip:Hide()
+	tooltipCacheAt = now
+	tooltipCacheTexts = texts
 	return texts
+end
+
+function ns.API.ClearWeaponTooltipCache()
+	tooltipCacheAt = 0
+	tooltipCacheTexts = nil
 end
 
 function ns.API.WeaponTooltipHas(tokens)

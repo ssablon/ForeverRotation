@@ -1,3 +1,8 @@
+# 1.5.42
+
+- Leveling no longer hitches the client. Spell learn and bar scans wait and reuse known spells.
+- Weapon imbues, poisons, stones, and other HUD buffs update as soon as you apply them. No /reload.
+
 # 1.5.41
 
 - The addon is now named Forever Rotation. Same helper, clearer name. /wfr and /foreverrot still work; /foreverrotation is added.

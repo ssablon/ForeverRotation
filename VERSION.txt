@@ -1,3 +1,9 @@
+1.5.42
+
+2026-09-27
+- Leveling no longer hitches the client. Spell learn and bar scans wait and reuse known spells.
+- Weapon imbues, poisons, stones, and other HUD buffs update as soon as you apply them. No /reload.
+
 1.5.41
 
 2026-09-26

@@ -3,10 +3,12 @@ local API = ns.API
 
 local maintNames
 local weaponNames
+local tokenCache = {}
 
 function ns.InvalidateBuffCaches()
 	maintNames = nil
 	weaponNames = nil
+	tokenCache = {}
 	if ns.API and ns.API.WipeAuraScans then
 		ns.API.WipeAuraScans()
 	end
@@ -278,20 +280,59 @@ local function rememberWeaponApply(entry)
 	ns.weaponRecheckDrop = nil
 end
 
-function ns.NoteWeaponCast(spellID)
+local function entryMatchesName(entry, name)
+	if not entry or type(name) ~= "string" or name == "" then
+		return false
+	end
+	local lower = strlower(name)
+	if entry.match then
+		for _, token in ipairs(entry.match) do
+			if type(token) == "string" and token ~= "" and lower:find(token, 1, true) then
+				return true
+			end
+		end
+	end
+	local ids = { entry.id }
+	if entry.ranks then
+		for _, id in ipairs(entry.ranks) do
+			ids[#ids + 1] = id
+		end
+	end
+	for _, id in ipairs(ids) do
+		local spellName = API.SpellName(id)
+		if type(spellName) == "string" and strlower(spellName) == lower then
+			return true
+		end
+	end
+	return false
+end
+
+function ns.NoteWeaponCast(spellID, spellName)
 	local entry
 	if spellID and not (issecretvalue and issecretvalue(spellID)) then
 		entry = ns.WEAPON_BUFF_IDS and ns.WEAPON_BUFF_IDS[spellID]
 		if not entry and ns.IsWeaponBuff(spellID) then
 			entry = select(1, ns.SelectedWeaponBuff())
 		end
-	elseif ns.weaponNeedLast then
+	end
+	if not entry and type(spellName) == "string" then
+		for _, choice in ipairs(ns.WeaponChoices() or {}) do
+			if entryMatchesName(choice, spellName) then
+				entry = choice
+				break
+			end
+		end
+	end
+	if not entry and ns.weaponNeedLast then
 		entry = select(1, ns.SelectedWeaponBuff())
 	end
 	if not entry then
 		return
 	end
 	rememberWeaponApply(entry)
+	if ns.API and ns.API.ClearWeaponTooltipCache then
+		ns.API.ClearWeaponTooltipCache()
+	end
 end
 
 function ns.NoteWeaponEnchantChanged()
@@ -349,6 +390,9 @@ local function handState(entry, offhand)
 end
 
 local function weaponMatchTokens(entry)
+	if entry and tokenCache[entry] then
+		return tokenCache[entry]
+	end
 	local tokens, seen = {}, {}
 	local function add(token)
 		if type(token) ~= "string" or token == "" then
@@ -379,6 +423,9 @@ local function weaponMatchTokens(entry)
 				add(name)
 			end
 		end
+	end
+	if entry then
+		tokenCache[entry] = tokens
 	end
 	return tokens
 end
@@ -438,13 +485,11 @@ function ns.BuildWeapon()
 	end
 	local now = GetTime()
 	if status == "missing" then
-		if now < (ns.weaponGrace or 0) then
-			ns.weaponNeedLast = false
-			return spellID, 0, false
-		end
-		if (ns.weaponCastAt or 0) > 0 and (now - ns.weaponCastAt) < 8 and now < (ns.weaponSeenUntil or 0) then
-			ns.weaponNeedLast = false
-			return spellID, ns.weaponSeenUntil - now, false
+		if now < (ns.weaponGrace or 0) or now < (ns.weaponSeenUntil or 0) then
+			local left = math.max((ns.weaponSeenUntil or 0) - now, 0)
+			local need = left > 0 and left <= 30
+			ns.weaponNeedLast = need
+			return spellID, left, need
 		end
 		ns.weaponSeenUntil = 0
 		ns.weaponGrace = 0

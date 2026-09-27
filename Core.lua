@@ -648,8 +648,10 @@ frame:RegisterEvent("PLAYER_EQUIPMENT_CHANGED")
 pcall(frame.RegisterEvent, frame, "WEAPON_ENCHANT_CHANGED")
 pcall(frame.RegisterEvent, frame, "UNIT_AURA")
 pcall(frame.RegisterEvent, frame, "UNIT_INVENTORY_CHANGED")
+pcall(frame.RegisterEvent, frame, "UNIT_SPELLCAST_START")
 pcall(frame.RegisterEvent, frame, "LEARNED_SPELL_IN_TAB")
 pcall(frame.RegisterEvent, frame, "PLAYER_TALENT_UPDATE")
+pcall(frame.RegisterEvent, frame, "PLAYER_LEVEL_UP")
 pcall(frame.RegisterEvent, frame, "PLAYER_LOGOUT")
 pcall(frame.RegisterEvent, frame, "PLAYER_DEAD")
 pcall(frame.RegisterEvent, frame, "PLAYER_ALIVE")
@@ -691,20 +693,58 @@ local function stopTicker()
 	frame:SetScript("OnUpdate", nil)
 end
 
+local tickQueued
+local spellFlushGen = 0
+local barFlushGen = 0
+local lastPlayerCastName
+
+local function requestTick()
+	lastTickSig = nil
+	if tickQueued then
+		return
+	end
+	tickQueued = true
+	local function run()
+		tickQueued = nil
+		ns.Tick()
+	end
+	if C_Timer and C_Timer.After then
+		C_Timer.After(0, run)
+	else
+		run()
+	end
+end
+
 local function flushSpells()
 	spellsPending = nil
 	if ns.API and ns.API.InvalidateSpells then
-		ns.API.InvalidateSpells()
+		ns.API.InvalidateSpells(false)
 	end
+	lastTickSig = nil
 	ns.Tick()
+end
+
+local function scheduleSpellFlush()
+	spellsPending = true
+	spellFlushGen = spellFlushGen + 1
+	local gen = spellFlushGen
+	if C_Timer and C_Timer.After then
+		C_Timer.After(1.2, function()
+			if gen ~= spellFlushGen then
+				return
+			end
+			flushSpells()
+		end)
+	else
+		flushSpells()
+	end
 end
 
 local function forceTick()
 	if ns.API and ns.API.WipeAuraScans then
 		ns.API.WipeAuraScans()
 	end
-	lastTickSig = nil
-	ns.Tick()
+	requestTick()
 end
 
 local function flushBars()
@@ -715,7 +755,23 @@ local function flushBars()
 	if ns.GlowInvalidate then
 		ns.GlowInvalidate()
 	end
-	forceTick()
+	requestTick()
+end
+
+local function scheduleBarFlush()
+	barsPending = true
+	barFlushGen = barFlushGen + 1
+	local gen = barFlushGen
+	if C_Timer and C_Timer.After then
+		C_Timer.After(1.0, function()
+			if gen ~= barFlushGen then
+				return
+			end
+			flushBars()
+		end)
+	else
+		flushBars()
+	end
 end
 
 local function weaponItemId(slot)
@@ -745,16 +801,8 @@ frame:SetScript("OnEvent", function(_, event, unit, _, spellID)
 		end
 		return
 	end
-	if event == "LEARNED_SPELL_IN_TAB" or event == "PLAYER_TALENT_UPDATE" then
-		if spellsPending then
-			return
-		end
-		spellsPending = true
-		if C_Timer and C_Timer.After then
-			C_Timer.After(0.5, flushSpells)
-		else
-			flushSpells()
-		end
+	if event == "LEARNED_SPELL_IN_TAB" or event == "PLAYER_TALENT_UPDATE" or event == "PLAYER_LEVEL_UP" then
+		scheduleSpellFlush()
 		return
 	end
 	if event == "PLAYER_LOGIN" or event == "PLAYER_ENTERING_WORLD" then
@@ -762,7 +810,7 @@ frame:SetScript("OnEvent", function(_, event, unit, _, spellID)
 		if not booted then
 			booted = true
 			if ns.API and ns.API.InvalidateSpells then
-				ns.API.InvalidateSpells()
+				ns.API.InvalidateSpells(true)
 			end
 			local okCreate, errCreate = pcall(ns.UI.Create)
 			if not okCreate then
@@ -802,14 +850,29 @@ frame:SetScript("OnEvent", function(_, event, unit, _, spellID)
 		forceTick()
 	elseif event == "UNIT_AURA" then
 		if liveAuraUnit(unit) then
-			forceTick()
+			if ns.API and ns.API.WipeAuraScan then
+				ns.API.WipeAuraScan(unit)
+			end
+			lastTickSig = nil
 		end
 	elseif event == "UNIT_INVENTORY_CHANGED" then
 		if unit == "player" then
-			forceTick()
+			if ns.API and ns.API.ClearWeaponTooltipCache then
+				ns.API.ClearWeaponTooltipCache()
+			end
+			requestTick()
+		end
+	elseif event == "UNIT_SPELLCAST_START" then
+		if unit == "player" and UnitCastingInfo then
+			local ok, name = pcall(UnitCastingInfo, "player")
+			if ok and type(name) == "string" then
+				lastPlayerCastName = name
+			end
 		end
 	elseif event == "UNIT_SPELLCAST_SUCCEEDED" then
 		if unit == "player" then
+			local castName = lastPlayerCastName
+			lastPlayerCastName = nil
 			if ns.API and ns.API.NoteSelfBuff then
 				ns.API.NoteSelfBuff(spellID)
 			end
@@ -817,9 +880,12 @@ frame:SetScript("OnEvent", function(_, event, unit, _, spellID)
 				ns.API.NoteSpellCast(spellID)
 			end
 			if ns.NoteWeaponCast then
-				ns.NoteWeaponCast(spellID)
+				ns.NoteWeaponCast(spellID, castName)
 			end
-			forceTick()
+			if ns.API and ns.API.WipeAuraScan then
+				ns.API.WipeAuraScan("player")
+			end
+			requestTick()
 		end
 	elseif event == "PLAYER_EQUIPMENT_CHANGED" then
 		local slot = unit
@@ -836,23 +902,21 @@ frame:SetScript("OnEvent", function(_, event, unit, _, spellID)
 					ns.ClearWeaponMemory()
 				end
 			end
+			if ns.API and ns.API.ClearWeaponTooltipCache then
+				ns.API.ClearWeaponTooltipCache()
+			end
 		end
-		forceTick()
+		requestTick()
 	elseif event == "WEAPON_ENCHANT_CHANGED" then
+		if ns.API and ns.API.ClearWeaponTooltipCache then
+			ns.API.ClearWeaponTooltipCache()
+		end
 		if ns.NoteWeaponEnchantChanged then
 			ns.NoteWeaponEnchantChanged()
 		end
-		forceTick()
+		requestTick()
 	elseif event == "ACTIONBAR_SLOT_CHANGED" or event == "ACTIONBAR_PAGE_CHANGED" or event == "UPDATE_SHAPESHIFT_FORM" then
-		if barsPending then
-			return
-		end
-		barsPending = true
-		if C_Timer and C_Timer.After then
-			C_Timer.After(0.5, flushBars)
-		else
-			flushBars()
-		end
+		scheduleBarFlush()
 	end
 end)
 
