@@ -132,14 +132,8 @@ function ns.BuildQueue()
 	local function consider(step)
 		return ns.IsStepEnabled(step) and step.id and not ns.IsWeaponBuff(step.id) and not ns.IsMaintenanceBuff(step.id) and onBar(step.id)
 	end
-	-- Actions (shocks, DoTs, CDs) beat fillers when they are ready and in range.
-	-- List order still ranks those actions. Fillers only fill empty slots.
 	if API.PredictBegin then
 		API.PredictBegin()
-	end
-	local function isFallback(opt)
-		opt = opt or {}
-		return opt.filler == true or opt.swing == true
 	end
 	local function inQueue(id)
 		if not id then
@@ -166,7 +160,7 @@ function ns.BuildQueue()
 		end
 		return ns.SpellInRange(id) ~= false
 	end
-	local function tryPick(step, shift, mustRange, allowDup)
+	local function pressable(step, shift, mustRange, allowDup)
 		if not consider(step) then
 			return false
 		end
@@ -180,6 +174,21 @@ function ns.BuildQueue()
 		if mustRange and not rangeNow(id, step.opt) then
 			return false
 		end
+		return true
+	end
+	local function laterAction(from, shift, mustRange)
+		for j = from + 1, #apl do
+			local step = apl[j]
+			if API.IsRotationAction and API.IsRotationAction(step.id, step.opt, step.racial) and pressable(step, shift, mustRange, false) then
+				return true
+			end
+		end
+		return false
+	end
+	local function tryPick(step, shift, mustRange, allowDup)
+		if not pressable(step, shift, mustRange, allowDup) then
+			return false
+		end
 		if take(step) then
 			if API.PredictConsume then
 				API.PredictConsume(step.id, step.opt)
@@ -188,11 +197,11 @@ function ns.BuildQueue()
 		end
 		return false
 	end
-	local function scan(shift, mustRange, wantFallback, allowDup)
-		for _, step in ipairs(apl) do
-			local fb = isFallback(step.opt)
-			if wantFallback == nil or fb == wantFallback then
-				if tryPick(step, shift, mustRange, allowDup) then
+	local function pickOne(shift, mustRange, allowDup)
+		for i, step in ipairs(apl) do
+			if pressable(step, shift, mustRange, allowDup) then
+				local skipFiller = API.IsFallback and API.IsFallback(step.opt) and laterAction(i, shift, mustRange)
+				if not skipFiller and tryPick(step, shift, mustRange, allowDup) then
 					return true
 				end
 			end
@@ -218,12 +227,10 @@ function ns.BuildQueue()
 			end
 		end
 		if #q == 0 then
-			if not scan(shift, true, false, false) then
-				scan(shift, true, true, false)
-			end
+			pickOne(shift, true, false)
 		end
 		while #q < 3 do
-			if not (scan(shift, false, false, false) or scan(shift, false, true, false) or scan(shift, false, true, true)) then
+			if not (pickOne(shift, false, false) or pickOne(shift, false, true)) then
 				break
 			end
 		end

@@ -1,3 +1,8 @@
+1.5.54
+
+2026-09-27
+- Same press rule for every class and race: a filler yields only to a later cooldown, DoT, or proc that is ready and in range. Ice Lance, Starfire, Swipe, and auto racials no longer steal the queue.
+
 1.5.53
 
 2026-09-27

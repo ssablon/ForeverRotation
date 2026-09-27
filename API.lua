@@ -633,6 +633,41 @@ function ns.API.SpellCooldownSec(spellID)
 	return fallbackSeconds(spellID) or 0
 end
 
+function ns.API.IsFallback(opt)
+	opt = opt or {}
+	return opt.filler == true or opt.swing == true
+end
+
+-- A filler listed first must yield to these when they are pressable.
+-- Nukes without a cooldown (Starfire, Ice Lance, Swipe) stay list-order.
+-- Auto-appended racials never steal a filler higher in the list.
+function ns.API.IsRotationAction(spellID, opt, isRacial)
+	if isRacial then
+		return false
+	end
+	opt = opt or {}
+	if ns.API.IsFallback(opt) then
+		return false
+	end
+	if opt.heal or opt.nodebuff or opt.nobuff or opt.needbuff or opt.needdebuff then
+		return true
+	end
+	if opt.proc or opt.usable or opt.comboMin then
+		return true
+	end
+	if opt.nopet or opt.pet or opt.nocombat then
+		return true
+	end
+	if opt.hp or opt.manaMax or opt.hpMin then
+		return true
+	end
+	if opt.anybuff or opt.anydebuff then
+		return true
+	end
+	local sec = ns.API.SpellCooldownSec(spellID)
+	return sec and sec > 0.2
+end
+
 local function markCooldown(spellID, seconds)
 	if not seconds or seconds <= 0.2 then
 		return

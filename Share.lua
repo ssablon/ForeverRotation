@@ -227,20 +227,22 @@ function ns.ImportProfile(text)
 		ns.db.autoEnemies = 8
 	end
 	ns.db.weaponBuff = meta.W ~= "" and meta.W or nil
-	if ns.FlushProfile then
+	if ns.ApplyRotationEdit then
+		ns.ApplyRotationEdit()
+	elseif ns.FlushProfile then
 		ns.FlushProfile()
-	end
-	if ns.InvalidateAPLCache then
-		ns.InvalidateAPLCache()
+		if ns.InvalidateAPLCache then
+			ns.InvalidateAPLCache()
+		end
+		if ns.Tick then
+			ns.Tick()
+		end
 	end
 	if ns.UI and ns.UI.RefreshRoles then
 		ns.UI.RefreshRoles()
 	end
 	if ns.UI and ns.UI.RefreshModes then
 		ns.UI.RefreshModes()
-	end
-	if ns.Tick then
-		ns.Tick()
 	end
 	return true, "OPT_IMPORT_OK"
 end
