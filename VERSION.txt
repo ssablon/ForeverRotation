@@ -1,3 +1,8 @@
+1.5.44
+
+2026-09-27
+- Options use a sidebar and cards, with ON/OFF switches, like a modern config window. Same settings, clearer layout.
+
 1.5.43
 
 2026-09-27

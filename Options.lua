@@ -20,29 +20,310 @@ local function bindSimpleTip(frame, title, desc)
 	end)
 end
 
+local PANEL = {
+	bgFile = "Interface\\Buttons\\WHITE8x8",
+	edgeFile = "Interface\\Tooltips\\UI-Tooltip-Border",
+	tile = true,
+	tileSize = 16,
+	edgeSize = 12,
+	insets = { left = 3, right = 3, top = 3, bottom = 3 },
+}
+
+local function addonVersion()
+	local ver
+	if C_AddOns and C_AddOns.GetAddOnMetadata then
+		local ok, value = pcall(C_AddOns.GetAddOnMetadata, addonName, "Version")
+		if ok then
+			ver = value
+		end
+	end
+	if (not ver or ver == "") and GetAddOnMetadata then
+		local ok, value = pcall(GetAddOnMetadata, addonName, "Version")
+		if ok then
+			ver = value
+		end
+	end
+	return ver or ""
+end
+
 local function makeListBtn(parent, width, label)
-	local btn = CreateFrame("Button", nil, parent)
+	local btn = CreateFrame("Button", nil, parent, "BackdropTemplate")
 	btn:SetSize(width, 18)
-	btn:SetNormalFontObject("GameFontHighlightSmall")
-	btn:SetText(label)
-	local ntex = btn:CreateTexture(nil, "BACKGROUND")
-	ntex:SetTexture(IMG .. "buttonUp")
-	ntex:SetTexCoord(0, 0.625, 0, 0.6875)
-	ntex:SetAllPoints()
-	ntex:SetVertexColor(0.83, 0.63, 0.09, 0.9)
-	btn:SetNormalTexture(ntex)
-	local htex = btn:CreateTexture(nil, "HIGHLIGHT")
-	htex:SetTexture(IMG .. "buttonHighlight")
-	htex:SetTexCoord(0, 0.625, 0, 0.6875)
-	htex:SetAllPoints()
-	btn:SetHighlightTexture(htex)
-	local ptex = btn:CreateTexture(nil, "BACKGROUND")
-	ptex:SetTexture(IMG .. "buttonDown")
-	ptex:SetTexCoord(0, 0.625, 0, 0.6875)
-	ptex:SetAllPoints()
-	ptex:SetVertexColor(0.83, 0.63, 0.09, 1)
-	btn:SetPushedTexture(ptex)
+	btn:SetBackdrop({
+		bgFile = "Interface\\Buttons\\WHITE8x8",
+		edgeFile = "Interface\\Tooltips\\UI-Tooltip-Border",
+		tile = true,
+		tileSize = 8,
+		edgeSize = 8,
+		insets = { left = 2, right = 2, top = 2, bottom = 2 },
+	})
+	btn:SetBackdropColor(0.06, 0.06, 0.06, 0.95)
+	btn:SetBackdropBorderColor(0.55, 0.45, 0.18, 0.85)
+	local text = btn:CreateFontString(nil, "OVERLAY", "GameFontHighlightSmall")
+	text:SetPoint("CENTER", 0, 0)
+	text:SetText(label)
+	text:SetTextColor(0.92, 0.92, 0.92)
+	btn.label = text
+	function btn:SetText(value)
+		self.label:SetText(value)
+	end
+	btn:SetScript("OnEnter", function(self)
+		self:SetBackdropBorderColor(1, 0.82, 0.2, 1)
+		self.label:SetTextColor(1, 0.82, 0.2)
+	end)
+	btn:SetScript("OnLeave", function(self)
+		self:SetBackdropBorderColor(0.55, 0.45, 0.18, 0.85)
+		self.label:SetTextColor(0.92, 0.92, 0.92)
+	end)
 	return btn
+end
+
+local function makeGoldBtn(parent, width, height, label)
+	local btn = CreateFrame("Button", nil, parent, "BackdropTemplate")
+	btn:SetSize(width, height)
+	btn:SetBackdrop({
+		bgFile = "Interface\\Buttons\\WHITE8x8",
+		edgeFile = "Interface\\Tooltips\\UI-Tooltip-Border",
+		tile = true,
+		tileSize = 8,
+		edgeSize = 10,
+		insets = { left = 2, right = 2, top = 2, bottom = 2 },
+	})
+	local text = btn:CreateFontString(nil, "OVERLAY", "GameFontHighlightSmall")
+	text:SetPoint("CENTER", 0, 0)
+	text:SetText(label or "")
+	btn.label = text
+	function btn:SetText(value)
+		self.label:SetText(value)
+	end
+	function btn:SetSelected(on)
+		self._selected = on and true or false
+		if self._selected then
+			self:SetBackdropColor(0.28, 0.20, 0.04, 0.95)
+			self:SetBackdropBorderColor(1, 0.82, 0.2, 1)
+			self.label:SetTextColor(1, 0.82, 0.2)
+		else
+			self:SetBackdropColor(0.06, 0.06, 0.06, 0.95)
+			self:SetBackdropBorderColor(0.55, 0.45, 0.18, 1)
+			self.label:SetTextColor(0.92, 0.92, 0.92)
+		end
+	end
+	function btn:SetNormalFontObject(font)
+		self:SetSelected(font == "GameFontNormalSmall" or font == GameFontNormalSmall)
+	end
+	btn:SetSelected(false)
+	btn:SetScript("OnEnter", function(self)
+		self:SetBackdropBorderColor(1, 0.82, 0.2, 1)
+		self.label:SetTextColor(1, 0.82, 0.2)
+	end)
+	btn:SetScript("OnLeave", function(self)
+		self:SetSelected(self._selected)
+	end)
+	return btn
+end
+
+local function makeCard(parent, titleKey, x, y, width, height)
+	local card = CreateFrame("Frame", nil, parent, "BackdropTemplate")
+	card:SetSize(width, height)
+	card:SetPoint("TOPLEFT", x, y)
+	card:SetBackdrop({
+		bgFile = "Interface\\Tooltips\\UI-Tooltip-Background",
+		edgeFile = "Interface\\Tooltips\\UI-Tooltip-Border",
+		tile = true,
+		tileSize = 8,
+		edgeSize = 8,
+		insets = { left = 2, right = 2, top = 2, bottom = 2 },
+	})
+	card:SetBackdropColor(0, 0, 0, 0.55)
+	card:SetBackdropBorderColor(0.5, 0.42, 0.28, 0.9)
+	local title = card:CreateFontString(nil, "OVERLAY", "GameFontNormal")
+	title:SetPoint("TOP", 0, -8)
+	title:SetText(ns.T(titleKey))
+	title:SetTextColor(1, 0.82, 0.2)
+	card.title = title
+	card.titleKey = titleKey
+	card._y = -30
+	card:SetScript("OnEnter", function(self)
+		self:SetBackdropColor(0.35, 0.30, 0.09, 0.55)
+		self:SetBackdropBorderColor(1, 0.94, 0.23, 0.95)
+	end)
+	card:SetScript("OnLeave", function(self)
+		self:SetBackdropColor(0, 0, 0, 0.55)
+		self:SetBackdropBorderColor(0.5, 0.42, 0.28, 0.9)
+	end)
+	return card
+end
+
+local function featureOn(key)
+	if key == "locked" then
+		return ns.db.locked == true
+	end
+	return ns.db[key] ~= false
+end
+
+local function paintSwitch(sw, on)
+	if on then
+		sw:SetBackdropColor(0.38, 0.25, 0.02, 0.95)
+		sw:SetBackdropBorderColor(1, 0.82, 0.2, 1)
+		sw.knob:ClearAllPoints()
+		sw.knob:SetPoint("RIGHT", sw, "RIGHT", -3, 0)
+		sw.knob:SetVertexColor(1, 0.82, 0.2, 1)
+		sw.state:SetText(ns.T("SWITCH_ON"))
+		sw.state:SetTextColor(1, 0.92, 0.45)
+		sw.state:ClearAllPoints()
+		sw.state:SetPoint("CENTER", sw, "CENTER", -10, 0)
+	else
+		sw:SetBackdropColor(0.08, 0.08, 0.08, 0.95)
+		sw:SetBackdropBorderColor(0.42, 0.42, 0.42, 1)
+		sw.knob:ClearAllPoints()
+		sw.knob:SetPoint("LEFT", sw, "LEFT", 3, 0)
+		sw.knob:SetVertexColor(0.48, 0.48, 0.48, 1)
+		sw.state:SetText(ns.T("SWITCH_OFF"))
+		sw.state:SetTextColor(0.65, 0.65, 0.65)
+		sw.state:ClearAllPoints()
+		sw.state:SetPoint("CENTER", sw, "CENTER", 10, 0)
+	end
+end
+
+local function makeSwitch(parent, key, label)
+	local row = CreateFrame("Frame", nil, parent)
+	row:SetHeight(24)
+	local txt = row:CreateFontString(nil, "OVERLAY", "GameFontHighlightSmall")
+	txt:SetPoint("LEFT", 0, 0)
+	txt:SetPoint("RIGHT", -66, 0)
+	txt:SetJustifyH("LEFT")
+	txt:SetText(label)
+	txt:SetTextColor(0.92, 0.92, 0.92)
+	local sw = CreateFrame("Button", nil, row, "BackdropTemplate")
+	sw:SetSize(58, 22)
+	sw:SetPoint("RIGHT", 0, 0)
+	sw:SetBackdrop({
+		bgFile = "Interface\\Buttons\\WHITE8x8",
+		edgeFile = "Interface\\Tooltips\\UI-Tooltip-Border",
+		tile = true,
+		tileSize = 8,
+		edgeSize = 8,
+		insets = { left = 2, right = 2, top = 2, bottom = 2 },
+	})
+	local knob = sw:CreateTexture(nil, "ARTWORK")
+	knob:SetTexture("Interface\\Buttons\\WHITE8x8")
+	knob:SetSize(16, 16)
+	sw.knob = knob
+	local state = sw:CreateFontString(nil, "OVERLAY", "GameFontNormalSmall")
+	sw.state = state
+	local function current()
+		return featureOn(key)
+	end
+	sw:SetScript("OnClick", function()
+		local on = not current()
+		ns.db[key] = on
+		paintSwitch(sw, on)
+		if ns.ApplyFeatureFlags then
+			ns.ApplyFeatureFlags()
+		elseif ns.Tick then
+			ns.Tick()
+		end
+	end)
+	row:SetScript("OnEnter", function()
+		txt:SetTextColor(1, 0.82, 0.2)
+	end)
+	row:SetScript("OnLeave", function()
+		txt:SetTextColor(0.92, 0.92, 0.92)
+	end)
+	function row:SetChecked(on)
+		paintSwitch(sw, on and true or false)
+	end
+	function row:GetChecked()
+		return current()
+	end
+	row.Text = txt
+	row.dbKey = key
+	row.switch = sw
+	paintSwitch(sw, current())
+	return row
+end
+
+local function addSwitch(card, key, label)
+	local row = makeSwitch(card, key, label)
+	row:SetPoint("TOPLEFT", card, "TOPLEFT", 12, card._y)
+	row:SetPoint("TOPRIGHT", card, "TOPRIGHT", -12, card._y)
+	card._y = card._y - 26
+	return row
+end
+
+local function makeBarSlider(parent, width, minV, maxV, step)
+	local bar = CreateFrame("Button", nil, parent, "BackdropTemplate")
+	bar:SetSize(width, 16)
+	bar:SetBackdrop({
+		bgFile = "Interface\\Buttons\\WHITE8x8",
+		edgeFile = "Interface\\Tooltips\\UI-Tooltip-Border",
+		tile = true,
+		tileSize = 8,
+		edgeSize = 8,
+		insets = { left = 2, right = 2, top = 2, bottom = 2 },
+	})
+	bar:SetBackdropColor(0.08, 0.08, 0.08, 0.95)
+	bar:SetBackdropBorderColor(0.42, 0.42, 0.42, 1)
+	local fill = bar:CreateTexture(nil, "ARTWORK")
+	fill:SetTexture("Interface\\Buttons\\WHITE8x8")
+	fill:SetVertexColor(1, 0.82, 0.2, 0.85)
+	fill:SetPoint("TOPLEFT", 3, -3)
+	fill:SetPoint("BOTTOMLEFT", 3, 3)
+	bar.fill = fill
+	bar._min, bar._max, bar._step, bar._value = minV, maxV, step, minV
+	function bar:Render()
+		local span = self._max - self._min
+		local p = span > 0 and (self._value - self._min) / span or 0
+		self.fill:SetWidth(math.max(2, (self:GetWidth() - 6) * p))
+	end
+	function bar:SetValue(value)
+		self._value = tonumber(value) or self._min
+		self:Render()
+	end
+	function bar:GetValue()
+		return self._value
+	end
+	local function applyFromCursor(self)
+		local okLeft, left = pcall(self.GetLeft, self)
+		local okScale, scale = pcall(self.GetEffectiveScale, self)
+		local okCur, cx = pcall(GetCursorPosition)
+		left, scale, cx = tonumber(okLeft and left), tonumber(okScale and scale) or 1, tonumber(okCur and cx)
+		if not left or not cx then
+			return
+		end
+		local p = (cx / scale - left) / math.max(1, self:GetWidth())
+		p = math.min(1, math.max(0, p))
+		local raw = self._min + p * (self._max - self._min)
+		local snapped = math.floor(raw / self._step + 0.5) * self._step
+		snapped = math.min(self._max, math.max(self._min, snapped))
+		self._value = snapped
+		self:Render()
+		if self.OnValueChanged then
+			self:OnValueChanged(snapped)
+		end
+	end
+	bar:SetScript("OnMouseDown", function(self)
+		self._drag = true
+		applyFromCursor(self)
+	end)
+	bar:SetScript("OnMouseUp", function(self)
+		self._drag = nil
+	end)
+	bar:SetScript("OnLeave", function(self)
+		if not self._drag then
+			return
+		end
+	end)
+	bar:SetScript("OnUpdate", function(self)
+		if self._drag and not IsMouseButtonDown("LeftButton") then
+			self._drag = nil
+		end
+		if self._drag then
+			applyFromCursor(self)
+		end
+	end)
+	bar:Render()
+	return bar
 end
 
 local function modeLabel(mode)
@@ -68,9 +349,9 @@ local function ensureOptions()
 	end
 	ns.optSerial = (ns.optSerial or 0) + 1
 	local frame = CreateFrame("Frame", "WoWForeverRotOptions" .. ns.optSerial, UIParent, "BackdropTemplate")
-	frame:SetSize(500, 560)
-	frame:SetPoint("CENTER", UIParent, "CENTER", 260, 40)
-	frame:SetFrameStrata("HIGH")
+	frame:SetSize(900, 680)
+	frame:SetPoint("CENTER", UIParent, "CENTER", 0, 20)
+	frame:SetFrameStrata("DIALOG")
 	frame:SetClampedToScreen(true)
 	frame:SetMovable(true)
 	frame:EnableMouse(true)
@@ -78,43 +359,72 @@ local function ensureOptions()
 	frame:SetScript("OnDragStart", frame.StartMoving)
 	frame:SetScript("OnDragStop", frame.StopMovingOrSizing)
 	frame:SetBackdrop({
-		bgFile = "Interface\\Buttons\\WHITE8x8",
-		edgeFile = "Interface\\Tooltips\\UI-Tooltip-Border",
+		bgFile = "Interface\\DialogFrame\\UI-DialogBox-Background-Dark",
+		edgeFile = "Interface\\DialogFrame\\UI-DialogBox-Border",
 		tile = true,
-		tileSize = 8,
-		edgeSize = 14,
-		insets = { left = 4, right = 4, top = 4, bottom = 4 },
+		tileSize = 32,
+		edgeSize = 24,
+		insets = { left = 8, right = 8, top = 8, bottom = 8 },
 	})
-	frame:SetBackdropColor(0.05, 0.05, 0.05, 0.94)
-	frame:SetBackdropBorderColor(0.83, 0.63, 0.09, 1)
 	frame:Hide()
 	tinsert(UISpecialFrames, frame:GetName())
 
-	local title = frame:CreateFontString(nil, "OVERLAY", "GameFontNormalLarge")
-	title:SetPoint("TOP", frame, "TOP", 0, -12)
-	title:SetText(ns.T("OPTIONS_TITLE"))
+	local titleBar = CreateFrame("Frame", nil, frame)
+	titleBar:SetPoint("TOPLEFT", 12, -10)
+	titleBar:SetPoint("TOPRIGHT", -42, -10)
+	titleBar:SetHeight(36)
+	titleBar:EnableMouse(true)
+	titleBar:RegisterForDrag("LeftButton")
+	titleBar:SetScript("OnDragStart", function()
+		frame:StartMoving()
+	end)
+	titleBar:SetScript("OnDragStop", function()
+		frame:StopMovingOrSizing()
+	end)
+
+	local title = titleBar:CreateFontString(nil, "OVERLAY", "GameFontNormalLarge")
+	title:SetPoint("LEFT", 8, 0)
+	frame.windowTitle = title
 
 	local close = CreateFrame("Button", nil, frame, "UIPanelCloseButton")
-	close:SetPoint("TOPRIGHT", frame, "TOPRIGHT", 2, 2)
+	close:SetPoint("TOPRIGHT", -6, -6)
 
-	local function tabBtn(name, text, x)
-		local btn = CreateFrame("Button", name, frame, "UIPanelButtonTemplate")
-		btn:SetSize(100, 22)
-		btn:SetPoint("TOPLEFT", frame, "TOPLEFT", x, -36)
-		btn:SetText(text)
-		return btn
-	end
+	local nav = CreateFrame("Frame", nil, frame, "BackdropTemplate")
+	nav:SetPoint("TOPLEFT", 16, -52)
+	nav:SetPoint("BOTTOMLEFT", 16, 16)
+	nav:SetWidth(200)
+	nav:SetBackdrop(PANEL)
+	nav:SetBackdropColor(0.02, 0.02, 0.02, 0.96)
+	nav:SetBackdropBorderColor(0.55, 0.45, 0.18, 1)
 
-	local generalTab = tabBtn("WoWForeverRotTabGeneral", ns.T("TAB_GENERAL"), 16)
-	local rotTab = tabBtn("WoWForeverRotTabRot", ns.T("TAB_ROTATION"), 122)
-	local defTab = tabBtn("WoWForeverRotTabDef", ns.T("TAB_DEFENSE"), 228)
-	local extraTab = tabBtn("WoWForeverRotTabExtra", ns.T("TAB_EXTRA"), 334)
+	local navTitle = nav:CreateFontString(nil, "OVERLAY", "GameFontNormal")
+	navTitle:SetPoint("TOPLEFT", 14, -14)
+	navTitle:SetTextColor(1, 0.82, 0.2)
+	frame.navTitle = navTitle
+
+	local navStatus = nav:CreateFontString(nil, "OVERLAY", "GameFontHighlightSmall")
+	navStatus:SetPoint("TOPLEFT", navTitle, "BOTTOMLEFT", 0, -6)
+	navStatus:SetPoint("RIGHT", -12, 0)
+	navStatus:SetJustifyH("LEFT")
+	navStatus:SetTextColor(0.65, 0.65, 0.65)
+	frame.navStatus = navStatus
+
+	local content = CreateFrame("Frame", nil, frame, "BackdropTemplate")
+	content:SetPoint("TOPLEFT", nav, "TOPRIGHT", 12, 0)
+	content:SetPoint("BOTTOMRIGHT", frame, "BOTTOMRIGHT", -16, 16)
+	content:SetBackdrop(PANEL)
+	content:SetBackdropColor(0.015, 0.015, 0.015, 0.98)
+	content:SetBackdropBorderColor(0.55, 0.45, 0.18, 1)
+
+	local pageTitle = content:CreateFontString(nil, "OVERLAY", "GameFontNormalLarge")
+	pageTitle:SetPoint("TOPLEFT", 16, -14)
+	pageTitle:SetTextColor(1, 0.82, 0.2)
+	frame.pageTitle = pageTitle
 
 	frame.profileButtons = {}
 	for i, key in ipairs({ "base", "pve", "pvp", "custom" }) do
-		local btn = CreateFrame("Button", "WoWForeverRotProfileEdit" .. i, frame, "UIPanelButtonTemplate")
-		btn:SetSize(88, 20)
-		btn:SetPoint("TOPLEFT", 16 + (i - 1) * 92, -62)
+		local btn = makeGoldBtn(content, 88, 22, ns.T("PROFILE_" .. key:upper()))
+		btn:SetPoint("TOPLEFT", 16 + (i - 1) * 94, -42)
 		btn.profile = key
 		btn:SetScript("OnClick", function(self)
 			if ns.SetProfile then
@@ -124,105 +434,64 @@ local function ensureOptions()
 		frame.profileButtons[i] = btn
 	end
 
-	local general = CreateFrame("Frame", nil, frame)
-	general:SetPoint("TOPLEFT", 12, -88)
-	general:SetPoint("BOTTOMRIGHT", -12, 12)
+	local general = CreateFrame("Frame", nil, content)
+	general:SetPoint("TOPLEFT", 8, -72)
+	general:SetPoint("BOTTOMRIGHT", -8, 8)
 
-	local rotation = CreateFrame("Frame", nil, frame)
-	rotation:SetPoint("TOPLEFT", 12, -88)
-	rotation:SetPoint("BOTTOMRIGHT", -12, 12)
+	local rotation = CreateFrame("Frame", nil, content)
+	rotation:SetPoint("TOPLEFT", 8, -72)
+	rotation:SetPoint("BOTTOMRIGHT", -8, 8)
 	rotation:Hide()
-	local extra = CreateFrame("Frame", nil, frame)
-	extra:SetPoint("TOPLEFT", 12, -88)
-	extra:SetPoint("BOTTOMRIGHT", -12, 12)
+
+	local extra = CreateFrame("Frame", nil, content)
+	extra:SetPoint("TOPLEFT", 8, -72)
+	extra:SetPoint("BOTTOMRIGHT", -8, 8)
 	extra:Hide()
 	frame.general = general
 	frame.rotation = rotation
 	frame.extra = extra
+	frame.content = content
+	frame.nav = nav
 
-	local function featureOn(key)
-		if key == "locked" then
-			return ns.db.locked == true
-		end
-		return ns.db[key] ~= false
-	end
+	local hudCard = makeCard(general, "OPT_CARD_HUD", 8, -4, 318, 172)
+	frame.optLock = addSwitch(hudCard, "locked", ns.T("OPT_LOCK"))
+	frame.optRotation = addSwitch(hudCard, "showRotation", ns.T("OPT_ROTATION"))
+	frame.optGlow = addSwitch(hudCard, "glow", ns.T("OPT_GLOW"))
+	frame.optRange = addSwitch(hudCard, "showRange", ns.T("OPT_RANGE"))
+	frame.optModes = addSwitch(hudCard, "showModes", ns.T("OPT_MODES"))
 
-	local function check(parent, key, label, y, x)
-		local box = CreateFrame("CheckButton", nil, parent, "UICheckButtonTemplate")
-		box:SetPoint("TOPLEFT", x or 8, y)
-		box:SetHitRectInsets(0, -220, -2, -2)
-		local text = box.Text or box:CreateFontString(nil, "OVERLAY", "GameFontHighlight")
-		text:SetPoint("LEFT", box, "RIGHT", 4, 0)
-		text:SetWidth(210)
-		text:SetJustifyH("LEFT")
-		text:SetText(label)
-		box.Text = text
-		box:SetScript("OnClick", function(self)
-			local on = not featureOn(key)
-			self:SetChecked(on)
-			ns.db[key] = on
-			if ns.ApplyFeatureFlags then
-				ns.ApplyFeatureFlags()
-			elseif ns.Tick then
-				ns.Tick()
-			end
-		end)
-		box.dbKey = key
-		return box
-	end
+	local winCard = makeCard(general, "OPT_CARD_WINDOWS", 338, -4, 318, 172)
+	frame.optDef = addSwitch(winCard, "showDefense", ns.T("OPT_DEFENSE"))
+	frame.optKick = addSwitch(winCard, "showInterrupt", ns.T("OPT_INTERRUPT"))
+	frame.optPurge = addSwitch(winCard, "showPurge", ns.T("OPT_PURGE"))
+	frame.optCleanse = addSwitch(winCard, "showCleanse", ns.T("OPT_CLEANSE"))
+	frame.optWeapon = addSwitch(winCard, "showWeapon", ns.T("OPT_WEAPON"))
 
-	local feat = general:CreateFontString(nil, "OVERLAY", "GameFontNormal")
-	feat:SetPoint("TOPLEFT", 12, -4)
-	feat:SetText(ns.T("OPT_FEATURES"))
-
-	frame.optLock = check(general, "locked", ns.T("OPT_LOCK"), -24)
-	frame.optRotation = check(general, "showRotation", ns.T("OPT_ROTATION"), -52)
-	frame.optGlow = check(general, "glow", ns.T("OPT_GLOW"), -80)
-	frame.optRange = check(general, "showRange", ns.T("OPT_RANGE"), -108)
-	frame.optModes = check(general, "showModes", ns.T("OPT_MODES"), -136)
-
-	frame.optDef = check(general, "showDefense", ns.T("OPT_DEFENSE"), -24, 250)
-	frame.optKick = check(general, "showInterrupt", ns.T("OPT_INTERRUPT"), -52, 250)
-	frame.optPurge = check(general, "showPurge", ns.T("OPT_PURGE"), -80, 250)
-	frame.optCleanse = check(general, "showCleanse", ns.T("OPT_CLEANSE"), -108, 250)
-	frame.optWeapon = check(general, "showWeapon", ns.T("OPT_WEAPON"), -136, 250)
-
-	local wlabel = general:CreateFontString(nil, "OVERLAY", "GameFontNormal")
-	wlabel:SetPoint("TOPLEFT", 16, -180)
-	wlabel:SetText(ns.T("OPT_WEAPON_PICK"))
-	frame.weaponLabel = wlabel
-	frame.weaponBoxes = {}
-
-	local scaleLabel = general:CreateFontString(nil, "OVERLAY", "GameFontNormal")
-	scaleLabel:SetPoint("TOPLEFT", 16, -340)
+	local displayCard = makeCard(general, "OPT_CARD_DISPLAY", 8, -188, 318, 196)
+	local scaleLabel = displayCard:CreateFontString(nil, "OVERLAY", "GameFontHighlightSmall")
+	scaleLabel:SetPoint("TOPLEFT", 12, -32)
+	scaleLabel:SetTextColor(0.92, 0.92, 0.92)
 	frame.scaleLabel = scaleLabel
+	local scaleBar = makeBarSlider(displayCard, 200, 60, 200, 10)
+	scaleBar:SetPoint("TOPLEFT", 12, -52)
+	scaleBar.OnValueChanged = function(_, value)
+		ns.db.uiScale = value / 100
+		if ns.UI and ns.UI.ApplyScale then
+			ns.db.uiScale = ns.UIScale and ns.UIScale() or (value / 100)
+			ns.UI.ApplyScale()
+		end
+		if frame.scaleLabel then
+			frame.scaleLabel:SetText(ns.T("OPT_SCALE"):format(math.floor((ns.UIScale and ns.UIScale() or value / 100) * 100 + 0.5)))
+		end
+	end
+	frame.scaleBar = scaleBar
 
-	local scaleLess = CreateFrame("Button", nil, general, "UIPanelButtonTemplate")
-	scaleLess:SetSize(22, 20)
-	scaleLess:SetPoint("LEFT", scaleLabel, "RIGHT", 10, 0)
-	scaleLess:SetText("-")
-	scaleLess:SetScript("OnClick", function()
-		ns.SetUIScale((ns.UIScale and ns.UIScale() or 1) - 0.1)
-	end)
-
-	local scaleMore = CreateFrame("Button", nil, general, "UIPanelButtonTemplate")
-	scaleMore:SetSize(22, 20)
-	scaleMore:SetPoint("LEFT", scaleLess, "RIGHT", 6, 0)
-	scaleMore:SetText("+")
-	scaleMore:SetScript("OnClick", function()
-		ns.SetUIScale((ns.UIScale and ns.UIScale() or 1) + 0.1)
-	end)
-	frame.scaleLess = scaleLess
-	frame.scaleMore = scaleMore
-
-	local langLabel = general:CreateFontString(nil, "OVERLAY", "GameFontNormal")
-	langLabel:SetPoint("TOPLEFT", 16, -372)
-	langLabel:SetText(ns.T("OPT_LANG"))
+	local langLabel = displayCard:CreateFontString(nil, "OVERLAY", "GameFontHighlightSmall")
+	langLabel:SetPoint("TOPLEFT", 12, -80)
+	langLabel:SetTextColor(0.92, 0.92, 0.92)
 	frame.langLabel = langLabel
-	local langBtn = CreateFrame("Button", nil, general, "UIPanelButtonTemplate")
-	langBtn:SetSize(170, 22)
-	langBtn:SetPoint("LEFT", langLabel, "RIGHT", 10, 0)
-	langBtn:SetText(ns.LocaleLabel and ns.LocaleLabel() or "Auto")
+	local langBtn = makeGoldBtn(displayCard, 170, 22, ns.LocaleLabel and ns.LocaleLabel() or "Auto")
+	langBtn:SetPoint("TOPLEFT", 12, -100)
 	langBtn:SetScript("OnClick", function()
 		if ns.CycleLocale then
 			ns.CycleLocale()
@@ -230,38 +499,42 @@ local function ensureOptions()
 	end)
 	frame.langBtn = langBtn
 
-	local resetPos = CreateFrame("Button", nil, general, "UIPanelButtonTemplate")
-	resetPos:SetSize(180, 22)
-	resetPos:SetPoint("TOPLEFT", 12, -400)
-	resetPos:SetText(ns.T("OPT_RESET_POS"))
+	local resetPos = makeGoldBtn(displayCard, 140, 22, ns.T("OPT_RESET_POS"))
+	resetPos:SetPoint("TOPLEFT", 12, -132)
 	resetPos:SetScript("OnClick", function()
 		ns.db.pos = nil
 		ns.UI.ApplyPosition()
 	end)
+	frame.resetPos = resetPos
 
-	local resetAll = CreateFrame("Button", nil, general, "UIPanelButtonTemplate")
-	resetAll:SetSize(220, 22)
+	local resetAll = makeGoldBtn(displayCard, 140, 22, ns.T("OPT_RESET_ALL"))
 	resetAll:SetPoint("LEFT", resetPos, "RIGHT", 8, 0)
-	resetAll:SetText(ns.T("OPT_RESET_ALL"))
 	resetAll:SetScript("OnClick", function()
 		ns.ConfirmResetAll()
 	end)
+	frame.resetAll = resetAll
+
+	local weaponCard = makeCard(general, "OPT_CARD_WEAPON", 338, -188, 318, 196)
+	frame.weaponCard = weaponCard
+	frame.weaponLabel = weaponCard.title
+	frame.weaponBoxes = {}
 
 	local hint = general:CreateFontString(nil, "OVERLAY", "GameFontHighlightSmall")
-	hint:SetPoint("TOPLEFT", 12, -432)
-	hint:SetWidth(450)
+	hint:SetPoint("BOTTOMLEFT", 12, 8)
+	hint:SetPoint("BOTTOMRIGHT", -12, 8)
 	hint:SetJustifyH("LEFT")
-	hint:SetText(ns.T("OPT_HINT"))
+	hint:SetTextColor(0.65, 0.65, 0.65)
+	frame.hint = hint
 
 	local specText = rotation:CreateFontString(nil, "OVERLAY", "GameFontNormal")
 	specText:SetPoint("TOPLEFT", 8, -2)
+	specText:SetTextColor(1, 0.82, 0.2)
 	frame.specText = specText
 
 	frame.specButtons = {}
 	for i = 1, 5 do
-		local btn = CreateFrame("Button", "WoWForeverRotSpec" .. i, rotation, "UIPanelButtonTemplate")
-		btn:SetSize(78, 20)
-		btn:SetPoint("TOPLEFT", 8 + (i - 1) * 84, -22)
+		local btn = makeGoldBtn(rotation, 86, 22, "")
+		btn:SetPoint("TOPLEFT", 8 + (i - 1) * 92, -22)
 		btn:SetScript("OnClick", function(self)
 			if self.spec then
 				editSpec = self.spec
@@ -274,9 +547,8 @@ local function ensureOptions()
 
 	frame.modeButtons = {}
 	for i, mode in ipairs({ "auto", "single", "aoe", "burst" }) do
-		local btn = CreateFrame("Button", "WoWForeverRotModeEdit" .. i, rotation, "UIPanelButtonTemplate")
-		btn:SetSize(72, 20)
-		btn:SetPoint("TOPLEFT", 8 + (i - 1) * 76, -46)
+		local btn = makeGoldBtn(rotation, 80, 22, modeLabel(mode))
+		btn:SetPoint("TOPLEFT", 8 + (i - 1) * 86, -48)
 		btn.mode = mode
 		btn:SetScript("OnClick", function(self)
 			editMode = self.mode
@@ -291,15 +563,14 @@ local function ensureOptions()
 	end
 
 	local autoHint = rotation:CreateFontString(nil, "OVERLAY", "GameFontHighlightSmall")
-	autoHint:SetPoint("TOPLEFT", 8, -68)
-	autoHint:SetWidth(360)
+	autoHint:SetPoint("TOPLEFT", 8, -76)
+	autoHint:SetWidth(420)
 	autoHint:SetJustifyH("LEFT")
+	autoHint:SetTextColor(0.72, 0.72, 0.72)
 	frame.autoHint = autoHint
 
-	local autoLess = CreateFrame("Button", nil, rotation, "UIPanelButtonTemplate")
-	autoLess:SetSize(22, 18)
-	autoLess:SetPoint("TOPRIGHT", rotation, "TOPRIGHT", -54, -66)
-	autoLess:SetText("-")
+	local autoLess = makeGoldBtn(rotation, 24, 20, "-")
+	autoLess:SetPoint("TOPRIGHT", rotation, "TOPRIGHT", -54, -74)
 	autoLess:SetScript("OnClick", function()
 		local n = tonumber(ns.db.autoEnemies) or 3
 		ns.db.autoEnemies = math.max(2, n - 1)
@@ -313,10 +584,8 @@ local function ensureOptions()
 	end)
 	frame.autoLess = autoLess
 
-	local autoMore = CreateFrame("Button", nil, rotation, "UIPanelButtonTemplate")
-	autoMore:SetSize(22, 18)
-	autoMore:SetPoint("TOPRIGHT", rotation, "TOPRIGHT", -8, -66)
-	autoMore:SetText("+")
+	local autoMore = makeGoldBtn(rotation, 24, 20, "+")
+	autoMore:SetPoint("TOPRIGHT", rotation, "TOPRIGHT", -8, -74)
 	autoMore:SetScript("OnClick", function()
 		local n = tonumber(ns.db.autoEnemies) or 3
 		ns.db.autoEnemies = math.min(8, n + 1)
@@ -332,12 +601,11 @@ local function ensureOptions()
 
 	local autoCount = rotation:CreateFontString(nil, "OVERLAY", "GameFontNormalSmall")
 	autoCount:SetPoint("RIGHT", autoLess, "LEFT", -6, 0)
+	autoCount:SetTextColor(1, 0.82, 0.2)
 	frame.autoCount = autoCount
 
-	local resetApl = CreateFrame("Button", nil, rotation, "UIPanelButtonTemplate")
-	resetApl:SetSize(120, 20)
+	local resetApl = makeGoldBtn(rotation, 120, 22, ns.T("OPT_RESET_APL"))
 	resetApl:SetPoint("TOPRIGHT", rotation, "TOPRIGHT", -8, -22)
-	resetApl:SetText(ns.T("OPT_RESET_APL"))
 	frame.resetApl = resetApl
 	resetApl:SetScript("OnClick", function()
 		if listKind == "def" then
@@ -348,11 +616,26 @@ local function ensureOptions()
 		ns.RefreshOptions()
 	end)
 
-	local scroll = CreateFrame("ScrollFrame", "WoWForeverRotAPLScroll", rotation, "UIPanelScrollFrameTemplate")
-	scroll:SetPoint("TOPLEFT", 4, -90)
-	scroll:SetPoint("BOTTOMRIGHT", -28, 4)
+	local listCard = CreateFrame("Frame", nil, rotation, "BackdropTemplate")
+	listCard:SetPoint("TOPLEFT", 4, -100)
+	listCard:SetPoint("BOTTOMRIGHT", -4, 4)
+	listCard:SetBackdrop({
+		bgFile = "Interface\\Tooltips\\UI-Tooltip-Background",
+		edgeFile = "Interface\\Tooltips\\UI-Tooltip-Border",
+		tile = true,
+		tileSize = 8,
+		edgeSize = 8,
+		insets = { left = 2, right = 2, top = 2, bottom = 2 },
+	})
+	listCard:SetBackdropColor(0, 0, 0, 0.45)
+	listCard:SetBackdropBorderColor(0.5, 0.42, 0.28, 0.9)
+	frame.listCard = listCard
+
+	local scroll = CreateFrame("ScrollFrame", "WoWForeverRotAPLScroll", listCard, "UIPanelScrollFrameTemplate")
+	scroll:SetPoint("TOPLEFT", 6, -8)
+	scroll:SetPoint("BOTTOMRIGHT", -28, 8)
 	local child = CreateFrame("Frame", nil, scroll)
-	child:SetSize(430, 10)
+	child:SetSize(600, 10)
 	scroll:SetScrollChild(child)
 	frame.aplScroll = scroll
 	frame.aplChild = child
@@ -362,7 +645,7 @@ local function ensureOptions()
 
 	local function makeDropZone(name)
 		local addBtn = CreateFrame("Button", name, child, "BackdropTemplate")
-		addBtn:SetSize(390, 32)
+		addBtn:SetSize(560, 32)
 		addBtn:SetBackdrop({
 			bgFile = "Interface\\Buttons\\WHITE8x8",
 			edgeFile = "Interface\\Tooltips\\UI-Tooltip-Border",
@@ -387,12 +670,14 @@ local function ensureOptions()
 			end
 		end)
 		addBtn:SetScript("OnEnter", function(self)
+			self:SetBackdropBorderColor(1, 0.82, 0.2, 1)
 			GameTooltip:SetOwner(self, "ANCHOR_TOP")
 			GameTooltip:AddLine(ns.T("OPT_ADD_SPELL"), 1, 0.82, 0)
 			GameTooltip:AddLine(ns.T("OPT_DROP_SPELL"), 1, 1, 1, true)
 			GameTooltip:Show()
 		end)
-		addBtn:SetScript("OnLeave", function()
+		addBtn:SetScript("OnLeave", function(self)
+			self:SetBackdropBorderColor(0.83, 0.63, 0.09, 0.85)
 			GameTooltip:Hide()
 		end)
 		addBtn:Hide()
@@ -402,14 +687,13 @@ local function ensureOptions()
 	frame.addSpell = makeDropZone("WoWForeverRotAddSpell")
 	for _, mode in ipairs({ "auto", "single", "aoe", "burst" }) do
 		local header = CreateFrame("Frame", nil, child)
-		header:SetSize(420, 22)
+		header:SetSize(580, 22)
 		local text = header:CreateFontString(nil, "OVERLAY", "GameFontNormal")
 		text:SetPoint("LEFT", 4, 0)
+		text:SetTextColor(1, 0.82, 0.2)
 		header.label = text
-		local reset = CreateFrame("Button", nil, header, "UIPanelButtonTemplate")
-		reset:SetSize(80, 18)
+		local reset = makeGoldBtn(header, 90, 18, ns.T("OPT_RESET_APL"))
 		reset:SetPoint("RIGHT", 0, 0)
-		reset:SetText(ns.T("OPT_RESET_APL"))
 		reset:SetScript("OnClick", function(self)
 			if self.mode then
 				ns.ResetAPL(nil, editSpec, self.mode)
@@ -466,29 +750,54 @@ local function ensureOptions()
 		end
 	end
 
-	frame.optHideIdle = check(extra, "hideIdle", ns.T("OPT_HIDE_IDLE"), -4)
-	frame.optPhysics = check(extra, "showPhysics", ns.T("OPT_PHYSICS"), -32)
-	frame.optBarOnly = check(extra, "barOnly", ns.T("OPT_BAR_ONLY"), -60)
-	frame.optAutoProfile = check(extra, "autoProfile", ns.T("OPT_AUTO_PROFILE"), -88)
-	frame.optCleanseGroup = check(extra, "cleanseGroup", ns.T("OPT_CLEANSE_GROUP"), -116)
-	for _, box in ipairs({ frame.optHideIdle, frame.optPhysics, frame.optBarOnly, frame.optAutoProfile, frame.optCleanseGroup }) do
-		if box.Text then
-			box.Text:SetWidth(420)
+	local combatCard = makeCard(extra, "OPT_CARD_COMBAT", 8, -4, 318, 122)
+	frame.optHideIdle = addSwitch(combatCard, "hideIdle", ns.T("OPT_HIDE_IDLE"))
+	frame.optPhysics = addSwitch(combatCard, "showPhysics", ns.T("OPT_PHYSICS"))
+	frame.optBarOnly = addSwitch(combatCard, "barOnly", ns.T("OPT_BAR_ONLY"))
+
+	local autoCard = makeCard(extra, "OPT_CARD_AUTOMATION", 338, -4, 318, 96)
+	frame.optAutoProfile = addSwitch(autoCard, "autoProfile", ns.T("OPT_AUTO_PROFILE"))
+	frame.optCleanseGroup = addSwitch(autoCard, "cleanseGroup", ns.T("OPT_CLEANSE_GROUP"))
+
+	local alertCard = makeCard(extra, "OPT_CARD_ALERTS", 8, -138, 318, 132)
+	local soundLabel = alertCard:CreateFontString(nil, "OVERLAY", "GameFontHighlightSmall")
+	soundLabel:SetPoint("TOPLEFT", 12, -32)
+	soundLabel:SetTextColor(0.92, 0.92, 0.92)
+	frame.soundLabel = soundLabel
+	local soundBar = makeBarSlider(alertCard, 200, 0, 100, 10)
+	soundBar:SetPoint("TOPLEFT", 12, -52)
+	soundBar.OnValueChanged = function(_, value)
+		ns.db.soundVolume = value
+		if frame.soundLabel then
+			frame.soundLabel:SetText(ns.T("OPT_SOUND"):format(value))
 		end
-		box:SetHitRectInsets(0, -400, -2, -2)
 	end
+	frame.soundBar = soundBar
+	local soundHint = alertCard:CreateFontString(nil, "OVERLAY", "GameFontHighlightSmall")
+	soundHint:SetPoint("TOPLEFT", 12, -78)
+	soundHint:SetPoint("RIGHT", -12, 0)
+	soundHint:SetJustifyH("LEFT")
+	soundHint:SetTextColor(0.65, 0.65, 0.65)
+	frame.soundHint = soundHint
 
-	local colorTitle = extra:CreateFontString(nil, "OVERLAY", "GameFontNormal")
-	colorTitle:SetPoint("TOPLEFT", 12, -152)
-	colorTitle:SetText(ns.T("OPT_COLORS"))
-
+	local colorCard = makeCard(extra, "OPT_COLORS", 338, -112, 318, 184)
 	frame.colorButtons = {}
+	frame.colorLabels = {}
 	local colorKeys = { "next", "heal", "def", "weapon", "range" }
 	local colorLabels = { "OPT_COLOR_NEXT", "OPT_COLOR_HEAL", "OPT_COLOR_DEF", "OPT_COLOR_WEAPON", "OPT_COLOR_RANGE" }
 	for i, key in ipairs(colorKeys) do
-		local btn = CreateFrame("Button", nil, extra, "BackdropTemplate")
+		local row = CreateFrame("Frame", nil, colorCard)
+		row:SetHeight(24)
+		row:SetPoint("TOPLEFT", 12, -28 - (i - 1) * 28)
+		row:SetPoint("RIGHT", -12, 0)
+		local label = row:CreateFontString(nil, "OVERLAY", "GameFontHighlightSmall")
+		label:SetPoint("LEFT", 0, 0)
+		label:SetTextColor(0.92, 0.92, 0.92)
+		label:SetText(ns.T(colorLabels[i]))
+		label.key = colorLabels[i]
+		local btn = CreateFrame("Button", nil, row, "BackdropTemplate")
 		btn:SetSize(22, 22)
-		btn:SetPoint("TOPLEFT", 16 + (i - 1) * 90, -176)
+		btn:SetPoint("RIGHT", 0, 0)
 		btn:SetBackdrop({
 			bgFile = "Interface\\Buttons\\WHITE8x8",
 			edgeFile = "Interface\\Buttons\\WHITE8x8",
@@ -498,54 +807,25 @@ local function ensureOptions()
 		btn:SetScript("OnClick", function()
 			pickColor(key)
 		end)
-		local label = extra:CreateFontString(nil, "OVERLAY", "GameFontHighlightSmall")
-		label:SetPoint("LEFT", btn, "RIGHT", 4, 0)
-		label:SetText(ns.T(colorLabels[i]))
 		frame.colorButtons[i] = btn
+		frame.colorLabels[i] = label
 	end
 
-	local soundLabel = extra:CreateFontString(nil, "OVERLAY", "GameFontNormal")
-	soundLabel:SetPoint("TOPLEFT", 16, -214)
-	frame.soundLabel = soundLabel
-
-	local soundLess = CreateFrame("Button", nil, extra, "UIPanelButtonTemplate")
-	soundLess:SetSize(22, 20)
-	soundLess:SetPoint("LEFT", soundLabel, "RIGHT", 10, 0)
-	soundLess:SetText("-")
-	soundLess:SetScript("OnClick", function()
-		ns.db.soundVolume = math.max(0, (tonumber(ns.db.soundVolume) or 60) - 10)
-		ns.RefreshOptions()
-	end)
-	local soundMore = CreateFrame("Button", nil, extra, "UIPanelButtonTemplate")
-	soundMore:SetSize(22, 20)
-	soundMore:SetPoint("LEFT", soundLess, "RIGHT", 6, 0)
-	soundMore:SetText("+")
-	soundMore:SetScript("OnClick", function()
-		ns.db.soundVolume = math.min(100, (tonumber(ns.db.soundVolume) or 60) + 10)
-		ns.RefreshOptions()
-	end)
-	frame.soundLess = soundLess
-	frame.soundMore = soundMore
-
-	local soundHint = extra:CreateFontString(nil, "OVERLAY", "GameFontHighlightSmall")
-	soundHint:SetPoint("TOPLEFT", 16, -238)
-	soundHint:SetWidth(450)
-	soundHint:SetJustifyH("LEFT")
-	soundHint:SetText(ns.T("OPT_SOUND_HINT"))
-
-	local shareHint = extra:CreateFontString(nil, "OVERLAY", "GameFontHighlightSmall")
-	shareHint:SetPoint("TOPLEFT", 16, -266)
-	shareHint:SetWidth(450)
+	local shareCard = makeCard(extra, "OPT_CARD_SHARE", 8, -282, 648, 248)
+	local shareHint = shareCard:CreateFontString(nil, "OVERLAY", "GameFontHighlightSmall")
+	shareHint:SetPoint("TOPLEFT", 12, -28)
+	shareHint:SetPoint("RIGHT", -12, 0)
 	shareHint:SetJustifyH("LEFT")
-	shareHint:SetText(ns.T("OPT_EXPORT_HINT"))
+	shareHint:SetTextColor(0.72, 0.72, 0.72)
+	frame.shareHint = shareHint
 
-	local box = CreateFrame("ScrollFrame", "WoWForeverRotShareScroll", extra, "UIPanelScrollFrameTemplate")
-	box:SetPoint("TOPLEFT", 16, -296)
-	box:SetPoint("BOTTOMRIGHT", -36, 48)
+	local box = CreateFrame("ScrollFrame", "WoWForeverRotShareScroll", shareCard, "UIPanelScrollFrameTemplate")
+	box:SetPoint("TOPLEFT", 12, -50)
+	box:SetPoint("BOTTOMRIGHT", -32, 40)
 	local edit = CreateFrame("EditBox", "WoWForeverRotShareEdit", box)
 	edit:SetMultiLine(true)
 	edit:SetFontObject("ChatFontSmall")
-	edit:SetWidth(420)
+	edit:SetWidth(580)
 	edit:SetHeight(400)
 	edit:SetAutoFocus(false)
 	edit:EnableMouse(true)
@@ -557,10 +837,8 @@ local function ensureOptions()
 	box:SetScrollChild(edit)
 	frame.shareEdit = edit
 
-	local exportBtn = CreateFrame("Button", nil, extra, "UIPanelButtonTemplate")
-	exportBtn:SetSize(140, 22)
-	exportBtn:SetPoint("BOTTOMLEFT", 16, 16)
-	exportBtn:SetText(ns.T("OPT_EXPORT"))
+	local exportBtn = makeGoldBtn(shareCard, 140, 22, ns.T("OPT_EXPORT"))
+	exportBtn:SetPoint("BOTTOMLEFT", 12, 10)
 	exportBtn:SetScript("OnClick", function()
 		if ns.ExportProfile then
 			edit:SetText(ns.ExportProfile())
@@ -568,11 +846,10 @@ local function ensureOptions()
 			edit:SetFocus()
 		end
 	end)
+	frame.exportBtn = exportBtn
 
-	local importBtn = CreateFrame("Button", nil, extra, "UIPanelButtonTemplate")
-	importBtn:SetSize(140, 22)
+	local importBtn = makeGoldBtn(shareCard, 140, 22, ns.T("OPT_IMPORT"))
 	importBtn:SetPoint("LEFT", exportBtn, "RIGHT", 8, 0)
-	importBtn:SetText(ns.T("OPT_IMPORT"))
 	importBtn:SetScript("OnClick", function()
 		if not ns.ImportProfile then
 			return
@@ -589,29 +866,112 @@ local function ensureOptions()
 		end
 		ns.Print(ns.T(msg or "OPT_IMPORT_BAD"))
 	end)
+	frame.importBtn = importBtn
 
-	local function showTab(which)
+	frame.navButtons = {}
+	local navDefs = {
+		{ key = "general", label = "TAB_GENERAL" },
+		{ key = "rotation", label = "TAB_ROTATION" },
+		{ key = "def", label = "TAB_DEFENSE" },
+		{ key = "extra", label = "TAB_EXTRA" },
+	}
+	for i, def in ipairs(navDefs) do
+		local btn = CreateFrame("Button", nil, nav)
+		btn:SetHeight(28)
+		btn:SetPoint("TOPLEFT", nav, "TOPLEFT", 10, -58 - ((i - 1) * 30))
+		btn:SetPoint("RIGHT", nav, "RIGHT", -10, 0)
+		btn:SetHighlightTexture("Interface\\QuestFrame\\UI-QuestTitleHighlight", "ADD")
+		local text = btn:CreateFontString(nil, "OVERLAY", "GameFontHighlight")
+		text:SetPoint("LEFT", 8, 0)
+		text:SetPoint("RIGHT", -6, 0)
+		text:SetJustifyH("LEFT")
+		btn.text = text
+		btn.labelKey = def.label
+		btn.tabKey = def.key
+		btn:SetScript("OnClick", function(self)
+			frame.ShowTab(self.tabKey)
+			if self.tabKey ~= "general" then
+				ns.RefreshOptions()
+			end
+		end)
+		frame.navButtons[def.key] = btn
+	end
+
+	function frame.RelocalizeChrome()
+		local ver = addonVersion()
+		if ver ~= "" then
+			frame.windowTitle:SetText(ns.T("TITLE") .. "  |cff66ccffv" .. ver .. "|r")
+		else
+			frame.windowTitle:SetText(ns.T("OPTIONS_TITLE"))
+		end
+		frame.navTitle:SetText(ns.T("OPT_NAV_TITLE"))
+		if frame.hint then
+			frame.hint:SetText(ns.T("OPT_HINT"))
+		end
+		if frame.soundHint then
+			frame.soundHint:SetText(ns.T("OPT_SOUND_HINT"))
+		end
+		if frame.shareHint then
+			frame.shareHint:SetText(ns.T("OPT_EXPORT_HINT"))
+		end
+		if frame.resetPos then
+			frame.resetPos:SetText(ns.T("OPT_RESET_POS"))
+		end
+		if frame.resetAll then
+			frame.resetAll:SetText(ns.T("OPT_RESET_ALL"))
+		end
+		if frame.resetApl then
+			frame.resetApl:SetText(ns.T("OPT_RESET_APL"))
+		end
+		if frame.exportBtn then
+			frame.exportBtn:SetText(ns.T("OPT_EXPORT"))
+		end
+		if frame.importBtn then
+			frame.importBtn:SetText(ns.T("OPT_IMPORT"))
+		end
+		if frame.colorLabels then
+			for _, label in ipairs(frame.colorLabels) do
+				label:SetText(ns.T(label.key))
+			end
+		end
+		for _, card in ipairs({ hudCard, winCard, displayCard, weaponCard, combatCard, autoCard, alertCard, colorCard, shareCard }) do
+			if card and card.title and card.titleKey then
+				card.title:SetText(ns.T(card.titleKey))
+			end
+		end
+		for _, btn in pairs(frame.navButtons) do
+			btn.text:SetText(ns.T(btn.labelKey))
+		end
+	end
+
+	function frame.ShowTab(which)
+		frame.activeTab = which
 		listKind = which == "def" and "def" or "apl"
 		general:SetShown(which == "general")
 		rotation:SetShown(which == "rotation" or which == "def")
 		extra:SetShown(which == "extra")
+		local titles = {
+			general = "TAB_GENERAL",
+			rotation = "TAB_ROTATION",
+			def = "TAB_DEFENSE",
+			extra = "TAB_EXTRA",
+		}
+		frame.pageTitle:SetText(ns.T(titles[which] or "TAB_GENERAL"))
+		frame.navStatus:SetText(ns.T(titles[which] or "TAB_GENERAL"))
+		for key, btn in pairs(frame.navButtons) do
+			local selected = key == which
+			if selected then
+				btn:LockHighlight()
+				btn.text:SetTextColor(1, 0.82, 0.2)
+			else
+				btn:UnlockHighlight()
+				btn.text:SetTextColor(0.9, 0.9, 0.9)
+			end
+		end
 	end
-	generalTab:SetScript("OnClick", function()
-		showTab("general")
-	end)
-	rotTab:SetScript("OnClick", function()
-		showTab("rotation")
-		ns.RefreshOptions()
-	end)
-	defTab:SetScript("OnClick", function()
-		showTab("def")
-		ns.RefreshOptions()
-	end)
-	extraTab:SetScript("OnClick", function()
-		showTab("extra")
-		ns.RefreshOptions()
-	end)
 
+	frame.RelocalizeChrome()
+	frame.ShowTab("general")
 	ns.UI.options = frame
 	return frame
 end
@@ -622,7 +982,7 @@ local function aplRow(parent, index)
 		return rows[index]
 	end
 	local row = CreateFrame("Frame", nil, parent)
-	row:SetSize(420, 28)
+	row:SetSize(580, 28)
 	row:EnableMouse(true)
 	row:SetPoint("TOPLEFT", parent, "TOPLEFT", 2, -2 - (index - 1) * 30)
 	row:SetScript("OnReceiveDrag", function(self)
@@ -651,7 +1011,7 @@ local function aplRow(parent, index)
 
 	local name = row:CreateFontString(nil, "OVERLAY", "GameFontHighlightSmall")
 	name:SetPoint("LEFT", 74, 0)
-	name:SetWidth(136)
+	name:SetWidth(280)
 	name:SetJustifyH("LEFT")
 	row.label = name
 
@@ -739,6 +1099,12 @@ end
 
 function ns.RefreshOptions()
 	local frame = ensureOptions()
+	if frame.RelocalizeChrome then
+		frame.RelocalizeChrome()
+	end
+	if frame.ShowTab and frame.activeTab then
+		frame.ShowTab(frame.activeTab)
+	end
 	if frame.optLock then
 		frame.optLock:SetChecked(ns.db.locked == true)
 		frame.optGlow:SetChecked(ns.db.glow ~= false)
@@ -782,6 +1148,9 @@ function ns.RefreshOptions()
 			frame.langBtn:SetText(ns.LocaleLabel())
 		end
 		frame.soundLabel:SetText(ns.T("OPT_SOUND"):format(tonumber(ns.db.soundVolume) or 60))
+		if frame.soundBar then
+			frame.soundBar:SetValue(tonumber(ns.db.soundVolume) or 60)
+		end
 	end
 	if frame.colorButtons then
 		for _, btn in ipairs(frame.colorButtons) do
@@ -793,17 +1162,20 @@ function ns.RefreshOptions()
 	if frame.scaleLabel then
 		local pct = math.floor((ns.UIScale and ns.UIScale() or 1) * 100 + 0.5)
 		frame.scaleLabel:SetText(ns.T("OPT_SCALE"):format(pct))
+		if frame.scaleBar then
+			frame.scaleBar:SetValue(pct)
+		end
 	end
 	local choices = ns.WeaponChoices and ns.WeaponChoices() or {}
-	if frame.weaponLabel then
-		frame.weaponLabel:SetShown(#choices > 0)
+	if frame.weaponCard then
+		frame.weaponCard:SetShown(#choices > 0)
 		for i, entry in ipairs(choices) do
 			local box = frame.weaponBoxes[i]
 			if not box then
-				box = CreateFrame("CheckButton", "WoWForeverRotWep" .. i, frame.general, "UICheckButtonTemplate")
-				box:SetPoint("TOPLEFT", 20, -200 - (i - 1) * 24)
-				local text = box:CreateFontString(nil, "OVERLAY", "GameFontHighlight")
+				box = CreateFrame("CheckButton", "WoWForeverRotWep" .. i, frame.weaponCard, "UICheckButtonTemplate")
+				local text = box:CreateFontString(nil, "OVERLAY", "GameFontHighlightSmall")
 				text:SetPoint("LEFT", box, "RIGHT", 4, 0)
+				text:SetTextColor(0.92, 0.92, 0.92)
 				box.label = text
 				box:SetScript("OnClick", function(self)
 					if self.wepKey then
@@ -819,6 +1191,8 @@ function ns.RefreshOptions()
 				end)
 				frame.weaponBoxes[i] = box
 			end
+			box:ClearAllPoints()
+			box:SetPoint("TOPLEFT", 12, -28 - (i - 1) * 24)
 			box.wepKey = entry.key
 			box.label:SetText(API.SpellLabel(entry.id) or entry.key)
 			box:SetChecked(ns.db.weaponBuff == entry.key or (not ns.db.weaponBuff and i == 1))

@@ -1,3 +1,7 @@
+# 1.5.44
+
+- Options use a sidebar and cards, with ON/OFF switches, like a modern config window. Same settings, clearer layout.
+
 # 1.5.43
 
 - The HUD shrinks when you turn off the swing bars and grows again when you turn them back on.
