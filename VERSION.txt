@@ -1,3 +1,8 @@
+1.5.57
+
+2026-09-27
+- Fillers yield again to a ready shock, DoT, or cooldown lower in the list, so that spell becomes slot 1 (e.g. Earth Shock over Lightning Bolt). Unknown range still counts. The HUD still shows each spell only once per queue.
+
 1.5.56
 
 2026-09-27
@@ -7,29 +12,3 @@
 
 2026-09-27
 - Slot 1 is only a spell confirmed in range. Out-of-range shocks, DoTs, and melee stay in slots 2–3 until you can reach the target. Same distance rule for every class and race.
-
-1.5.54
-
-2026-09-27
-- Same press rule for every class and race: a filler yields only to a later cooldown, DoT, or proc that is ready and in range. Ice Lance, Starfire, Swipe, and auto racials no longer steal the queue.
-
-1.5.53
-
-2026-09-27
-- A ready in-range shock, DoT, or cooldown becomes the spell to press even if a filler is listed first. Rotation edits apply at once (Apply button); no /reload.
-
-1.5.52
-
-2026-09-27
-- Queue lookahead works for every class: combo, stealth finishers, current cast pinned, positional spells during the GCD, and a filler after shocks so the HUD never sticks on one icon.
-
-1.5.51
-
-2026-09-27
-- HUD queue now works like ConROC: after the first spell, the next two assume it was pressed (DoT up, shock on cooldown). Learned shocks and DoTs show again instead of only the filler.
-- New trainer spells are picked up without /reload. Target DoTs stay known when the client hides auras.
-
-1.5.50
-
-2026-09-27
-- Missing Forever 1-60 combat spells from the lab: Swift Judgement, Enchanted Flare, Tranquilizing Shot, Preparation, and the rest of the editor list. Classic IDs that do not exist on this client now use the Forever ones.

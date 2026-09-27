@@ -1,3 +1,7 @@
+# 1.5.57
+
+- Fillers yield again to a ready shock, DoT, or cooldown lower in the list, so that spell becomes slot 1 (e.g. Earth Shock over Lightning Bolt). Unknown range still counts. The HUD still shows each spell only once per queue.
+
 # 1.5.56
 
 - Rotation follows list order strictly: the first ready in-range spell is suggested, then the next different ones for slots 2–3. Cast fillers no longer yield to later cooldowns, and the HUD no longer stacks the same spell three times. Mage Pyroblast is usable in combat when listed.

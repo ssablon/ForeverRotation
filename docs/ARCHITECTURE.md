@@ -158,13 +158,13 @@ Un sort seulement utile (`IsHelpful` et pas `IsHarmful`) peut passer via le coû
 
 ## Files (`Rotations.lua`)
 
-`ns.BuildQueue` : jusqu’à 3 cases, chaque passage reprend la liste **depuis le début** et prend le **premier** pas encore utilisable (portée + ressources + `StepOk`).
+`ns.BuildQueue` : jusqu’à 3 cases, chaque passage reprend la liste **depuis le début**.
 
 - ignore un pas décoché, un enchant d'arme, un buff de maintenance, et (si `barOnly`) un sort absent des barres déjà indexées par GlowFetch ;
 - le sort en cours de lancement est épinglé en case 1, puis `PredictConsume` suppose qu'il a été lancé (DoT, CD / horions, buff, stealth, points de combo) ;
-- **ordre strict** : un filler de cast (Boule de feu, LB…) ne cède plus à un CD plus bas. Seuls les fillers `swing` (Frappe héroïque, Auto Shot, Maul) cèdent encore à une action prête à portée ;
-- un même sort n’apparaît qu’une fois dans la file (sauf `swing`) : les cases 2–3 montrent les sorts suivants de la liste, pas le même spam ;
-- case 1 = seulement un sort dont `RangeState` est `in` (ou sans check). Une portée `nil` / secrète n'est plus traitée comme « à portée ». Horion, DoT, melee : `out` → cases 2–3. Même règle pour chaque classe et race ;
+- un **filler** en tête cède à une **action** plus bas (horion, DoT, CD, proc) dès qu’elle est prête et à portée `in` ou inconnue (`notOut`) — l’horion passe alors en case 1. Starfire / Ice Lance / Swipe / raciaux auto ne volent pas ;
+- un même sort n’apparaît qu’une fois dans la file (sauf `swing`) : les cases 2–3 montrent d’autres sorts, pas le même spam ;
+- case 1 préfère `RangeState` `in` ; à défaut `notOut`. `out` → cases 2–3 ;
 - `ns.ApplyRotationEdit` (Haut / Bas / Appliquer) vide le cache et relance le HUD sans `/reload` ;
 - `IsSpellUsable` faux pendant le GCD ou un cast n'empêche plus un horion d'entrer dans la file ;
 - si aucun soin n'est entré dans les 3 cases, le premier soin `StepOk` est inséré en tête et la file est recoupée à 3.

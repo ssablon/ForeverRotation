@@ -199,8 +199,12 @@ function ns.BuildQueue()
 	local function laterAction(from, shift)
 		for j = from + 1, #apl do
 			local step = apl[j]
-			if API.IsRotationAction and API.IsRotationAction(step.id, step.opt, step.racial) and pressable(step, shift, "in", false) then
-				return true
+			if API.IsRotationAction and API.IsRotationAction(step.id, step.opt, step.racial) then
+				-- Confirmed in-range, or unknown (notOut): a ready shock/DoT/CD
+				-- must still beat a filler listed above it.
+				if pressable(step, shift, "in", false) or pressable(step, shift, "notOut", false) then
+					return true
+				end
 			end
 		end
 		return false
@@ -222,10 +226,10 @@ function ns.BuildQueue()
 			if pressable(step, shift, mustRange, allowDup) then
 				local id = (API.Resolve and API.Resolve(step.id)) or step.id
 				local opt = step.opt or {}
-				-- Strict list order: a cast filler (Fireball, LB, …) never yields.
-				-- Only next-swing fillers (Heroic Strike, Maul, Auto Shot) still
-				-- defer to a later ready in-range cooldown / DoT / proc.
-				local skipFiller = opt.swing == true and API.IsFallback and API.IsFallback(opt) and laterAction(i, shift)
+				-- Fillers (Lightning Bolt, Fireball, Heroic Strike, …) yield to a
+				-- later ready action (shock, DoT, CD, proc) so that spell becomes
+				-- slot 1. Ice Lance / Starfire stay list-order (not actions).
+				local skipFiller = API.IsFallback and API.IsFallback(opt) and laterAction(i, shift)
 				local unknown = rangeState(id, step.opt) == "unknown"
 				local skipUnknown = rangeMode(mustRange) == "in" and unknown and laterInRange(i, shift)
 				if not skipFiller and not skipUnknown and tryPick(step, shift, mustRange, allowDup) then
