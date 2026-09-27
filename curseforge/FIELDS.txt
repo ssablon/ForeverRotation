@@ -1,11 +1,11 @@
 À coller dans le formulaire CurseForge (Create Project)
 
 Game:                 World of Warcraft
-Project name:         Forever Rotation
+Project name:         Forever Rotation (Multi language)
 Slug (si demandé):    forever-rot
 Logo:                 curseforge/logo-512.png
-Summary (FR):         Aide de rotation pour WoW Forever Classic. HUD des 3 prochains sorts, tête de mort sur le bon bouton, plus soins, défense, interrupts, purges, dissipations et enchant d'arme. Pas un bot — vous appuyez toujours.
-Summary (EN):         Rotation helper for WoW Forever Classic. See the next 3 spells on a HUD, a skull on the matching action-bar button, plus heals, defense, interrupts, purges, cleanses and weapon buffs. Not a bot — you still press the keys.
+Summary (FR):         Forever Rotation (Multi language) — aide de rotation pour WoW Forever Classic. HUD des 3 prochains sorts, crâne sur le bon bouton, plus soins, défense, interrupts et enchant d'arme. Pas un bot. 11 langues.
+Summary (EN):         Forever Rotation (Multi language) — rotation helper for WoW Forever Classic. HUD of the next 3 spells, skull on the matching button, plus heals, defense, interrupts and weapon buffs. Not a bot. 11 languages.
 Class:                Addon
 Main category:        Combat
 Additional:           Buffs & Debuffs, Class

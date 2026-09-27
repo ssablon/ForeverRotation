@@ -1,18 +1,18 @@
 ## Interface: 16001
 ## AllowLoadGameType: camelot
-## Title: |cffd4a017Forever|r |cff66ccffRotation|r
-## Notes: Rotation helper for WoW Forever (Classic content, camelot client).
-## Notes-frFR: Aide de rotation pour WoW Forever (contenu Classic, client camelot).
-## Notes-deDE: Rotationshilfe für WoW Forever.
-## Notes-esES: Ayuda de rotación para WoW Forever.
-## Notes-ruRU: Подсказки ротации для WoW Forever.
-## Notes-esMX: Ayuda de rotación para WoW Forever.
-## Notes-ptBR: Ajuda de rotação para WoW Forever.
-## Notes-itIT: Aiuto rotazione per WoW Forever.
-## Notes-koKR: WoW Forever 순환 도우미.
-## Notes-zhCN: WoW Forever 循环助手。
-## Notes-zhTW: WoW Forever 循環助手。
-## Version: 1.5.47
+## Title: |cffd4a017Forever|r |cff66ccffRotation|r |cff888888(Multi language)|r
+## Notes: Rotation helper for WoW Forever Classic. HUD, skull flash, heals, defense, interrupts. Not a bot. 11 languages.
+## Notes-frFR: Aide de rotation pour WoW Forever Classic. HUD, crâne, soins, défense. Pas un bot. 11 langues.
+## Notes-deDE: Rotationshilfe für WoW Forever Classic. HUD, Totenkopf, Heilung, Abwehr. Kein Bot. 11 Sprachen.
+## Notes-esES: Ayuda de rotación para WoW Forever Classic. HUD, calavera, sanación, defensa. No es un bot. 11 idiomas.
+## Notes-ruRU: Подсказки ротации для WoW Forever Classic. HUD, череп, лечение, защита. Не бот. 11 языков.
+## Notes-esMX: Ayuda de rotación para WoW Forever Classic. HUD, calavera, sanación, defensa. No es un bot. 11 idiomas.
+## Notes-ptBR: Ajuda de rotação para WoW Forever Classic. HUD, caveira, cura, defesa. Não é um bot. 11 idiomas.
+## Notes-itIT: Aiuto rotazione per WoW Forever Classic. HUD, teschio, cure, difesa. Non è un bot. 11 lingue.
+## Notes-koKR: WoW Forever Classic 순환 도우미. HUD, 해골, 치유, 방어. 봇 아님. 11개 언어.
+## Notes-zhCN: WoW Forever Classic 循环助手。HUD、骷髅、治疗、防御。不是机器人。11 种语言。
+## Notes-zhTW: WoW Forever Classic 循環助手。HUD、骷髏、治療、防禦。不是機器人。11 種語言。
+## Version: 1.5.48
 ## Author: Vohnka
 ## IconTexture: Interface\AddOns\WoWForeverRot\images\logo.tga
 ## Category: WoW Forever

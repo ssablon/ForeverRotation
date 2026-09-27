@@ -22,7 +22,7 @@
 
   <div class="field">
     <label>Project name (pas de « WoW » dans le titre)</label>
-    <input id="name" value="Forever Rotation" readonly />
+    <input id="name" value="Forever Rotation (Multi language)" readonly />
     <button type="button" data-copy="name">Copier</button>
   </div>
 
@@ -34,7 +34,7 @@
 
   <div class="field">
     <label>Summary (anglais, obligatoire)</label>
-    <textarea id="summary" rows="3" readonly>Rotation helper for WoW Forever Classic. See the next 3 spells on a HUD, a skull on the matching action-bar button, plus heals, defense, interrupts, purges, cleanses and weapon buffs. Not a bot — you still press the keys.</textarea>
+    <textarea id="summary" rows="3" readonly>Forever Rotation (Multi language) — rotation helper for WoW Forever Classic. HUD of the next 3 spells, skull on the matching button, plus heals, defense, interrupts and weapon buffs. Not a bot. 11 languages.</textarea
     <button type="button" data-copy="summary">Copier</button>
   </div>
 
@@ -55,38 +55,76 @@
 
   <div class="field">
     <label>Description (English — paste as HTML / source)</label>
-    <textarea id="desc" rows="16" readonly>&lt;div&gt;
-  &lt;p&gt;&lt;strong&gt;Rotation helper for WoW Forever&lt;/strong&gt; (Classic Era combat, camelot client). It shows the next three abilities, flashes a skull on the matching action-bar button, and also tracks heals, defense buffs, interrupts, purges, cleanses, and weapon imbues. &lt;strong&gt;This is not a bot&lt;/strong&gt; — you still press the keys.&lt;/p&gt;
-  &lt;h2&gt;Install&lt;/h2&gt;
+    <textarea id="desc" rows="16" readonly>&lt;div style=&quot;font-family:Segoe UI,Tahoma,sans-serif;color:#d8dce6;line-height:1.55;max-width:820px&quot;&gt;
+  &lt;div style=&quot;background:#121826;border:1px solid #3d4a63;border-radius:10px;padding:20px 22px;margin:0 0 18px&quot;&gt;
+    &lt;h1 style=&quot;margin:0 0 8px;color:#e8c36a;font-size:1.55rem&quot;&gt;Forever Rotation &lt;span style=&quot;color:#8aa4bc;font-size:1rem;font-weight:600&quot;&gt;(Multi language)&lt;/span&gt;&lt;/h1&gt;
+    &lt;p style=&quot;margin:0;color:#9ecbff;font-size:1.02rem&quot;&gt;Rotation helper for &lt;strong&gt;WoW Forever Classic&lt;/strong&gt; (camelot client, interface 16001).&lt;/p&gt;
+    &lt;p style=&quot;margin:10px 0 0&quot;&gt;A HUD of the next three abilities, a skull flash on the matching action-bar button, plus heals, long defense buffs, interrupts, purges, cleanses and weapon imbues. &lt;strong style=&quot;color:#f3d27a&quot;&gt;This is not a bot&lt;/strong&gt; — you still press the keys.&lt;/p&gt;
+  &lt;/div&gt;
+
+  &lt;table style=&quot;width:100%;border-collapse:separate;border-spacing:10px 0;margin:0 0 8px&quot;&gt;
+    &lt;tr&gt;
+      &lt;td style=&quot;width:50%;vertical-align:top;background:#161b27;border:1px solid #2e384c;border-radius:8px;padding:14px 16px&quot;&gt;
+        &lt;h3 style=&quot;margin:0 0 6px;color:#66ccff&quot;&gt;What you see&lt;/h3&gt;
+        &lt;ul style=&quot;margin:0;padding-left:18px&quot;&gt;
+          &lt;li&gt;Next spell, then the two after that&lt;/li&gt;
+          &lt;li&gt;White skull on the button to press&lt;/li&gt;
+          &lt;li&gt;Green / blue / red flashes for heal, defense, weapon&lt;/li&gt;
+          &lt;li&gt;Classic swing, dual-wield, auto-shot and energy timing&lt;/li&gt;
+        &lt;/ul&gt;
+      &lt;/td&gt;
+      &lt;td style=&quot;width:50%;vertical-align:top;background:#161b27;border:1px solid #2e384c;border-radius:8px;padding:14px 16px&quot;&gt;
+        &lt;h3 style=&quot;margin:0 0 6px;color:#66ccff&quot;&gt;What it does not do&lt;/h3&gt;
+        &lt;ul style=&quot;margin:0;padding-left:18px&quot;&gt;
+          &lt;li&gt;Never casts, never clicks for you&lt;/li&gt;
+          &lt;li&gt;Never reads other players&#x27; keys&lt;/li&gt;
+          &lt;li&gt;Reset only touches the current profile&lt;/li&gt;
+          &lt;li&gt;UI text in 11 languages, English fallback&lt;/li&gt;
+        &lt;/ul&gt;
+      &lt;/td&gt;
+    &lt;/tr&gt;
+  &lt;/table&gt;
+
+  &lt;h2 style=&quot;color:#e8c36a;border-bottom:1px solid #3d4a63;padding-bottom:6px&quot;&gt;Spellflash colors&lt;/h2&gt;
+  &lt;ul&gt;
+    &lt;li&gt;&lt;strong style=&quot;color:#ffffff&quot;&gt;White&lt;/strong&gt; — next ability&lt;/li&gt;
+    &lt;li&gt;&lt;strong style=&quot;color:#6ee07a&quot;&gt;Green&lt;/strong&gt; — heal (only when someone is missing health)&lt;/li&gt;
+    &lt;li&gt;&lt;strong style=&quot;color:#6ea8ff&quot;&gt;Blue&lt;/strong&gt; — defense buff (blessings, auras, buffs &amp;gt; 1 min)&lt;/li&gt;
+    &lt;li&gt;&lt;strong style=&quot;color:#ff7a7a&quot;&gt;Red&lt;/strong&gt; — weapon enchant / poison&lt;/li&gt;
+  &lt;/ul&gt;
+
+  &lt;h2 style=&quot;color:#e8c36a;border-bottom:1px solid #3d4a63;padding-bottom:6px&quot;&gt;Profiles &amp;amp; classes&lt;/h2&gt;
+  &lt;p&gt;Base · PvE · PvP · Custom — each has its own lists. Warrior, Paladin, Hunter, Rogue, Priest, Shaman, Mage, Warlock, Druid.&lt;/p&gt;
+  &lt;p&gt;Hide the HUD while idle, bar-only suggestions, auto PvE/PvP profile, group dispel, and Classic physics cues when you want them.&lt;/p&gt;
+
+  &lt;h2 style=&quot;color:#e8c36a;border-bottom:1px solid #3d4a63;padding-bottom:6px&quot;&gt;Install&lt;/h2&gt;
   &lt;ol&gt;
     &lt;li&gt;Close the game client.&lt;/li&gt;
-    &lt;li&gt;Copy the &lt;code&gt;WoWForeverRot&lt;/code&gt; folder into &lt;code&gt;World of Warcraft\_classic_beta_\Interface\AddOns\&lt;/code&gt;&lt;/li&gt;
+    &lt;li&gt;Copy the &lt;code&gt;WoWForeverRot&lt;/code&gt; folder into&lt;br /&gt;
+      &lt;code&gt;World of Warcraft\_classic_beta_\Interface\AddOns\&lt;/code&gt;&lt;/li&gt;
     &lt;li&gt;Restart → Addons → enable &lt;strong&gt;Forever Rotation&lt;/strong&gt;.&lt;/li&gt;
   &lt;/ol&gt;
   &lt;p&gt;The CurseForge app often installs into official Classic. On Forever, &lt;strong&gt;unzip by hand&lt;/strong&gt; into &lt;code&gt;_classic_beta_&lt;/code&gt;.&lt;/p&gt;
-  &lt;h2&gt;Spellflash colors&lt;/h2&gt;
-  &lt;ul&gt;
-    &lt;li&gt;&lt;strong&gt;White&lt;/strong&gt; — next ability&lt;/li&gt;
-    &lt;li&gt;&lt;strong&gt;Green&lt;/strong&gt; — heal (only when someone is missing health)&lt;/li&gt;
-    &lt;li&gt;&lt;strong&gt;Blue&lt;/strong&gt; — defense buff (blessings, auras, buffs &amp;gt; 1 min)&lt;/li&gt;
-    &lt;li&gt;&lt;strong&gt;Red&lt;/strong&gt; — weapon enchant / poison&lt;/li&gt;
-  &lt;/ul&gt;
-  &lt;h2&gt;Profiles&lt;/h2&gt;
-  &lt;p&gt;Base · PvE · PvP · Custom — each has its own lists. Reset affects the current profile only.&lt;/p&gt;
-  &lt;h2&gt;Commands&lt;/h2&gt;
-  &lt;p&gt;&lt;code&gt;/wfr&lt;/code&gt; or &lt;code&gt;/foreverrot&lt;/code&gt;&lt;/p&gt;
+
+  &lt;h2 style=&quot;color:#e8c36a;border-bottom:1px solid #3d4a63;padding-bottom:6px&quot;&gt;Commands&lt;/h2&gt;
+  &lt;p&gt;&lt;code&gt;/wfr&lt;/code&gt;, &lt;code&gt;/foreverrot&lt;/code&gt;, or &lt;code&gt;/foreverrotation&lt;/code&gt;&lt;/p&gt;
   &lt;ul&gt;
     &lt;li&gt;&lt;code&gt;/wfr lock&lt;/code&gt; · &lt;code&gt;unlock&lt;/code&gt; — lock / move the HUD&lt;/li&gt;
     &lt;li&gt;&lt;code&gt;/wfr menu&lt;/code&gt; — options (add, toggle, reorder)&lt;/li&gt;
-    &lt;li&gt;&lt;code&gt;/wfr profile&lt;/code&gt; · &lt;code&gt;base&lt;/code&gt; · &lt;code&gt;jce&lt;/code&gt; · &lt;code&gt;jcj&lt;/code&gt; · &lt;code&gt;custom&lt;/code&gt;&lt;/li&gt;
+    &lt;li&gt;&lt;code&gt;/wfr profile&lt;/code&gt; · &lt;code&gt;base&lt;/code&gt; · &lt;code&gt;pve&lt;/code&gt; · &lt;code&gt;pvp&lt;/code&gt; · &lt;code&gt;custom&lt;/code&gt;&lt;/li&gt;
     &lt;li&gt;&lt;code&gt;/wfr mode&lt;/code&gt; — Auto / Single / AoE / Burst&lt;/li&gt;
     &lt;li&gt;&lt;code&gt;/wfr role&lt;/code&gt; — dps / tank / healer…&lt;/li&gt;
   &lt;/ul&gt;
   &lt;p&gt;Minimap button: left-click = options, right-click = lock.&lt;/p&gt;
-  &lt;h2&gt;Classes&lt;/h2&gt;
-  &lt;p&gt;Warrior, Paladin, Hunter, Rogue, Priest, Shaman, Mage, Warlock, Druid.&lt;/p&gt;
-  &lt;h2&gt;Author&lt;/h2&gt;
-  &lt;p&gt;&lt;strong&gt;Vohnka&lt;/strong&gt; — &lt;a href="https://wow-forever.fr"&gt;wow-forever.fr&lt;/a&gt;&lt;/p&gt;
+
+  &lt;h2 style=&quot;color:#e8c36a;border-bottom:1px solid #3d4a63;padding-bottom:6px&quot;&gt;Links &amp;amp; support&lt;/h2&gt;
+  &lt;ul&gt;
+    &lt;li&gt;Website: &lt;a href=&quot;https://wow-forever.fr&quot;&gt;https://wow-forever.fr&lt;/a&gt;&lt;/li&gt;
+    &lt;li&gt;Discord: &lt;a href=&quot;https://discord.gg/qmb2uDu8Z3&quot;&gt;https://discord.gg/qmb2uDu8Z3&lt;/a&gt;&lt;/li&gt;
+  &lt;/ul&gt;
+  &lt;p&gt;All support is on Discord. Please write in &lt;strong&gt;English&lt;/strong&gt; in &lt;strong&gt;#support&lt;/strong&gt;, &lt;strong&gt;#bugs&lt;/strong&gt;, and &lt;strong&gt;#suggestions&lt;/strong&gt;. Screenshots are welcome. Do not use the CurseForge comments for help or bug reports.&lt;/p&gt;
+
+  &lt;p style=&quot;margin:18px 0 0;color:#9aa6b8&quot;&gt;Author: &lt;strong style=&quot;color:#e8c36a&quot;&gt;Vohnka&lt;/strong&gt; — &lt;a href=&quot;https://wow-forever.fr&quot;&gt;wow-forever.fr&lt;/a&gt;&lt;/p&gt;
 &lt;/div&gt;</textarea>
     <button type="button" data-copy="desc">Copier</button>
   </div>

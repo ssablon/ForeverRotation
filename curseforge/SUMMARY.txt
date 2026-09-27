@@ -1,1 +1,1 @@
-Aide de rotation pour WoW Forever Classic. HUD des 3 prochains sorts, tête de mort sur le bon bouton, plus soins, défense, interrupts, purges, dissipations et enchant d'arme. Pas un bot — vous appuyez toujours.
+Forever Rotation (Multi language) — aide de rotation pour WoW Forever Classic. HUD des 3 prochains sorts, crâne sur le bon bouton, plus soins, défense, interrupts et enchant d'arme. Pas un bot. 11 langues.

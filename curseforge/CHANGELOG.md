@@ -1,3 +1,7 @@
+# 1.5.48
+
+- Title now shows (Multi language). The About card, CurseForge page, and website describe the addon more clearly.
+
 # 1.5.47
 
 - Copy on the Info page puts the link in the chat box, selected, so Ctrl+C works. This client has no system clipboard API.

@@ -1,3 +1,8 @@
+1.5.48
+
+2026-09-27
+- Title now shows (Multi language). The About card, CurseForge page, and website describe the addon more clearly.
+
 1.5.47
 
 2026-09-27

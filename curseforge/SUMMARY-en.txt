@@ -1,1 +1,1 @@
-Rotation helper for WoW Forever Classic. See the next 3 spells on a HUD, a skull on the matching action-bar button, plus heals, defense, interrupts, purges, cleanses and weapon buffs. Not a bot — you still press the keys.
+Forever Rotation (Multi language) — rotation helper for WoW Forever Classic. HUD of the next 3 spells, skull on the matching button, plus heals, defense, interrupts and weapon buffs. Not a bot. 11 languages.

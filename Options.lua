@@ -486,6 +486,8 @@ local function ensureOptions()
 
 	local title = titleBar:CreateFontString(nil, "OVERLAY", "GameFontNormalLarge")
 	title:SetPoint("LEFT", 8, 0)
+	title:SetPoint("RIGHT", titleBar, "RIGHT", -8, 0)
+	title:SetJustifyH("LEFT")
 	frame.windowTitle = title
 
 	local close = CreateFrame("Button", nil, frame, "UIPanelCloseButton")
@@ -976,7 +978,7 @@ local function ensureOptions()
 	end)
 	frame.importBtn = importBtn
 
-	local aboutCard = makeCard(info, "OPT_CARD_ABOUT", 8, -4, 648, 118)
+	local aboutCard = makeCard(info, "OPT_CARD_ABOUT", 8, -4, 648, 196)
 	local aboutBody = aboutCard:CreateFontString(nil, "OVERLAY", "GameFontHighlightSmall")
 	aboutBody:SetPoint("TOPLEFT", 12, -30)
 	aboutBody:SetPoint("RIGHT", -12, 0)
@@ -984,8 +986,15 @@ local function ensureOptions()
 	aboutBody:SetWordWrap(true)
 	aboutBody:SetTextColor(0.92, 0.92, 0.92)
 	frame.aboutBody = aboutBody
+	local aboutPoints = aboutCard:CreateFontString(nil, "OVERLAY", "GameFontHighlightSmall")
+	aboutPoints:SetPoint("TOPLEFT", aboutBody, "BOTTOMLEFT", 0, -8)
+	aboutPoints:SetPoint("RIGHT", -12, 0)
+	aboutPoints:SetJustifyH("LEFT")
+	aboutPoints:SetWordWrap(true)
+	aboutPoints:SetTextColor(0.78, 0.86, 0.96)
+	frame.aboutPoints = aboutPoints
 	local aboutCredit = aboutCard:CreateFontString(nil, "OVERLAY", "GameFontNormal")
-	aboutCredit:SetPoint("TOPLEFT", aboutBody, "BOTTOMLEFT", 0, -8)
+	aboutCredit:SetPoint("TOPLEFT", aboutPoints, "BOTTOMLEFT", 0, -10)
 	aboutCredit:SetTextColor(1, 0.82, 0.2)
 	frame.aboutCredit = aboutCredit
 	local aboutSupport = aboutCard:CreateFontString(nil, "OVERLAY", "GameFontHighlightSmall")
@@ -995,7 +1004,7 @@ local function ensureOptions()
 	aboutSupport:SetTextColor(0.72, 0.72, 0.72)
 	frame.aboutSupport = aboutSupport
 
-	local cmdCard = makeCard(info, "OPT_CARD_COMMANDS", 8, -134, 648, 196)
+	local cmdCard = makeCard(info, "OPT_CARD_COMMANDS", 8, -212, 648, 196)
 	local cmdHint = cmdCard:CreateFontString(nil, "OVERLAY", "GameFontHighlightSmall")
 	cmdHint:SetPoint("TOPLEFT", 12, -28)
 	cmdHint:SetPoint("RIGHT", -12, 0)
@@ -1010,7 +1019,7 @@ local function ensureOptions()
 	cmdList:SetTextColor(0.92, 0.92, 0.92)
 	frame.cmdList = cmdList
 
-	local linksCard = makeCard(info, "OPT_CARD_LINKS", 8, -342, 648, 122)
+	local linksCard = makeCard(info, "OPT_CARD_LINKS", 8, -420, 648, 122)
 	frame.siteRow = makeLinkRow(linksCard, "INFO_SITE", SITE_URL)
 	frame.siteRow:SetPoint("TOPLEFT", 12, -32)
 	frame.siteRow:SetPoint("RIGHT", -12, 0)
@@ -1054,9 +1063,9 @@ local function ensureOptions()
 	function frame.RelocalizeChrome()
 		local ver = addonVersion()
 		if ver ~= "" then
-			frame.windowTitle:SetText(ns.T("TITLE") .. "  |cff66ccffv" .. ver .. "|r")
+			frame.windowTitle:SetText(ns.T("TITLE") .. "  |cffbbbbbb" .. ns.T("TITLE_SUB") .. "|r  |cff66ccffv" .. ver .. "|r")
 		else
-			frame.windowTitle:SetText(ns.T("OPTIONS_TITLE"))
+			frame.windowTitle:SetText(ns.T("TITLE") .. "  |cffbbbbbb" .. ns.T("TITLE_SUB") .. "|r")
 		end
 		frame.navTitle:SetText(ns.T("OPT_NAV_TITLE"))
 		if frame.hint then
@@ -1085,6 +1094,11 @@ local function ensureOptions()
 		end
 		if frame.aboutBody then
 			frame.aboutBody:SetText(ns.T("INFO_ABOUT"))
+			frame.aboutBody:SetHeight(math.max(20, frame.aboutBody:GetStringHeight() + 2))
+		end
+		if frame.aboutPoints then
+			frame.aboutPoints:SetText(ns.T("INFO_ABOUT_POINTS"))
+			frame.aboutPoints:SetHeight(math.max(20, frame.aboutPoints:GetStringHeight() + 2))
 		end
 		if frame.aboutCredit then
 			frame.aboutCredit:SetText(ns.T("INFO_CREDIT"))
