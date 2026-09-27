@@ -1,3 +1,7 @@
+# 1.5.50
+
+- Missing Forever 1-60 combat spells from the lab: Swift Judgement, Enchanted Flare, Tranquilizing Shot, Preparation, and the rest of the editor list. Classic IDs that do not exist on this client now use the Forever ones.
+
 # 1.5.49
 
 - Options no longer measure text height. That call froze the camelot client after the Multi language title change.
