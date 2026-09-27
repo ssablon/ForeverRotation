@@ -984,6 +984,23 @@ function ns.RangeUpdate()
 	end
 end
 
+function ns.SpellBarSlot(spellID)
+	if not spellID then
+		return nil
+	end
+	if lastFetch == 0 then
+		ns.GlowFetch()
+	end
+	local list = buttonsFor(spellID)
+	for _, button in ipairs(list) do
+		local slot = buttonSlots[button]
+		if slot then
+			return slot
+		end
+	end
+	return nil
+end
+
 function ns.SpellOnBar(spellID)
 	if not spellID then
 		return false

@@ -162,7 +162,8 @@ Un sort seulement utile (`IsHelpful` et pas `IsHarmful`) peut passer via le coû
 
 - ignore un pas décoché, un enchant d'arme, un buff de maintenance, et (si `barOnly`) un sort absent des barres déjà indexées par GlowFetch ;
 - le sort en cours de lancement est épinglé en case 1, puis `PredictConsume` suppose qu'il a été lancé (DoT, CD / horions, buff, stealth, points de combo) ;
-- un filler en tête de liste cède le pas à un sort **action** plus bas (CD, DoT, proc, execute) s'il est prêt et à portée. Starfire / Ice Lance / Swipe / raciaux auto n'entrent pas dans ce vol ; ils suivent l'ordre de la liste ;
+- un filler en tête de liste cède le pas à un sort **action** plus bas (CD, DoT, proc, execute) s'il est prêt et **à portée confirmée**. Starfire / Ice Lance / Swipe / raciaux auto n'entrent pas dans ce vol ; ils suivent l'ordre de la liste ;
+- case 1 = seulement un sort dont `RangeState` est `in` (ou sans check). Une portée `nil` / secrète n'est plus traitée comme « à portée ». Horion, DoT, melee : `out` → cases 2–3. Même règle pour chaque classe et race ;
 - `ns.ApplyRotationEdit` (Haut / Bas / Appliquer) vide le cache et relance le HUD sans `/reload` ;
 - `IsSpellUsable` faux pendant le GCD ou un cast n'empêche plus un horion d'entrer dans la file ;
 - si aucun soin n'est entré dans les 3 cases, le premier soin `StepOk` est inséré en tête et la file est recoupée à 3.

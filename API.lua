@@ -885,6 +885,172 @@ function ns.API.IsHarmful(spellID)
 	return false
 end
 
+local function numberOrNil(value)
+	value = safe(value, nil)
+	if type(value) == "number" and value == value then
+		return value
+	end
+	return nil
+end
+
+function ns.API.SpellMaxRange(spellID)
+	local id = ns.API.Resolve(spellID) or spellID
+	if not id then
+		return nil
+	end
+	local info = ns.API.SpellInfo(id)
+	if info then
+		local maxR = numberOrNil(info.maxRange)
+		if maxR ~= nil then
+			return maxR
+		end
+	end
+	if GetSpellInfo then
+		local ok, _, _, _, _, minR, maxR = pcall(GetSpellInfo, id)
+		if ok then
+			maxR = numberOrNil(maxR)
+			if maxR == nil then
+				maxR = numberOrNil(minR)
+			end
+			if maxR ~= nil then
+				return maxR
+			end
+		end
+	end
+	return nil
+end
+
+local function interactInRange(unit, index)
+	if not CheckInteractDistance then
+		return nil
+	end
+	local ok, result = pcall(CheckInteractDistance, unit, index)
+	if not ok then
+		return nil
+	end
+	result = safe(result, nil)
+	if result == true or result == 1 then
+		return true
+	end
+	if result == false or result == 0 then
+		return false
+	end
+	return nil
+end
+
+function ns.API.TargetRangeBand(unit)
+	unit = unit or "target"
+	if not unitExists(unit) then
+		return nil, nil
+	end
+	if UnitDistanceSquared then
+		local ok, distSq = pcall(UnitDistanceSquared, unit)
+		if ok then
+			distSq = numberOrNil(distSq)
+			if distSq and distSq >= 0 then
+				local yards = math.sqrt(distSq)
+				return yards, yards
+			end
+		end
+	end
+	-- Classic: 3 ~10 yd (duel), 2 ~11 yd (trade), 1 ~28 yd (inspect).
+	local close = interactInRange(unit, 3)
+	if close == nil then
+		close = interactInRange(unit, 2)
+	end
+	local inspect = interactInRange(unit, 1)
+	if close == true then
+		return 0, 11
+	end
+	if inspect == true then
+		return 11, 28
+	end
+	if inspect == false then
+		return 28, 100
+	end
+	return nil, nil
+end
+
+local function rangeUnitFor(spellID, opt)
+	opt = opt or {}
+	if opt.heal or (ns.API.IsHelpful(spellID, opt) and not ns.API.IsHarmful(spellID)) then
+		if ns.API.HealRangeUnit then
+			return ns.API.HealRangeUnit(opt)
+		end
+		return "player"
+	end
+	return "target"
+end
+
+function ns.API.NeedsRange(spellID, opt)
+	opt = opt or {}
+	if opt.nopet or opt.nocombat then
+		return false
+	end
+	local id = ns.API.Resolve(spellID) or spellID
+	if opt.heal then
+		local unit = rangeUnitFor(id, opt)
+		return unit ~= "player"
+	end
+	if opt.hostile then
+		return true
+	end
+	if ns.API.IsHarmful(id) then
+		return true
+	end
+	return false
+end
+
+-- "none" = no check, "in" / "out" / "unknown".
+-- Unknown is never treated as in-range for the first HUD slot.
+function ns.API.RangeState(spellID, opt)
+	opt = opt or {}
+	local id = ns.API.Resolve(spellID) or spellID
+	if not id or not ns.API.NeedsRange(id, opt) then
+		return "none"
+	end
+	local unit = rangeUnitFor(id, opt)
+	if not unitExists(unit) then
+		return "out"
+	end
+	local slot = ns.SpellBarSlot and ns.SpellBarSlot(id)
+	local flag
+	if ns.SpellInRange then
+		flag = ns.SpellInRange(id, slot)
+	end
+	if flag == true then
+		return "in"
+	end
+	if flag == false then
+		return "out"
+	end
+	local maxR = ns.API.SpellMaxRange(id)
+	if maxR == 0 and ns.API.IsHarmful(id) then
+		maxR = 5
+	end
+	local minY, maxY = ns.API.TargetRangeBand(unit)
+	if minY and maxR and minY >= maxR then
+		return "out"
+	end
+	if maxY and maxR and maxY <= maxR then
+		return "in"
+	end
+	return "unknown"
+end
+
+-- mode: "in" (slot 1), "notOut" (unknown allowed), "any" (lookahead / OOR).
+function ns.API.InSpellRange(spellID, opt, mode)
+	mode = mode or "in"
+	local state = ns.API.RangeState(spellID, opt)
+	if state == "none" or state == "in" then
+		return true
+	end
+	if state == "out" then
+		return mode == "any"
+	end
+	return mode ~= "in"
+end
+
 function ns.API.HealUnit(opt)
 	opt = opt or {}
 	if opt.unit and unitExists(opt.unit) then
@@ -1179,6 +1345,14 @@ function ns.API.StepOk(spellID, opt, timeShift)
 	end
 	if ns.API.Ready(spellID, opt, true) or opt.filler == true or opt.swing == true then
 		return true
+	end
+	-- Out of range is still a queue candidate for slots 2–3. Slot 1
+	-- requires RangeState "in" separately. IsSpellUsable is false when OOR.
+	if hasResources(spellID) and ns.API.RangeState then
+		local reach = ns.API.RangeState(spellID, opt)
+		if reach == "out" or reach == "unknown" then
+			return true
+		end
 	end
 	if ns.Physics and ns.Physics.EnergySoon and ns.Physics.EnergySoon(spellID) then
 		return true

@@ -1,3 +1,7 @@
+# 1.5.55
+
+- Slot 1 is only a spell confirmed in range. Out-of-range shocks, DoTs, and melee stay in slots 2–3 until you can reach the target. Same distance rule for every class and race.
+
 # 1.5.54
 
 - Same press rule for every class and race: a filler yields only to a later cooldown, DoT, or proc that is ready and in range. Ice Lance, Starfire, Swipe, and auto racials no longer steal the queue.

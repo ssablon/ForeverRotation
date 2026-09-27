@@ -146,19 +146,30 @@ function ns.BuildQueue()
 		end
 		return false
 	end
-	local function rangeNow(id, opt)
+	-- "in" = confirmed reach (slot 1). "notOut" = unknown ok. "any" = OOR ok (slots 2-3).
+	local function rangeMode(mustRange)
+		if mustRange == true or mustRange == "in" then
+			return "in"
+		end
+		if mustRange == "notOut" then
+			return "notOut"
+		end
+		return "any"
+	end
+	local function rangeOk(id, opt, mustRange)
+		if API.InSpellRange then
+			return API.InSpellRange(id, opt, rangeMode(mustRange))
+		end
 		if not ns.SpellInRange then
 			return true
 		end
-		opt = opt or {}
-		local need = opt.hostile or opt.heal
-		if not need and API.IsHarmful then
-			need = API.IsHarmful(id)
+		return ns.SpellInRange(id) == true or rangeMode(mustRange) ~= "in"
+	end
+	local function rangeState(id, opt)
+		if API.RangeState then
+			return API.RangeState(id, opt)
 		end
-		if not need then
-			return true
-		end
-		return ns.SpellInRange(id) ~= false
+		return "unknown"
 	end
 	local function pressable(step, shift, mustRange, allowDup)
 		if not consider(step) then
@@ -171,15 +182,33 @@ function ns.BuildQueue()
 		if not allowDup and inQueue(id) then
 			return false
 		end
-		if mustRange and not rangeNow(id, step.opt) then
+		if not rangeOk(id, step.opt, mustRange) then
 			return false
 		end
 		return true
 	end
-	local function laterAction(from, shift, mustRange)
+	local function laterInRange(from, shift)
 		for j = from + 1, #apl do
 			local step = apl[j]
-			if API.IsRotationAction and API.IsRotationAction(step.id, step.opt, step.racial) and pressable(step, shift, mustRange, false) then
+			if pressable(step, shift, "in", false) then
+				return true
+			end
+		end
+		return false
+	end
+	local function laterAction(from, shift)
+		for j = from + 1, #apl do
+			local step = apl[j]
+			if API.IsRotationAction and API.IsRotationAction(step.id, step.opt, step.racial) and pressable(step, shift, "in", false) then
+				return true
+			end
+		end
+		return false
+	end
+	local function laterFallback(from, shift)
+		for j = from + 1, #apl do
+			local step = apl[j]
+			if API.IsFallback and API.IsFallback(step.opt) and pressable(step, shift, "notOut", false) then
 				return true
 			end
 		end
@@ -200,8 +229,12 @@ function ns.BuildQueue()
 	local function pickOne(shift, mustRange, allowDup)
 		for i, step in ipairs(apl) do
 			if pressable(step, shift, mustRange, allowDup) then
-				local skipFiller = API.IsFallback and API.IsFallback(step.opt) and laterAction(i, shift, mustRange)
-				if not skipFiller and tryPick(step, shift, mustRange, allowDup) then
+				local id = (API.Resolve and API.Resolve(step.id)) or step.id
+				local skipFiller = API.IsFallback and API.IsFallback(step.opt) and laterAction(i, shift)
+				local unknown = rangeState(id, step.opt) == "unknown"
+				local skipUnknown = rangeMode(mustRange) ~= "any" and unknown and laterInRange(i, shift)
+				local skipUnknownAction = rangeMode(mustRange) ~= "any" and unknown and API.IsRotationAction and API.IsRotationAction(step.id, step.opt, step.racial) and laterFallback(i, shift)
+				if not skipFiller and not skipUnknown and not skipUnknownAction and tryPick(step, shift, mustRange, allowDup) then
 					return true
 				end
 			end
@@ -227,10 +260,13 @@ function ns.BuildQueue()
 			end
 		end
 		if #q == 0 then
-			pickOne(shift, true, false)
+			pickOne(shift, "in", false)
+		end
+		if #q == 0 then
+			pickOne(shift, "notOut", false)
 		end
 		while #q < 3 do
-			if not (pickOne(shift, false, false) or pickOne(shift, false, true)) then
+			if not (pickOne(shift, "any", false) or pickOne(shift, "any", true)) then
 				break
 			end
 		end
