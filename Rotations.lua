@@ -98,10 +98,10 @@ function ns.BuildQueue()
 			return false
 		end
 		local opt = step.opt or {}
-		local ownCd = API.SpellCooldownSec and API.SpellCooldownSec(id) or 0
-		local canRepeat = opt.filler == true
-			or opt.swing == true
-			or (not opt.heal and not opt.nodebuff and not opt.nobuff and not opt.comboMin and ownCd <= 0.2)
+		-- Only next-swing fillers may appear more than once. Every other spell
+		-- shows at most once so the HUD walks the list (1 → 2 → 3…) instead of
+		-- stacking the same cast three times.
+		local canRepeat = opt.swing == true
 		if not canRepeat and (used[id] or used[step.key]) then
 			return false
 		end
@@ -205,15 +205,6 @@ function ns.BuildQueue()
 		end
 		return false
 	end
-	local function laterFallback(from, shift)
-		for j = from + 1, #apl do
-			local step = apl[j]
-			if API.IsFallback and API.IsFallback(step.opt) and pressable(step, shift, "notOut", false) then
-				return true
-			end
-		end
-		return false
-	end
 	local function tryPick(step, shift, mustRange, allowDup)
 		if not pressable(step, shift, mustRange, allowDup) then
 			return false
@@ -230,11 +221,14 @@ function ns.BuildQueue()
 		for i, step in ipairs(apl) do
 			if pressable(step, shift, mustRange, allowDup) then
 				local id = (API.Resolve and API.Resolve(step.id)) or step.id
-				local skipFiller = API.IsFallback and API.IsFallback(step.opt) and laterAction(i, shift)
+				local opt = step.opt or {}
+				-- Strict list order: a cast filler (Fireball, LB, …) never yields.
+				-- Only next-swing fillers (Heroic Strike, Maul, Auto Shot) still
+				-- defer to a later ready in-range cooldown / DoT / proc.
+				local skipFiller = opt.swing == true and API.IsFallback and API.IsFallback(opt) and laterAction(i, shift)
 				local unknown = rangeState(id, step.opt) == "unknown"
-				local skipUnknown = rangeMode(mustRange) ~= "any" and unknown and laterInRange(i, shift)
-				local skipUnknownAction = rangeMode(mustRange) ~= "any" and unknown and API.IsRotationAction and API.IsRotationAction(step.id, step.opt, step.racial) and laterFallback(i, shift)
-				if not skipFiller and not skipUnknown and not skipUnknownAction and tryPick(step, shift, mustRange, allowDup) then
+				local skipUnknown = rangeMode(mustRange) == "in" and unknown and laterInRange(i, shift)
+				if not skipFiller and not skipUnknown and tryPick(step, shift, mustRange, allowDup) then
 					return true
 				end
 			end
@@ -265,8 +259,9 @@ function ns.BuildQueue()
 		if #q == 0 then
 			pickOne(shift, "notOut", false)
 		end
+		-- Never allowDup: the next slots must be later spells in the list.
 		while #q < 3 do
-			if not (pickOne(shift, "any", false) or pickOne(shift, "any", true)) then
+			if not pickOne(shift, "any", false) then
 				break
 			end
 		end

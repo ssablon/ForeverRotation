@@ -272,7 +272,7 @@ ns.APLDefaults = {
 	},
 	MAGE = {
 		damage = {
-			step("Pyroblast", M.Pyroblast, { nocombat = true, hostile = true }),
+			step("Pyroblast", M.Pyroblast, { hostile = true }),
 			step("FireBlast", M.FireBlast, { hostile = true }),
 			step("IceLance", M.IceLance, { hostile = true }),
 			step("Scorch", M.Scorch, { nodebuff = true, hostile = true }),

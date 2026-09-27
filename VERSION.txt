@@ -1,3 +1,8 @@
+1.5.56
+
+2026-09-27
+- Rotation follows list order strictly: the first ready in-range spell is suggested, then the next different ones for slots 2–3. Cast fillers no longer yield to later cooldowns, and the HUD no longer stacks the same spell three times. Mage Pyroblast is usable in combat when listed.
+
 1.5.55
 
 2026-09-27
@@ -28,88 +33,3 @@
 
 2026-09-27
 - Missing Forever 1-60 combat spells from the lab: Swift Judgement, Enchanted Flare, Tranquilizing Shot, Preparation, and the rest of the editor list. Classic IDs that do not exist on this client now use the Forever ones.
-
-1.5.49
-
-2026-09-27
-- Options no longer measure text height. That call froze the camelot client after the Multi language title change.
-
-1.5.48
-
-2026-09-27
-- Title now shows (Multi language). The About card, CurseForge page, and website describe the addon more clearly.
-
-1.5.47
-
-2026-09-27
-- Copy on the Info page puts the link in the chat box, selected, so Ctrl+C works. This client has no system clipboard API.
-
-1.5.46
-
-2026-09-27
-- Mouse-button keybinds stay inside the HUD icons (Mouse Button 4 shows as M4).
-
-1.5.45
-
-2026-09-27
-- Options Info page lists slash commands, credits, website, Discord, and CurseForge. The new option labels are translated in every language pack.
-
-1.5.44
-
-2026-09-27
-- Options use a sidebar and cards, with ON/OFF switches, like a modern config window. Same settings, clearer layout.
-
-1.5.43
-
-2026-09-27
-- The HUD shrinks when you turn off the swing bars and grows again when you turn them back on.
-
-1.5.42
-
-2026-09-27
-- Leveling no longer hitches the client. Spell learn and bar scans wait and reuse known spells.
-- Weapon imbues, poisons, stones, and other HUD buffs update as soon as you apply them. No /reload.
-
-1.5.41
-
-2026-09-26
-- The addon is now named Forever Rotation. Same helper, clearer name. /wfr and /foreverrot still work; /foreverrotation is added.
-
-1.5.40
-
-2026-09-25
-- Weapon buffs, heals, defense, interrupts, racials, and the rest of the HUD refresh as soon as the game reports a change. You no longer need /reload after an imbue, poison, or stone. This is for every class and race.
-
-1.5.39
-
-2026-09-25
-- Forever 1-60 combat spells and racials are added on top of Classic Era lists. Unknown spells stay hidden until you learn them.
-- Spell match uses all 11 client languages when a lab id is remapped.
-
-1.5.38
-
-2026-09-25
-- The rotation no longer disappears and comes back on its own when the action bar scan flickers.
-
-1.5.37
-
-2026-09-25
-- The suggested spell stays on screen while it is casting or still in the air, for every class.
-- Melee fillers stay visible between swings. The swing cue still marks the moment to press.
-
-1.5.36
-
-2026-09-25
-- The skull is found from the button name and from the spell icon, for attacks, heals, and defense on every class.
-
-1.5.35
-
-2026-09-25
-- Rotation, range tint, and the skull stay available for every class and race when only some action buttons can be read.
-- Macros are read from their text, and ranks of the same spell stay matched. Hunters keep Auto Shot as the filler between shots.
-
-1.5.34
-
-2026-09-25
-- Rotation suggestions, the red out-of-range tint, and the skull overlay work again when the client hides action-bar spell ids.
-- Spells are matched from the button tooltip. Range uses the action slot itself.
