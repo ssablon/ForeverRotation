@@ -1257,21 +1257,10 @@ function ns.API.StepOk(spellID, opt, timeShift)
 	if opt.needbuff and not ns.API.HasAura(opt.needbuff, "player", "HELPFUL") then
 		return false
 	end
-	if opt.require and not ns.API.Known(opt.require) then
-		return false
-	end
-	if opt.requireAny then
-		local knownSchool = false
-		for _, id in ipairs(opt.requireAny) do
-			if ns.API.Known(id) then
-				knownSchool = true
-				break
-			end
-		end
-		if not knownSchool then
-			return false
-		end
-	end
+	-- require / requireAny are NOT used to hide list spells. List order is
+	-- authoritative: if the player put Frostbolt above Fireball, Frostbolt wins
+	-- when it is known and ready. School gating lived here before and skipped
+	-- fillers the player had explicitly ordered.
 	if opt.needdebuff and not ns.API.HasAura(opt.needdebuff, opt.unit or "target", "HARMFUL") then
 		return false
 	end

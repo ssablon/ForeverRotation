@@ -20,13 +20,27 @@ function ns.CoerceChecked(value)
 	return value == true or value == 1 or value == "1"
 end
 
+local function copyOpt(opt)
+	if type(opt) ~= "table" then
+		return {}
+	end
+	local out = {}
+	for k, v in pairs(opt) do
+		-- Strip school-gate flags; list order alone decides among known fillers.
+		if k ~= "require" and k ~= "requireAny" then
+			out[k] = v
+		end
+	end
+	return out
+end
+
 local function copyList(list)
 	local out = {}
 	for i, s in ipairs(list) do
 		out[i] = {
 			key = s.key,
 			id = s.id,
-			opt = s.opt,
+			opt = copyOpt(s.opt),
 			on = ns.IsStepEnabled(s),
 			racial = s.racial,
 		}
@@ -354,7 +368,7 @@ local function mergeSteps(defaults, saved, dropped, skipMaint)
 				out[#out + 1] = {
 					key = def.key,
 					id = def.id,
-					opt = def.opt,
+					opt = copyOpt(def.opt),
 					on = ns.IsStepEnabled(def),
 					racial = def.racial,
 				}
@@ -376,20 +390,15 @@ local function mergeSteps(defaults, saved, dropped, skipMaint)
 				out[#out + 1] = {
 					key = def.key,
 					id = def.id,
-					opt = def.opt,
+					opt = copyOpt(def.opt),
 					on = ns.IsStepEnabled(row),
 					racial = def.racial,
 				}
 				seen[row.key] = true
 			elseif (row.id or row.custom) and not skipCombatOnly(row.id, skipMaint) then
-				local opt = row.opt or {}
+				local opt = copyOpt(row.opt)
 				if ns.API.IsHelpful and ns.API.IsHelpful(row.id, opt) and not opt.heal then
-					local copy = {}
-					for k, v in pairs(opt) do
-						copy[k] = v
-					end
-					copy.heal = true
-					opt = copy
+					opt.heal = true
 				end
 				out[#out + 1] = {
 					key = row.key,
@@ -415,7 +424,7 @@ local function mergeSteps(defaults, saved, dropped, skipMaint)
 				out[#out + 1] = {
 					key = def.key,
 					id = def.id,
-					opt = def.opt,
+					opt = copyOpt(def.opt),
 					on = ns.IsStepEnabled(def),
 					racial = def.racial,
 				}

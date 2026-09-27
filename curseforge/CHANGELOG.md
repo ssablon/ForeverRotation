@@ -1,3 +1,7 @@
+# 1.5.58
+
+- List order is authoritative for fillers: Frostbolt / Arcane / Fireball are no longer hidden by talent-school gates (requireAny). If Frostbolt is above Fireball and ready, Frostbolt is suggested.
+
 # 1.5.57
 
 - Fillers yield again to a ready shock, DoT, or cooldown lower in the list, so that spell becomes slot 1 (e.g. Earth Shock over Lightning Bolt). Unknown range still counts. The HUD still shows each spell only once per queue.

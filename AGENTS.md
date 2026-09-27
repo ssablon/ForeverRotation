@@ -2,7 +2,7 @@
 
 Addon d'aide à la rotation pour **WoW Forever** (combat Classic Era, client camelot, interface `16001`). Il affiche les prochains sorts et surligne les boutons. Il ne lance aucun sort.
 
-Version actuelle : **1.5.57**. Auteur : Vohnka — https://wow-forever.fr  
+Version actuelle : **1.5.58**. Auteur : Vohnka — https://wow-forever.fr  
 Dépôt : https://github.com/ssablon/ForeverRotation (privé, branche `main`). Le dossier local et le dossier AddOns restent `WoWForeverRot` (sauvegardes et install).
 
 La carte complète du code est dans [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md). Ce fichier dit seulement par où commencer.
@@ -48,7 +48,7 @@ Tout l'état partagé vit dans la table `ns` (deuxième valeur de `...`). `Core.
 - Rejeter les noms `TEST`, `(OLD)`, `(PT)` (`junkSpellName`).
 - Les buffs de `ns.MAINTENANCE_BUFF_IDS` sont retirés des listes de combat au chargement (`stripMaintFromApl`) et refusés par `AddAPL`.
 - Un sort avec un temps de recharge propre ne reste pas affiché : `NoteSpellCast` le retire jusqu'à la fin du CD, puis le pas suivant est testé. Le GCD ne compte pas. Ne pas court-circuiter `ns.API.Cooldown` avec `filler`. `filler` reste bloqué par `ns.Physics.Blocks` (Frappe héroïque hors fenêtre de swing, Aimed/Multi pendant le clip).
-- `IsRotationAction` : un filler (éclair, boule de feu, frappe héroïque…) cède la case 1 à un horion / DoT / CD / proc plus bas prêt (portée `in` ou inconnue). Ne pas marquer Starfire ou Ice Lance comme action (pas de CD). Les raciaux auto-ajoutés ne volent pas le filler. Un même sort n’apparaît qu’une fois dans la file (sauf `swing`).
+- `IsRotationAction` : un filler (éclair, boule de feu, frappe héroïque…) cède la case 1 à un horion / DoT / CD / proc plus bas prêt (portée `in` ou inconnue). Ne pas marquer Starfire ou Ice Lance comme action (pas de CD). Les raciaux auto-ajoutés ne volent pas le filler. Un même sort n’apparaît qu’une fois dans la file (sauf `swing`). Ne plus utiliser `require` / `requireAny` pour cacher un filler : l’ordre de liste gagne.
 - Fulgurance, Revanche, Riposte, Contre-attaque et Morsure de la mangouste utilisent `opt.proc` (`IsSpellUsable` vrai). Ne pas appeler `CombatLogGetCurrentEventInfo` : le client bloque l'addon.
 - `listVersion` est à 4 : au prochain login les listes sauvées sont remplacées par l'ordre ConROC Classic.
 - Le mode `auto` utilise la liste mono (`APLDefaults`) tant que `ns.API.EnemyCount()` est sous `autoEnemies` (défaut 3, minimum 2). Au-dessus, il utilise la liste `aoe`.

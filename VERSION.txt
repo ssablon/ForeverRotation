@@ -1,14 +1,9 @@
+1.5.58
+
+2026-09-27
+- List order is authoritative for fillers: Frostbolt / Arcane / Fireball are no longer hidden by talent-school gates (requireAny). If Frostbolt is above Fireball and ready, Frostbolt is suggested.
+
 1.5.57
 
 2026-09-27
 - Fillers yield again to a ready shock, DoT, or cooldown lower in the list, so that spell becomes slot 1 (e.g. Earth Shock over Lightning Bolt). Unknown range still counts. The HUD still shows each spell only once per queue.
-
-1.5.56
-
-2026-09-27
-- Rotation follows list order strictly: the first ready in-range spell is suggested, then the next different ones for slots 2–3. Cast fillers no longer yield to later cooldowns, and the HUD no longer stacks the same spell three times. Mage Pyroblast is usable in combat when listed.
-
-1.5.55
-
-2026-09-27
-- Slot 1 is only a spell confirmed in range. Out-of-range shocks, DoTs, and melee stay in slots 2–3 until you can reach the target. Same distance rule for every class and race.

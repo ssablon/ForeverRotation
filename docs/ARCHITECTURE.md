@@ -141,7 +141,7 @@ Les listes viennent d'un noyau Era type ConROC Classic, niveaux 1–60. Pas de S
 | `usable` | Le client doit répondre que le sort est utilisable (Exorcisme, Colère divine, Attaque sournoise dans le dos). Si la réponse est masquée, le pas est sauté. |
 | `manaMax` | Refus si le pourcentage de mana du joueur est au-dessus de ce seuil (Connexion). |
 | `hpMin` | Refus si la vie (joueur, ou `unit`) est sous ce pourcentage. |
-| `require` / `requireAny` | Le sort (ou l'un des sorts) doit être connu. Sert à choisir Éclair de givre ou Projectiles des arcanes selon les talents. |
+| `require` / `requireAny` | **Retiré** — ne masquent plus un sort de la liste. L’ordre de la liste décide (ex. Éclair de givre au-dessus de Boule de feu). |
 | `anydebuff` | Liste d'IDs. Si la cible a **l'un** d'eux, le pas est refusé. Une seule piqûre, une seule malédiction. |
 
 `ns.API.Ready` : sort résolu, pas de cooldown propre en cours, pas de `noMana`. Le GCD (environ 1,5 s) ne retire pas le sort de la file : il reste le prochain bouton à presser. Un cooldown plus long (Jugement, Horion, Visée, Déflagration…) le retire jusqu'à la fin, et le pas suivant de la liste est testé. Ça vaut pour toutes les classes, les raciaux et la défense.
