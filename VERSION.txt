@@ -1,3 +1,8 @@
+1.5.46
+
+2026-09-27
+- Mouse-button keybinds stay inside the HUD icons (Mouse Button 4 shows as M4).
+
 1.5.45
 
 2026-09-27

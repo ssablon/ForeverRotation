@@ -1049,6 +1049,34 @@ local function shortKey(text)
 	text = text:gsub("CTRL%-", "C")
 	text = text:gsub("ALT%-", "A")
 	text = text:gsub("STRG%-", "C")
+	text = text:gsub("MOUSEWHEELUP", "WU")
+	text = text:gsub("MOUSEWHEELDOWN", "WD")
+	text = text:gsub("[Bb][Uu][Tt][Tt][Oo][Nn](%d+)", "M%1")
+	local mouse = text:match("(%d+)%s*$")
+	if mouse and #text > 4 then
+		local low = text:lower()
+		if low:find("button", 1, true)
+			or low:find("souris", 1, true)
+			or low:find("mouse", 1, true)
+			or low:find("maustaste", 1, true)
+			or low:find("ratón", 1, true)
+			or low:find("raton", 1, true)
+			or low:find("мыш", 1, true)
+			or low:find("마우스", 1, true)
+			or low:find("鼠标", 1, true)
+			or low:find("滑鼠", 1, true)
+			or low:find("botão", 1, true)
+			or low:find("botao", 1, true)
+			or low:find("pulsante", 1, true)
+			or low:find("tasto", 1, true)
+		then
+			local prefix = text:match("^([SCA]+)")
+			if prefix and #prefix < #text then
+				return prefix .. "M" .. mouse
+			end
+			return "M" .. mouse
+		end
+	end
 	return text
 end
 

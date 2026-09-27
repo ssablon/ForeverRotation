@@ -144,8 +144,13 @@ local function makeIcon(name, parent, size)
 	frame.cooldown = cd
 	local bind = frame:CreateFontString(nil, "OVERLAY", "NumberFontNormalSmall")
 	bind:SetPoint("BOTTOMRIGHT", -3, 3)
-	bind:SetTextColor(1, 0.92, 0.45)
+	bind:SetWidth((size or SIZE) - 8)
 	bind:SetJustifyH("RIGHT")
+	bind:SetWordWrap(false)
+	if bind.SetMaxLines then
+		bind:SetMaxLines(1)
+	end
+	bind:SetTextColor(1, 0.92, 0.45)
 	frame.bind = bind
 	return frame
 end
@@ -413,6 +418,12 @@ function ns.UI.Create()
 		frame.cooldown = cd
 		local bind = frame:CreateFontString(nil, "OVERLAY", "NumberFontNormalSmall")
 		bind:SetPoint("BOTTOMRIGHT", -2, 2)
+		bind:SetWidth(34)
+		bind:SetJustifyH("RIGHT")
+		bind:SetWordWrap(false)
+		if bind.SetMaxLines then
+			bind:SetMaxLines(1)
+		end
 		bind:SetTextColor(1, 0.92, 0.45)
 		frame.bind = bind
 		return frame

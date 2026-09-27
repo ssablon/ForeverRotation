@@ -1,3 +1,7 @@
+# 1.5.46
+
+- Mouse-button keybinds stay inside the HUD icons (Mouse Button 4 shows as M4).
+
 # 1.5.45
 
 - Options Info page lists slash commands, credits, website, Discord, and CurseForge. The new option labels are translated in every language pack.
