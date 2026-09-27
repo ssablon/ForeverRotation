@@ -1,3 +1,8 @@
+1.5.49
+
+2026-09-27
+- Options no longer measure text height. That call froze the camelot client after the Multi language title change.
+
 1.5.48
 
 2026-09-27

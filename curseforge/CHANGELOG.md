@@ -1,3 +1,7 @@
+# 1.5.49
+
+- Options no longer measure text height. That call froze the camelot client after the Multi language title change.
+
 # 1.5.48
 
 - Title now shows (Multi language). The About card, CurseForge page, and website describe the addon more clearly.

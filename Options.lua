@@ -981,24 +981,28 @@ local function ensureOptions()
 	local aboutCard = makeCard(info, "OPT_CARD_ABOUT", 8, -4, 648, 196)
 	local aboutBody = aboutCard:CreateFontString(nil, "OVERLAY", "GameFontHighlightSmall")
 	aboutBody:SetPoint("TOPLEFT", 12, -30)
-	aboutBody:SetPoint("RIGHT", -12, 0)
+	aboutBody:SetPoint("TOPRIGHT", -12, -30)
+	aboutBody:SetHeight(48)
 	aboutBody:SetJustifyH("LEFT")
+	aboutBody:SetJustifyV("TOP")
 	aboutBody:SetWordWrap(true)
 	aboutBody:SetTextColor(0.92, 0.92, 0.92)
 	frame.aboutBody = aboutBody
 	local aboutPoints = aboutCard:CreateFontString(nil, "OVERLAY", "GameFontHighlightSmall")
-	aboutPoints:SetPoint("TOPLEFT", aboutBody, "BOTTOMLEFT", 0, -8)
-	aboutPoints:SetPoint("RIGHT", -12, 0)
+	aboutPoints:SetPoint("TOPLEFT", 12, -82)
+	aboutPoints:SetPoint("TOPRIGHT", -12, -82)
+	aboutPoints:SetHeight(56)
 	aboutPoints:SetJustifyH("LEFT")
+	aboutPoints:SetJustifyV("TOP")
 	aboutPoints:SetWordWrap(true)
 	aboutPoints:SetTextColor(0.78, 0.86, 0.96)
 	frame.aboutPoints = aboutPoints
 	local aboutCredit = aboutCard:CreateFontString(nil, "OVERLAY", "GameFontNormal")
-	aboutCredit:SetPoint("TOPLEFT", aboutPoints, "BOTTOMLEFT", 0, -10)
+	aboutCredit:SetPoint("TOPLEFT", 12, -144)
 	aboutCredit:SetTextColor(1, 0.82, 0.2)
 	frame.aboutCredit = aboutCredit
 	local aboutSupport = aboutCard:CreateFontString(nil, "OVERLAY", "GameFontHighlightSmall")
-	aboutSupport:SetPoint("TOPLEFT", aboutCredit, "BOTTOMLEFT", 0, -4)
+	aboutSupport:SetPoint("TOPLEFT", 12, -162)
 	aboutSupport:SetPoint("RIGHT", -12, 0)
 	aboutSupport:SetJustifyH("LEFT")
 	aboutSupport:SetTextColor(0.72, 0.72, 0.72)
@@ -1062,10 +1066,12 @@ local function ensureOptions()
 
 	function frame.RelocalizeChrome()
 		local ver = addonVersion()
+		local title = tostring(ns.T("TITLE") or "Forever Rotation")
+		local sub = tostring(ns.T("TITLE_SUB") or "(Multi language)")
 		if ver ~= "" then
-			frame.windowTitle:SetText(ns.T("TITLE") .. "  |cffbbbbbb" .. ns.T("TITLE_SUB") .. "|r  |cff66ccffv" .. ver .. "|r")
+			frame.windowTitle:SetText(title .. "  |cffbbbbbb" .. sub .. "|r  |cff66ccffv" .. ver .. "|r")
 		else
-			frame.windowTitle:SetText(ns.T("TITLE") .. "  |cffbbbbbb" .. ns.T("TITLE_SUB") .. "|r")
+			frame.windowTitle:SetText(title .. "  |cffbbbbbb" .. sub .. "|r")
 		end
 		frame.navTitle:SetText(ns.T("OPT_NAV_TITLE"))
 		if frame.hint then
@@ -1094,11 +1100,9 @@ local function ensureOptions()
 		end
 		if frame.aboutBody then
 			frame.aboutBody:SetText(ns.T("INFO_ABOUT"))
-			frame.aboutBody:SetHeight(math.max(20, frame.aboutBody:GetStringHeight() + 2))
 		end
 		if frame.aboutPoints then
 			frame.aboutPoints:SetText(ns.T("INFO_ABOUT_POINTS"))
-			frame.aboutPoints:SetHeight(math.max(20, frame.aboutPoints:GetStringHeight() + 2))
 		end
 		if frame.aboutCredit then
 			frame.aboutCredit:SetText(ns.T("INFO_CREDIT"))
@@ -1293,7 +1297,7 @@ end
 function ns.RefreshOptions()
 	local frame = ensureOptions()
 	if frame.RelocalizeChrome then
-		frame.RelocalizeChrome()
+		pcall(frame.RelocalizeChrome)
 	end
 	if frame.ShowTab and frame.activeTab then
 		frame.ShowTab(frame.activeTab)
