@@ -1,3 +1,9 @@
+# 1.5.59
+
+- Class lists stay class-only; racials stay race-only (no cross-race fallback).
+- Spell name matching folds accents (Éclair ↔ Eclair) so Forever FR resolves every class filler and racial correctly.
+- Mage burst includes Frostbolt above Fireball, same list-order rule as single target.
+
 # 1.5.58
 
 - List order is authoritative for fillers: Frostbolt / Arcane / Fireball are no longer hidden by talent-school gates (requireAny). If Frostbolt is above Fireball and ready, Frostbolt is suggested.

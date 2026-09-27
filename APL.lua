@@ -87,11 +87,67 @@ local function listHas(list, value)
 end
 
 function ns.RaceId()
-	local ok, _, _, raceId = pcall(UnitRace, "player")
+	local ok, raceName, raceFile, raceId = pcall(UnitRace, "player")
 	if ok then
 		raceId = readableId(raceId)
 		if raceId then
 			return raceId
+		end
+		-- Camelot sometimes hides the numeric id; map the race file / name.
+		local file = readableText(raceFile)
+		local name = readableText(raceName)
+		local byFile = {
+			Human = 1,
+			Orc = 2,
+			Dwarf = 3,
+			NightElf = 4,
+			Scourge = 5,
+			Undead = 5,
+			Tauren = 6,
+			Gnome = 7,
+			Troll = 8,
+			-- Forever Aeolids (Alliance 95 / Horde 96)
+			Aeolid = 95,
+			Highborne = 95,
+			Skyborne = 95,
+			Windborne = 96,
+		}
+		if file and byFile[file] then
+			return byFile[file]
+		end
+		if name then
+			local lower = name:lower()
+			if lower:find("humain", 1, true) or lower == "human" then
+				return 1
+			end
+			if lower:find("orc", 1, true) then
+				return 2
+			end
+			if lower:find("nain", 1, true) or lower == "dwarf" then
+				return 3
+			end
+			if lower:find("nuit", 1, true) or lower:find("night", 1, true) then
+				return 4
+			end
+			if lower:find("mort", 1, true) or lower:find("undead", 1, true) or lower:find("forsaken", 1, true) then
+				return 5
+			end
+			if lower:find("tauren", 1, true) then
+				return 6
+			end
+			if lower:find("gnome", 1, true) then
+				return 7
+			end
+			if lower:find("troll", 1, true) then
+				return 8
+			end
+			if lower:find("olide", 1, true) or lower:find("aeolid", 1, true) or lower:find("skyborne", 1, true) then
+				local fac = ns.Faction()
+				if fac == "Horde" then
+					return 96
+				end
+				return 95
+			end
 		end
 	end
 	return nil
@@ -106,14 +162,18 @@ function ns.Faction()
 end
 
 local function racialMatches(racial, race, faction)
-	if racial.factions and faction and not listHas(racial.factions, faction) then
-		return false
+	-- Race gate is hard: Human never gets Orc Blood Fury, Aeolid never gets
+	-- Troll Berserking. Faction gate is the same for Alliance/Horde-only rows.
+	if racial.factions then
+		if not faction or not listHas(racial.factions, faction) then
+			return false
+		end
 	end
 	if racial.races then
-		if race then
-			return listHas(racial.races, race)
+		if not race or not listHas(racial.races, race) then
+			return false
 		end
-		return ns.API.Known(racial.id)
+		return true
 	end
 	return ns.API.Known(racial.id)
 end

@@ -116,12 +116,41 @@ local function readBookItem(index, bank)
 	return nil, nil
 end
 
+-- Forever FR lab often drops accents (Eclair vs Éclair). Fold so Resolve
+-- matches the spellbook for every class spell and racial by name.
+local ACCENT_FOLD = {
+	["à"] = "a", ["á"] = "a", ["â"] = "a", ["ã"] = "a", ["ä"] = "a", ["å"] = "a",
+	["À"] = "a", ["Á"] = "a", ["Â"] = "a", ["Ã"] = "a", ["Ä"] = "a", ["Å"] = "a",
+	["è"] = "e", ["é"] = "e", ["ê"] = "e", ["ë"] = "e",
+	["È"] = "e", ["É"] = "e", ["Ê"] = "e", ["Ë"] = "e",
+	["ì"] = "i", ["í"] = "i", ["î"] = "i", ["ï"] = "i",
+	["Ì"] = "i", ["Í"] = "i", ["Î"] = "i", ["Ï"] = "i",
+	["ò"] = "o", ["ó"] = "o", ["ô"] = "o", ["õ"] = "o", ["ö"] = "o",
+	["Ò"] = "o", ["Ó"] = "o", ["Ô"] = "o", ["Õ"] = "o", ["Ö"] = "o",
+	["ù"] = "u", ["ú"] = "u", ["û"] = "u", ["ü"] = "u",
+	["Ù"] = "u", ["Ú"] = "u", ["Û"] = "u", ["Ü"] = "u",
+	["ý"] = "y", ["ÿ"] = "y", ["Ý"] = "y",
+	["ç"] = "c", ["Ç"] = "c",
+	["ñ"] = "n", ["Ñ"] = "n",
+	["œ"] = "oe", ["Œ"] = "oe",
+	["æ"] = "ae", ["Æ"] = "ae",
+}
+
+local function foldAccents(name)
+	if type(name) ~= "string" or name == "" then
+		return name
+	end
+	return (name:gsub("[%z\1-\127\194-\244][\128-\191]*", function(ch)
+		return ACCENT_FOLD[ch] or ch
+	end))
+end
+
 local function normSpellName(name)
 	name = safe(name, nil)
 	if type(name) ~= "string" or name == "" then
 		return nil
 	end
-	name = name:lower()
+	name = foldAccents(name):lower()
 	name = name:gsub("%s*%([^%)]*%)", "")
 	name = name:gsub("%s*rank%s*%d+", "")
 	name = name:gsub("%s+", " "):gsub("^%s+", ""):gsub("%s+$", "")

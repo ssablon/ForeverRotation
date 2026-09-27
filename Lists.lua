@@ -692,6 +692,7 @@ ns.APLModes = {
 				step("Pyroblast", M.Pyroblast, { hostile = true }),
 				step("FireBlast", M.FireBlast, { hostile = true }),
 				step("IceLance", M.IceLance, { hostile = true }),
+				step("Frostbolt", M.Frostbolt, { filler = true, hostile = true }),
 				step("FrostfireBolt", M.FrostfireBolt, { filler = true, hostile = true }),
 				step("Fireball", M.Fireball, { filler = true, hostile = true }),
 			},
