@@ -1,3 +1,8 @@
+1.5.43
+
+2026-09-27
+- The HUD shrinks when you turn off the swing bars and grows again when you turn them back on.
+
 1.5.42
 
 2026-09-27

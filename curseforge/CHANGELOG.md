@@ -1,3 +1,7 @@
+# 1.5.43
+
+- The HUD shrinks when you turn off the swing bars and grows again when you turn them back on.
+
 # 1.5.42
 
 - Leveling no longer hitches the client. Spell learn and bar scans wait and reuse known spells.

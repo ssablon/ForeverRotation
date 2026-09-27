@@ -173,7 +173,7 @@ function ns.UI.Create()
 	end
 
 	local root = CreateFrame("Frame", "WoWForeverRotFrame", UIParent, "BackdropTemplate")
-	root:SetSize(SIZE * 3 + GAP * 2 + 16, 8 + SIZE + 8 + (3 * 12 + 2 * 3) + 8)
+	root:SetSize(SIZE * 3 + GAP * 2 + 16, 8 + SIZE + 8)
 	root:SetFrameStrata("MEDIUM")
 	applyChrome(root)
 	makeMovable(root, "queue")
@@ -242,31 +242,32 @@ function ns.UI.Create()
 		parent.rows[index] = row
 		return row
 	end
-	gauge:SetScript("OnUpdate", function(self, elapsed)
-		self._acc = (self._acc or 0) + elapsed
-		if self._acc < 0.05 then
-			return
+	local function physicsOn()
+		return ns.Physics and ns.Physics.Enabled and ns.Physics.Enabled()
+	end
+
+	local function physicsBars()
+		if not physicsOn() then
+			return nil
 		end
-		self._acc = 0
-		if not ns.UI.root or not ns.UI.root:IsShown() or (ns.Physics and ns.Physics.Enabled and not ns.Physics.Enabled()) then
-			self:Hide()
-			if ns.UI.FitFrame then
-				ns.UI.FitFrame()
-			end
-			return
-		end
-		local bars
 		if ns.Physics and ns.Physics.Status then
 			local ok, st = pcall(ns.Physics.Status)
-			bars = ok and st and (st.bars or { st })
+			local bars = ok and st and (st.bars or { st })
+			if bars and #bars > 0 then
+				return bars
+			end
 		end
-		if not bars or #bars == 0 then
-			local speed = 2
-			local progress = (GetTime() % speed) / speed
-			bars = {
-				{ kind = "swing", progress = progress, hot = progress > 0.8, mark = 0.8, label = "" },
-			}
+		return {
+			{ kind = "swing", progress = 0, hot = false, mark = 0.8, label = ns.T("PHYS_SWING") },
+		}
+	end
+
+	local function paintGauge(self)
+		if not physicsOn() or not ns.UI.root or not ns.UI.root:IsShown() then
+			self:Hide()
+			return
 		end
+		local bars = physicsBars()
 		self:Show()
 		local n = #bars
 		local rowH, gap = 12, 3
@@ -342,26 +343,55 @@ function ns.UI.Create()
 		if ns.UI.RefreshCue then
 			ns.UI.RefreshCue()
 		end
+		if self._barCount ~= n then
+			self._barCount = n
+			if not self._fitting and ns.UI.FitFrame then
+				self._fitting = true
+				ns.UI.FitFrame()
+				self._fitting = nil
+			end
+		end
+	end
+
+	gauge:SetScript("OnUpdate", function(self, elapsed)
+		self._acc = (self._acc or 0) + elapsed
+		if self._acc < 0.05 then
+			return
+		end
+		self._acc = 0
+		paintGauge(self)
 	end)
-	gauge:Show()
 	ns.UI.gauge = gauge
+	ns.UI.PaintGauge = paintGauge
 
 	function ns.UI.FitFrame()
 		if not ns.UI.root then
 			return
 		end
-		local physics = ns.Physics and ns.Physics.Enabled and ns.Physics.Enabled()
-		local height = 8 + SIZE + 8
-		if physics then
-			height = height + (3 * 12 + 2 * 3) + 8
+		local on = physicsOn()
+		local extra = 0
+		if on then
+			local bars = physicsBars()
+			local n = bars and #bars or 1
+			extra = 8 + n * 12 + math.max(0, n - 1) * 3
 		end
+		if ns.UI.gauge then
+			if on then
+				ns.UI.gauge:Show()
+			else
+				ns.UI.gauge._barCount = nil
+				ns.UI.gauge:Hide()
+			end
+		end
+		local height = 8 + SIZE + 8 + extra
 		local rootFrame = ns.UI.root
-		if math.abs((rootFrame:GetHeight() or 0) - height) < 0.5 then
+		local current = tonumber(rootFrame:GetHeight())
+		if current and math.abs(current - height) < 0.5 then
 			return
 		end
 		local top, left = rootFrame:GetTop(), rootFrame:GetLeft()
 		rootFrame:SetHeight(height)
-		if top and left then
+		if type(top) == "number" and type(left) == "number" then
 			rootFrame:ClearAllPoints()
 			rootFrame:SetPoint("TOPLEFT", UIParent, "BOTTOMLEFT", left, top)
 		end
@@ -679,6 +709,9 @@ function ns.UI.Create()
 	ns.UI.ApplyScale()
 	ns.UI.RefreshRoles()
 	ns.UI.SetLocked(ns.db.locked == true)
+	if ns.UI.FitFrame then
+		ns.UI.FitFrame()
+	end
 end
 
 function ns.UI.RefreshTips()
