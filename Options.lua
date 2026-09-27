@@ -247,14 +247,48 @@ local function makeSwitch(parent, key, label)
 end
 
 local function copyText(text)
-	if type(CopyToClipboard) == "function" then
-		local ok = pcall(CopyToClipboard, text)
+	if type(text) ~= "string" or text == "" then
+		return false
+	end
+	if CopyToClipboard then
+		pcall(CopyToClipboard, text)
+	end
+	if ChatFrame_OpenChat then
+		local ok = pcall(ChatFrame_OpenChat, text, DEFAULT_CHAT_FRAME)
 		if ok then
+			local box = DEFAULT_CHAT_FRAME and DEFAULT_CHAT_FRAME.editBox
+			if box and box.HighlightText then
+				pcall(box.HighlightText, box)
+			end
 			ns.Print(ns.T("INFO_COPIED"))
 			return true
 		end
 	end
-	return false
+	local box
+	if ChatEdit_ChooseBoxForSend then
+		local ok, chosen = pcall(ChatEdit_ChooseBoxForSend)
+		if ok then
+			box = chosen
+		end
+	end
+	box = box or (DEFAULT_CHAT_FRAME and DEFAULT_CHAT_FRAME.editBox)
+	if not box then
+		return false
+	end
+	if ChatEdit_ActivateChat then
+		pcall(ChatEdit_ActivateChat, box)
+	end
+	if box.SetText then
+		pcall(box.SetText, box, text)
+	end
+	if box.HighlightText then
+		pcall(box.HighlightText, box)
+	end
+	if box.SetFocus then
+		pcall(box.SetFocus, box)
+	end
+	ns.Print(ns.T("INFO_COPIED"))
+	return true
 end
 
 local function makeLinkRow(parent, labelKey, url)
@@ -302,9 +336,8 @@ local function makeLinkRow(parent, labelKey, url)
 	local copy = makeGoldBtn(row, 64, 22, ns.T("INFO_COPY"))
 	copy:SetPoint("RIGHT", 0, 0)
 	copy:SetScript("OnClick", function()
-		box:HighlightText()
-		box:SetFocus()
 		if not copyText(url) then
+			box:SetFocus()
 			box:HighlightText()
 		end
 	end)

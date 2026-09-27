@@ -1,3 +1,7 @@
+# 1.5.47
+
+- Copy on the Info page puts the link in the chat box, selected, so Ctrl+C works. This client has no system clipboard API.
+
 # 1.5.46
 
 - Mouse-button keybinds stay inside the HUD icons (Mouse Button 4 shows as M4).

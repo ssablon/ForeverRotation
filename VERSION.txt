@@ -1,3 +1,8 @@
+1.5.47
+
+2026-09-27
+- Copy on the Info page puts the link in the chat box, selected, so Ctrl+C works. This client has no system clipboard API.
+
 1.5.46
 
 2026-09-27
