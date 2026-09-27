@@ -158,12 +158,13 @@ Un sort seulement utile (`IsHelpful` et pas `IsHarmful`) peut passer via le coû
 
 ## Files (`Rotations.lua`)
 
-`ns.BuildQueue` : jusqu’à 3 cases, chaque passage reprend la liste **depuis le début**.
+`ns.BuildQueue` : jusqu’à 3 cases. La liste est lue dans l’ordre ; les sorts **déjà lancés dans le tour courant** (`ns.NoteRotationCast` / `rotSpent`) sont sautés — même s’ils n’avaient pas encore été affichés. Quand plus aucun pas utilisable ne reste dans le tour, `rotSpent` est vidé et la file **repart du début**. Reset aussi au changement de cible et à la sortie de combat.
 
 - ignore un pas décoché, un enchant d'arme, un buff de maintenance, et (si `barOnly`) un sort absent des barres déjà indexées par GlowFetch ;
 - le sort en cours de lancement est épinglé en case 1, puis `PredictConsume` suppose qu'il a été lancé (DoT, CD / horions, buff, stealth, points de combo) ;
 - un **filler** en tête cède à une **action** plus bas (horion, DoT, CD, proc) dès qu’elle est prête et à portée `in` ou inconnue (`notOut`) — l’horion passe alors en case 1. Starfire / Ice Lance / Swipe / raciaux auto ne volent pas ;
-- un même sort n’apparaît qu’une fois dans la file (sauf `swing`) : les cases 2–3 montrent d’autres sorts, pas le même spam ;
+- un même sort n’apparaît qu’une fois dans la file (sauf `swing`) : les cases 2–3 montrent d’autres sorts ;
+- `opt.hold` retire un sort après cast pour N secondes (DoT / snare) en plus du marquage « tour » ;
 - case 1 préfère `RangeState` `in` ; à défaut `notOut`. `out` → cases 2–3 ;
 - `ns.ApplyRotationEdit` (Haut / Bas / Appliquer) vide le cache et relance le HUD sans `/reload` ;
 - `IsSpellUsable` faux pendant le GCD ou un cast n'empêche plus un horion d'entrer dans la file ;

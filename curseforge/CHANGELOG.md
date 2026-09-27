@@ -1,3 +1,7 @@
+# 1.5.63
+
+- Rotation pass tracking: casting any list spell (even before it was shown) marks it used and advances to the next usable spell. When the pass is exhausted, the queue restarts from the top. Clears on target change and leaving combat.
+
 # 1.5.62
 
 - Clarify hold = 0: no aura re-cast delay only. Rotation still follows list order and conditions (1 → 2 → 3); it does not mean spam the same spell in a loop.

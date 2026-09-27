@@ -4,6 +4,58 @@ local API = ns.API
 local maintNames
 local weaponNames
 local tokenCache = {}
+-- Spells already cast in the current rotation pass. Skipped until the list
+-- has been walked through; then wiped so the queue restarts from the top.
+local rotSpent = {}
+
+function ns.ClearRotationSpent()
+	wipe(rotSpent)
+end
+
+local function sameRotSpell(a, b)
+	if not a or not b then
+		return false
+	end
+	if a == b then
+		return true
+	end
+	local ra = API.Resolve and API.Resolve(a) or a
+	local rb = API.Resolve and API.Resolve(b) or b
+	return ra and rb and ra == rb
+end
+
+-- Mark an APL spell as used for this pass (cast from the bar or suggested).
+-- Next suggestions start after it; when nothing left is usable, we wrap to 1.
+function ns.NoteRotationCast(spellID)
+	if not spellID or not ns.GetAPL then
+		return
+	end
+	local resolved = (API.Resolve and API.Resolve(spellID)) or spellID
+	if not resolved then
+		return
+	end
+	local apl = ns.GetAPL()
+	for _, step in ipairs(apl or {}) do
+		if step and step.key and sameRotSpell(step.id, resolved) then
+			rotSpent[step.key] = true
+			if resolved then
+				rotSpent["id:" .. tostring(resolved)] = true
+			end
+			return
+		end
+	end
+end
+
+local function isRotSpent(step)
+	if not step then
+		return false
+	end
+	if step.key and rotSpent[step.key] then
+		return true
+	end
+	local id = (API.Resolve and API.Resolve(step.id)) or step.id
+	return id and rotSpent["id:" .. tostring(id)] or false
+end
 
 function ns.InvalidateBuffCaches()
 	maintNames = nil
@@ -190,7 +242,7 @@ function ns.BuildQueue()
 	local function laterInRange(from, shift)
 		for j = from + 1, #apl do
 			local step = apl[j]
-			if pressable(step, shift, "in", false) then
+			if not isRotSpent(step) and pressable(step, shift, "in", false) then
 				return true
 			end
 		end
@@ -199,7 +251,7 @@ function ns.BuildQueue()
 	local function laterAction(from, shift)
 		for j = from + 1, #apl do
 			local step = apl[j]
-			if API.IsRotationAction and API.IsRotationAction(step.id, step.opt, step.racial) then
+			if not isRotSpent(step) and API.IsRotationAction and API.IsRotationAction(step.id, step.opt, step.racial) then
 				-- Confirmed in-range, or unknown (notOut): a ready shock/DoT/CD
 				-- must still beat a filler listed above it.
 				if pressable(step, shift, "in", false) or pressable(step, shift, "notOut", false) then
@@ -221,9 +273,9 @@ function ns.BuildQueue()
 		end
 		return false
 	end
-	local function pickOne(shift, mustRange, allowDup)
+	local function pickOne(shift, mustRange, allowDup, skipSpent)
 		for i, step in ipairs(apl) do
-			if pressable(step, shift, mustRange, allowDup) then
+			if (not skipSpent or not isRotSpent(step)) and pressable(step, shift, mustRange, allowDup) then
 				local id = (API.Resolve and API.Resolve(step.id)) or step.id
 				local opt = step.opt or {}
 				-- Fillers (Lightning Bolt, Fireball, Heroic Strike, …) yield to a
@@ -238,6 +290,18 @@ function ns.BuildQueue()
 			end
 		end
 		return false
+	end
+	-- Prefer unspent steps (continue after a manual cast). If the pass is
+	-- exhausted, wipe and restart from the top of the list.
+	local function pickNext(shift, mustRange, allowDup)
+		if pickOne(shift, mustRange, allowDup, true) then
+			return true
+		end
+		if next(rotSpent) then
+			wipe(rotSpent)
+			return pickOne(shift, mustRange, allowDup, true)
+		end
+		return pickOne(shift, mustRange, allowDup, false)
 	end
 	local function fillSlots()
 		local shift = 0.2
@@ -258,14 +322,14 @@ function ns.BuildQueue()
 			end
 		end
 		if #q == 0 then
-			pickOne(shift, "in", false)
+			pickNext(shift, "in", false)
 		end
 		if #q == 0 then
-			pickOne(shift, "notOut", false)
+			pickNext(shift, "notOut", false)
 		end
 		-- Never allowDup: the next slots must be later spells in the list.
 		while #q < 3 do
-			if not pickOne(shift, "any", false) then
+			if not pickNext(shift, "any", false) then
 				break
 			end
 		end

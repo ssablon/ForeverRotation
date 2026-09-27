@@ -641,6 +641,7 @@ frame:RegisterEvent("PLAYER_LOGIN")
 frame:RegisterEvent("PLAYER_ENTERING_WORLD")
 frame:RegisterEvent("PLAYER_TARGET_CHANGED")
 frame:RegisterEvent("UNIT_SPELLCAST_SUCCEEDED")
+pcall(frame.RegisterEvent, frame, "PLAYER_REGEN_ENABLED")
 frame:RegisterEvent("UPDATE_SHAPESHIFT_FORM")
 frame:RegisterEvent("ACTIONBAR_SLOT_CHANGED")
 frame:RegisterEvent("ACTIONBAR_PAGE_CHANGED")
@@ -857,6 +858,14 @@ frame:SetScript("OnEvent", function(_, event, unit, _, spellID)
 		if ns.API and ns.API.ClearTargetDebuffs then
 			ns.API.ClearTargetDebuffs()
 		end
+		if ns.ClearRotationSpent then
+			ns.ClearRotationSpent()
+		end
+		forceTick()
+	elseif event == "PLAYER_REGEN_ENABLED" then
+		if ns.ClearRotationSpent then
+			ns.ClearRotationSpent()
+		end
 		forceTick()
 	elseif event == "UNIT_AURA" then
 		if liveAuraUnit(unit) then
@@ -893,6 +902,9 @@ frame:SetScript("OnEvent", function(_, event, unit, _, spellID)
 			end
 			if ns.API and ns.API.NoteSpellCast then
 				ns.API.NoteSpellCast(id or spellID)
+			end
+			if ns.NoteRotationCast then
+				ns.NoteRotationCast(id or spellID)
 			end
 			if ns.API and ns.API.NoteTargetDebuff and ns.API.IsHarmful and id and ns.API.IsHarmful(id) then
 				ns.API.NoteTargetDebuff(id)
