@@ -1,6 +1,9 @@
 local addonName, ns = ...
 local API = ns.API
 local IMG = "Interface\\AddOns\\WoWForeverRot\\images\\"
+local SITE_URL = "https://wow-forever.fr"
+local DISCORD_URL = "https://discord.gg/qmb2uDu8Z3"
+local CURSE_URL = "https://www.curseforge.com/wow/addons/forever-rot"
 
 local editSpec
 local editMode
@@ -243,6 +246,72 @@ local function makeSwitch(parent, key, label)
 	return row
 end
 
+local function copyText(text)
+	if type(CopyToClipboard) == "function" then
+		local ok = pcall(CopyToClipboard, text)
+		if ok then
+			ns.Print(ns.T("INFO_COPIED"))
+			return true
+		end
+	end
+	return false
+end
+
+local function makeLinkRow(parent, labelKey, url)
+	local row = CreateFrame("Frame", nil, parent)
+	row:SetHeight(26)
+	local label = row:CreateFontString(nil, "OVERLAY", "GameFontHighlightSmall")
+	label:SetPoint("LEFT", 0, 0)
+	label:SetWidth(90)
+	label:SetJustifyH("LEFT")
+	label:SetTextColor(0.92, 0.92, 0.92)
+	label:SetText(ns.T(labelKey))
+	row.label = label
+	row.labelKey = labelKey
+	local box = CreateFrame("EditBox", nil, row, "BackdropTemplate")
+	box:SetPoint("LEFT", label, "RIGHT", 8, 0)
+	box:SetPoint("RIGHT", -72, 0)
+	box:SetHeight(22)
+	box:SetAutoFocus(false)
+	box:SetFontObject("ChatFontSmall")
+	box:SetTextInsets(6, 6, 2, 2)
+	box:SetText(url)
+	box:SetCursorPosition(0)
+	if box.SetBackdrop then
+		box:SetBackdrop({
+			bgFile = "Interface\\Buttons\\WHITE8x8",
+			edgeFile = "Interface\\Tooltips\\UI-Tooltip-Border",
+			tile = true,
+			tileSize = 8,
+			edgeSize = 8,
+			insets = { left = 2, right = 2, top = 2, bottom = 2 },
+		})
+		box:SetBackdropColor(0.08, 0.08, 0.08, 0.95)
+		box:SetBackdropBorderColor(0.42, 0.42, 0.42, 1)
+	end
+	box:SetScript("OnEditFocusGained", function(self)
+		self:HighlightText()
+	end)
+	box:SetScript("OnEscapePressed", function(self)
+		self:ClearFocus()
+	end)
+	box:SetScript("OnEnterPressed", function(self)
+		self:ClearFocus()
+	end)
+	row.box = box
+	local copy = makeGoldBtn(row, 64, 22, ns.T("INFO_COPY"))
+	copy:SetPoint("RIGHT", 0, 0)
+	copy:SetScript("OnClick", function()
+		box:HighlightText()
+		box:SetFocus()
+		if not copyText(url) then
+			box:HighlightText()
+		end
+	end)
+	row.copy = copy
+	return row
+end
+
 local function addSwitch(card, key, label)
 	local row = makeSwitch(card, key, label)
 	row:SetPoint("TOPLEFT", card, "TOPLEFT", 12, card._y)
@@ -447,9 +516,15 @@ local function ensureOptions()
 	extra:SetPoint("TOPLEFT", 8, -72)
 	extra:SetPoint("BOTTOMRIGHT", -8, 8)
 	extra:Hide()
+
+	local info = CreateFrame("Frame", nil, content)
+	info:SetPoint("TOPLEFT", 8, -72)
+	info:SetPoint("BOTTOMRIGHT", -8, 8)
+	info:Hide()
 	frame.general = general
 	frame.rotation = rotation
 	frame.extra = extra
+	frame.info = info
 	frame.content = content
 	frame.nav = nav
 
@@ -868,12 +943,58 @@ local function ensureOptions()
 	end)
 	frame.importBtn = importBtn
 
+	local aboutCard = makeCard(info, "OPT_CARD_ABOUT", 8, -4, 648, 118)
+	local aboutBody = aboutCard:CreateFontString(nil, "OVERLAY", "GameFontHighlightSmall")
+	aboutBody:SetPoint("TOPLEFT", 12, -30)
+	aboutBody:SetPoint("RIGHT", -12, 0)
+	aboutBody:SetJustifyH("LEFT")
+	aboutBody:SetWordWrap(true)
+	aboutBody:SetTextColor(0.92, 0.92, 0.92)
+	frame.aboutBody = aboutBody
+	local aboutCredit = aboutCard:CreateFontString(nil, "OVERLAY", "GameFontNormal")
+	aboutCredit:SetPoint("TOPLEFT", aboutBody, "BOTTOMLEFT", 0, -8)
+	aboutCredit:SetTextColor(1, 0.82, 0.2)
+	frame.aboutCredit = aboutCredit
+	local aboutSupport = aboutCard:CreateFontString(nil, "OVERLAY", "GameFontHighlightSmall")
+	aboutSupport:SetPoint("TOPLEFT", aboutCredit, "BOTTOMLEFT", 0, -4)
+	aboutSupport:SetPoint("RIGHT", -12, 0)
+	aboutSupport:SetJustifyH("LEFT")
+	aboutSupport:SetTextColor(0.72, 0.72, 0.72)
+	frame.aboutSupport = aboutSupport
+
+	local cmdCard = makeCard(info, "OPT_CARD_COMMANDS", 8, -134, 648, 196)
+	local cmdHint = cmdCard:CreateFontString(nil, "OVERLAY", "GameFontHighlightSmall")
+	cmdHint:SetPoint("TOPLEFT", 12, -28)
+	cmdHint:SetPoint("RIGHT", -12, 0)
+	cmdHint:SetJustifyH("LEFT")
+	cmdHint:SetTextColor(0.72, 0.72, 0.72)
+	frame.cmdHint = cmdHint
+	local cmdList = cmdCard:CreateFontString(nil, "OVERLAY", "GameFontHighlightSmall")
+	cmdList:SetPoint("TOPLEFT", 12, -48)
+	cmdList:SetPoint("RIGHT", -12, 0)
+	cmdList:SetJustifyH("LEFT")
+	cmdList:SetWordWrap(true)
+	cmdList:SetTextColor(0.92, 0.92, 0.92)
+	frame.cmdList = cmdList
+
+	local linksCard = makeCard(info, "OPT_CARD_LINKS", 8, -342, 648, 122)
+	frame.siteRow = makeLinkRow(linksCard, "INFO_SITE", SITE_URL)
+	frame.siteRow:SetPoint("TOPLEFT", 12, -32)
+	frame.siteRow:SetPoint("RIGHT", -12, 0)
+	frame.discordRow = makeLinkRow(linksCard, "INFO_DISCORD", DISCORD_URL)
+	frame.discordRow:SetPoint("TOPLEFT", 12, -60)
+	frame.discordRow:SetPoint("RIGHT", -12, 0)
+	frame.curseRow = makeLinkRow(linksCard, "INFO_CURSE", CURSE_URL)
+	frame.curseRow:SetPoint("TOPLEFT", 12, -88)
+	frame.curseRow:SetPoint("RIGHT", -12, 0)
+
 	frame.navButtons = {}
 	local navDefs = {
 		{ key = "general", label = "TAB_GENERAL" },
 		{ key = "rotation", label = "TAB_ROTATION" },
 		{ key = "def", label = "TAB_DEFENSE" },
 		{ key = "extra", label = "TAB_EXTRA" },
+		{ key = "info", label = "TAB_INFO" },
 	}
 	for i, def in ipairs(navDefs) do
 		local btn = CreateFrame("Button", nil, nav)
@@ -929,12 +1050,35 @@ local function ensureOptions()
 		if frame.importBtn then
 			frame.importBtn:SetText(ns.T("OPT_IMPORT"))
 		end
+		if frame.aboutBody then
+			frame.aboutBody:SetText(ns.T("INFO_ABOUT"))
+		end
+		if frame.aboutCredit then
+			frame.aboutCredit:SetText(ns.T("INFO_CREDIT"))
+		end
+		if frame.aboutSupport then
+			frame.aboutSupport:SetText(ns.T("INFO_SUPPORT"))
+		end
+		if frame.cmdHint then
+			frame.cmdHint:SetText(ns.T("INFO_CMD_HINT"))
+		end
+		if frame.cmdList then
+			frame.cmdList:SetText(ns.T("INFO_CMD_LIST"))
+		end
+		for _, row in ipairs({ frame.siteRow, frame.discordRow, frame.curseRow }) do
+			if row and row.label and row.labelKey then
+				row.label:SetText(ns.T(row.labelKey))
+			end
+			if row and row.copy then
+				row.copy:SetText(ns.T("INFO_COPY"))
+			end
+		end
 		if frame.colorLabels then
 			for _, label in ipairs(frame.colorLabels) do
 				label:SetText(ns.T(label.key))
 			end
 		end
-		for _, card in ipairs({ hudCard, winCard, displayCard, weaponCard, combatCard, autoCard, alertCard, colorCard, shareCard }) do
+		for _, card in ipairs({ hudCard, winCard, displayCard, weaponCard, combatCard, autoCard, alertCard, colorCard, shareCard, aboutCard, cmdCard, linksCard }) do
 			if card and card.title and card.titleKey then
 				card.title:SetText(ns.T(card.titleKey))
 			end
@@ -950,11 +1094,13 @@ local function ensureOptions()
 		general:SetShown(which == "general")
 		rotation:SetShown(which == "rotation" or which == "def")
 		extra:SetShown(which == "extra")
+		info:SetShown(which == "info")
 		local titles = {
 			general = "TAB_GENERAL",
 			rotation = "TAB_ROTATION",
 			def = "TAB_DEFENSE",
 			extra = "TAB_EXTRA",
+			info = "TAB_INFO",
 		}
 		frame.pageTitle:SetText(ns.T(titles[which] or "TAB_GENERAL"))
 		frame.navStatus:SetText(ns.T(titles[which] or "TAB_GENERAL"))

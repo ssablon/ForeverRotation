@@ -1,3 +1,7 @@
+# 1.5.45
+
+- Options Info page lists slash commands, credits, website, Discord, and CurseForge. The new option labels are translated in every language pack.
+
 # 1.5.44
 
 - Options use a sidebar and cards, with ON/OFF switches, like a modern config window. Same settings, clearer layout.

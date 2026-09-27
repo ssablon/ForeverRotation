@@ -1,3 +1,8 @@
+1.5.45
+
+2026-09-27
+- Options Info page lists slash commands, credits, website, Discord, and CurseForge. The new option labels are translated in every language pack.
+
 1.5.44
 
 2026-09-27

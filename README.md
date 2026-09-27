@@ -4,7 +4,7 @@ Rotation helper for **WoW Forever** (Classic Era combat on the camelot / Midnigh
 
 It shows the next abilities on a small HUD and flashes the matching action-bar buttons. It does **not** cast spells for you.
 
-Author: [Vohnka](https://wow-forever.fr) · Current version: **1.5.44**
+Author: [Vohnka](https://wow-forever.fr) · Current version: **1.5.45**
 
 Player-facing text is translated for `enUS`, `frFR`, `deDE`, `esES`, `esMX`, `ruRU`, `zhCN`, `zhTW`, `ptBR`, `itIT`, and `koKR`. Missing strings fall back to English.
 
