@@ -1,3 +1,33 @@
+# 1.5.67
+
+## Max ConROC-parity without combat log
+
+Forever still cannot read the combat log. This build adds the remaining high-value Classic helper logic that unit auras, totems, creature type, and range can support — stacks, Seal→Judgement, totem upkeep, bleed filters, and low-HP DoT skips.
+
+### Stacks and refresh
+- **Sunder Armor** and **Lacerate** keep applying until **5 stacks**, then refresh in the usual ~6 s window.
+- **Scorch** tracks **Fire Vulnerability** to 5 stacks (Improved Scorch), then refreshes near expiry.
+- **Slice and Dice** / **Renew** can refresh when about **4 s** remain (not only when missing).
+
+### Paladin Seal → Judgement
+- Damage: Seal of the Crusader first when Judgement of the Crusader is missing, then Judgement (requires any seal), then DPS seals.
+- Heal: Seal of Light / Wisdom tied to their judgement debuffs.
+- **Exorcism** only on Undead / Demon. **Consecration** when enough nearby enemies.
+
+### Totems (Shaman)
+- Strength of Earth, Mana Spring, Searing Totem (and optional Grace of Air / Windfury / Healing Stream) re-suggest when the totem is down or about to expire.
+
+### Creature filters and low-HP skips
+- Rend, Rip, Rake, Rupture skip Mechanical / Elemental / Undead.
+- DoTs and marks skip dying trash (&lt; 20% HP) or elites (&lt; 5% HP).
+- Sunder skips if Expose Armor is already up. Whirlwind / Swipe need nearby enemies.
+
+### Hunter / other
+- Viper Sting only when the target has mana (still off by default).
+- Aspect of the Monkey available when the mob is targeting you (off by default).
+
+No combat log — Forever-safe. Custom list order kept.
+
 # 1.5.66
 
 ## ConROC-parity helpers without combat log

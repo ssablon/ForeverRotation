@@ -12,7 +12,7 @@
 ## Notes-koKR: WoW Forever Classic 순환 도우미. HUD, 해골, 치유, 방어. 봇 아님. 11개 언어.
 ## Notes-zhCN: WoW Forever Classic 循环助手。HUD、骷髅、治疗、防御。不是机器人。11 种语言。
 ## Notes-zhTW: WoW Forever Classic 循環助手。HUD、骷髏、治療、防禦。不是機器人。11 種語言。
-## Version: 1.5.66
+## Version: 1.5.67
 ## Author: Vohnka
 ## IconTexture: Interface\AddOns\WoWForeverRot\images\logo.tga
 ## Category: WoW Forever

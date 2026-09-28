@@ -1,3 +1,35 @@
+1.5.67
+
+# 1.5.67
+
+## Max ConROC-parity without combat log
+
+Forever still cannot read the combat log. This build adds the remaining high-value Classic helper logic that unit auras, totems, creature type, and range can support — stacks, Seal→Judgement, totem upkeep, bleed filters, and low-HP DoT skips.
+
+### Stacks and refresh
+- **Sunder Armor** and **Lacerate** keep applying until **5 stacks**, then refresh in the usual ~6 s window.
+- **Scorch** tracks **Fire Vulnerability** to 5 stacks (Improved Scorch), then refreshes near expiry.
+- **Slice and Dice** / **Renew** can refresh when about **4 s** remain (not only when missing).
+
+### Paladin Seal → Judgement
+- Damage: Seal of the Crusader first when Judgement of the Crusader is missing, then Judgement (requires any seal), then DPS seals.
+- Heal: Seal of Light / Wisdom tied to their judgement debuffs.
+- **Exorcism** only on Undead / Demon. **Consecration** when enough nearby enemies.
+
+### Totems (Shaman)
+- Strength of Earth, Mana Spring, Searing Totem (and optional Grace of Air / Windfury / Healing Stream) re-suggest when the totem is down or about to expire (`GetTotemInfo`).
+
+### Creature filters and low-HP skips
+- Rend, Rip, Rake, Rupture skip Mechanical / Elemental / Undead.
+- DoTs and marks skip dying trash (&lt; 20% HP) or elites (&lt; 5% HP) like ConROC Raidmob floors.
+- Sunder skips if Expose Armor is already up. Whirlwind / Swipe need nearby enemies.
+
+### Hunter / other
+- Viper Sting only when the target has mana (still off by default).
+- Aspect of the Monkey available when the mob is targeting you (off by default).
+
+No combat log — Forever-safe. Custom list order kept (`listVersion` still 4); new conditions come from default spell options on merge.
+
 1.5.66
 
 # 1.5.66
@@ -7,7 +39,7 @@
 Forever still cannot read the combat log. This build closes the main rotation gaps using unit auras, range, and creature type only — so DoTs, marks, melee/ranged switching, pet reminders, stings, and execute windows behave closer to a Classic helper without secret CLEU APIs.
 
 ### Aura-first DoTs and marks
-- When the target aura API is **readable**, missing Hunter's Mark, Serpent Sting, Corruption, Rend, and other `nodebuff` spells are suggested again even if a hold timer was still running.
+- When the target aura API is **readable**, missing Hunter's Mark, Serpent Sting, Corruption, Rend, and other DoT/mark spells are suggested again even if a hold timer was still running.
 - While the aura is up, the spell stays hidden until about **6 seconds** remain, then it can re-enter the queue (refresh).
 - When Forever **hides** target auras, the previous per-mob hold (GUID) still applies as a fallback.
 - Self holds (Renew, Slice and Dice, …) stay global and unchanged.
@@ -28,14 +60,9 @@ Forever still cannot read the combat log. This build closes the main rotation ga
 ### Enemy range bands
 - Enemy counting can filter nameplates by yard bands (about 10 / 28) for tighter AoE checks. Auto AoE still uses the full hostile nameplate count.
 
-No combat log — Forever-safe. Same listVersion (4); custom list order is kept.
+No combat log — Forever-safe. Custom list order is kept.
 
 1.5.65
 
 2026-09-28
 - Target DoT / mark / snare re-suggest delay (hold) is per-mob: switching target or a dead sticky target clears it so Hunter's Mark, Serpent Sting, Corruption, Rend, etc. can be suggested again. Self holds (Renew, Slice and Dice, …) unchanged. No combat log.
-
-1.5.64
-
-2026-09-27
-- CurseForge release notes: detailed summary of rotation fixes from 1.5.58–1.5.63 (list order, hold delays, pass advance/wrap, translations). Same gameplay as 1.5.63.

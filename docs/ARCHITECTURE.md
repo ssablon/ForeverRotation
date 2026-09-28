@@ -127,7 +127,15 @@ Les listes viennent d'un noyau Era type ConROC Classic, niveaux 1–60. Pas de S
 | `nobuff` | Aura-first : si l'aura utile est **lisible** et absente → OK (hold self nettoyé). Si présente et remain > `refresh` (défaut : pas de refresh forcé sauf `opt.refresh`) → refus. Si secrète, `HasAura` / hold. |
 | `nodebuff` | `true` = le sort ne doit pas déjà être un débuff sur la cible. Un ID = cet autre débuff. Aura-first : absence lisible → OK + clear hold ; remain ≤ `refresh` (défaut **6** s) → refresh autorisé ; aura secrète → hold GUID. |
 | `refresh` | Secondes restantes sous lesquelles un `nobuff` / `nodebuff` peut être reproposé. Défaut `nodebuff` = 6. |
-| `nocreature` | `true` = refuse sur Mechanical / Elemental (`UnitCreatureType`). Table / string = types ciblés. Stings Hunter. |
+| `stacks` | Avec `nodebuff` / `nobuff` : continue à proposer tant que les stacks lisibles sont &lt; N ; ensuite refresh normal. Sunder / Lacerate / Fire Vulnerability. |
+| `nocreature` | `true` = Mechanical / Elemental. Table / string = types canoniques (`undead`, `demon`, …). |
+| `creature` | Inverse : le pas n'est OK que si le type cible matche (Exorcism Undead/Demon). |
+| `totem` | Propose le totem si absent ou remain ≤ `refresh` (défaut 1 s) via `GetTotemInfo`. |
+| `enemiesMin` / `enemiesYards` | Refuse si `EnemyCount(yards)` &lt; N (Whirlwind, Consecration, Swipe). |
+| `skipLow` | Refuse DoT/mark si vie cible &lt; 20 % (trash) ou &lt; 5 % (elite/raidmob). |
+| `targetMana` | Refuse si la cible n'a pas de mana (Viper Sting). |
+| `needanybuff` | Exige au moins un buff de la liste sur le joueur (Judgement après sceau). |
+| `ifTargeting` | Exige `targettarget == player` (Aspect of the Monkey). |
 | `anybuff` | Liste d'IDs. Si le joueur a **l'un** d'eux, le pas est refusé. Sert aux sceaux, auras, aspects, armures exclusifs. |
 | `form` | Exige l'aura de forme sur le joueur (`ns.API.Form`). |
 | `noform` | Refus si cette forme est active. |

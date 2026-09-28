@@ -1458,23 +1458,69 @@ function ns.API.StepOk(spellID, opt, timeShift)
 	if opt.nocreature and ns.API.CreatureBlocked and ns.API.CreatureBlocked(opt.nocreature) then
 		return false
 	end
+	if opt.creature and ns.API.CreatureMatch and not ns.API.CreatureMatch(opt.creature) then
+		return false
+	end
+	if opt.totem then
+		local refreshAt = tonumber(opt.refresh)
+		if refreshAt == nil then
+			refreshAt = 1
+		end
+		local remain = ns.API.TotemRemain and ns.API.TotemRemain(spellID) or 0
+		if remain > refreshAt then
+			return false
+		end
+	end
+	if opt.enemiesMin then
+		local n = ns.API.EnemyCount(opt.enemiesYards)
+		if (n or 0) < opt.enemiesMin then
+			return false
+		end
+	end
+	if opt.skipLow and ns.API.Hostile() then
+		local floorHp = (ns.API.IsRaidmob and ns.API.IsRaidmob()) and 5 or 20
+		if ns.API.Health("target") < floorHp then
+			return false
+		end
+	end
+	if opt.targetMana then
+		local okCur, current = pcall(UnitPower, "target", 0)
+		local okMax, maxp = pcall(UnitPowerMax, "target", 0)
+		if not okCur or not readable(current) or current <= 0 then
+			return false
+		end
+		if okMax and readable(maxp) and maxp <= 0 then
+			return false
+		end
+	end
+	if opt.ifTargeting then
+		local ok, onMe = pcall(UnitIsUnit, "targettarget", "player")
+		if not ok or not onMe then
+			return false
+		end
+	end
 	local helpful = ns.API.IsHelpful(spellID, opt)
 	local auraUnit = helpful and ns.API.HealUnit(opt) or "player"
 	-- Aura-first (ConROC-style): readable missing aura → allow; up with remain
-	-- above refresh → block. Hold is only a Forever fallback when auras lie.
+	-- above refresh → block. stacks=N keeps applying until count reaches N.
+	-- Hold is only a Forever fallback when auras lie.
 	if opt.nobuff then
 		local buffUnit = "player"
 		if opt.heal then
 			buffUnit = opt.unit or auraUnit
 		end
-		local found, remain, unreadable = ns.API.FindAura(spellID, buffUnit, "HELPFUL")
+		local found, remain, unreadable, _, stacks = ns.API.FindAura(spellID, buffUnit, "HELPFUL")
 		if found then
+			local needStacks = tonumber(opt.stacks)
 			local refreshAt = tonumber(opt.refresh) or 0
-			if remain >= 9000 or refreshAt <= 0 or remain > refreshAt then
+			if needStacks and (stacks or 0) < needStacks then
+				if ns.API.HoldRemain(spellID) > 0 then
+					clearHoldKeys(spellID)
+				end
+			elseif remain >= 9000 or refreshAt <= 0 or remain > refreshAt then
 				return false
 			end
 		elseif not found and not unreadable then
-			-- readable absence: clear sticky self-hold so HoTs can re-suggest early
 			if ns.API.HoldRemain(spellID) > 0 then
 				clearHoldKeys(spellID)
 			end
@@ -1485,18 +1531,22 @@ function ns.API.StepOk(spellID, opt, timeShift)
 	end
 	if opt.nodebuff then
 		local debuff = opt.nodebuff == true and spellID or opt.nodebuff
-		local debuffUnit = opt.unit or (helpful and auraUnit or "target")
-		local found, remain, unreadable = ns.API.FindAura(debuff, debuffUnit, "HARMFUL")
+		-- Seals / buffs are "helpful" but judgement/DoT checks always use the enemy.
+		local debuffUnit = opt.unit or ((helpful and opt.heal) and auraUnit or "target")
+		local found, remain, unreadable, _, stacks = ns.API.FindAura(debuff, debuffUnit, "HARMFUL")
 		if found then
-			-- Default refresh window 6s like ConROC sting/DoT reapply.
+			local needStacks = tonumber(opt.stacks)
 			local refreshAt = tonumber(opt.refresh)
 			if refreshAt == nil then
 				refreshAt = 6
 			end
-			if remain >= 9000 or refreshAt <= 0 or remain > refreshAt then
+			if needStacks and (stacks or 0) < needStacks then
+				clearHoldKeys(spellID)
+			elseif remain >= 9000 or refreshAt <= 0 or remain > refreshAt then
 				return false
+			else
+				clearHoldKeys(spellID)
 			end
-			clearHoldKeys(spellID)
 		elseif not found and not unreadable then
 			clearHoldKeys(spellID)
 		elseif not found and unreadable and ns.API.HasAura(debuff, debuffUnit, "HARMFUL") then
@@ -1505,8 +1555,6 @@ function ns.API.StepOk(spellID, opt, timeShift)
 	end
 	local holdLeft = ns.API.HoldRemain(spellID)
 	if holdLeft > gate then
-		-- Timer-only holds (chill, etc.) and unreadable-aura Forever fallback.
-		-- Readable missing auras already cleared the hold above.
 		return false
 	end
 	local needHp = opt.hp
@@ -1550,6 +1598,18 @@ function ns.API.StepOk(spellID, opt, timeShift)
 	if opt.needbuff and not ns.API.HasAura(opt.needbuff, "player", "HELPFUL") then
 		return false
 	end
+	if opt.needanybuff then
+		local okBuff = false
+		for _, other in ipairs(opt.needanybuff) do
+			if ns.API.HasAura(other, "player", "HELPFUL") then
+				okBuff = true
+				break
+			end
+		end
+		if not okBuff then
+			return false
+		end
+	end
 	-- require / requireAny are NOT used to hide list spells. List order is
 	-- authoritative: if the player put Frostbolt above Fireball, Frostbolt wins
 	-- when it is known and ready. School gating lived here before and skipped
@@ -1563,8 +1623,6 @@ function ns.API.StepOk(spellID, opt, timeShift)
 			usable = readUsable(IsUsableSpell, spellID)
 		end
 		if usable ~= true then
-			-- Procs stay strict. Positional spells (Backstab, Exorcism) follow
-			-- the same GCD/cast window as Ready(), so they still enter slot 2–3.
 			if opt.proc then
 				return false
 			end
@@ -1651,6 +1709,23 @@ local function auraRemain(aura)
 		return remain
 	end
 	return 9999
+end
+
+local function auraStacks(aura)
+	if type(aura) ~= "table" then
+		return 0
+	end
+	local n = safe(aura.applications, nil)
+	if n == nil then
+		n = safe(aura.stacks, nil)
+	end
+	if n == nil then
+		n = safe(aura.count, nil)
+	end
+	if type(n) == "number" and n > 0 then
+		return n
+	end
+	return 1
 end
 
 -- Familles de buffs exclusifs. Un sceau actif (quel que soit son ID de rang)
@@ -2093,7 +2168,7 @@ end
 
 function ns.API.FindAura(spellID, unit, filter)
 	if not spellID then
-		return false, 0, false, nil
+		return false, 0, false, nil, 0
 	end
 	unit = unit or "player"
 	filter = filter or "HELPFUL"
@@ -2107,7 +2182,7 @@ function ns.API.FindAura(spellID, unit, filter)
 			if id then
 				local ok, aura = pcall(C_UnitAuras.GetPlayerAuraBySpellID, id)
 				if ok and type(aura) == "table" then
-					return true, auraRemain(aura), false, nil
+					return true, auraRemain(aura), false, nil, auraStacks(aura)
 				end
 			end
 		end
@@ -2118,25 +2193,29 @@ function ns.API.FindAura(spellID, unit, filter)
 		if named then
 			local _, _, hidden = auraIdentity(named)
 			if not hidden then
-				return true, auraRemain(named), false, nil
+				return true, auraRemain(named), false, nil, auraStacks(named)
 			end
 		end
 	end
 
 	local scan = scanUnitAuras(unit, filter)
 	if wantKey and scan.names[wantKey] then
-		return true, auraRemain(scan.names[wantKey]), false, scan.families
+		local aura = scan.names[wantKey]
+		return true, auraRemain(aura), false, scan.families, auraStacks(aura)
 	end
 	if resolved and scan.ids[resolved] then
-		return true, auraRemain(scan.ids[resolved]), false, scan.families
+		local aura = scan.ids[resolved]
+		return true, auraRemain(aura), false, scan.families, auraStacks(aura)
 	end
 	if spellID and scan.ids[spellID] then
-		return true, auraRemain(scan.ids[spellID]), false, scan.families
+		local aura = scan.ids[spellID]
+		return true, auraRemain(aura), false, scan.families, auraStacks(aura)
 	end
 	if wantFamily and scan.families[wantFamily] then
-		return true, auraRemain(scan.families[wantFamily]), false, scan.families
+		local aura = scan.families[wantFamily]
+		return true, auraRemain(aura), false, scan.families, auraStacks(aura)
 	end
-	return false, 0, scan.unreadable, scan.families
+	return false, 0, scan.unreadable, scan.families, 0
 end
 
 function ns.API.HasWeaponBuff(entry)
@@ -2183,62 +2262,155 @@ function ns.API.Health(unit)
 	return (health / max) * 100
 end
 
--- Block stings / DoTs on creature types ConROC also skips (localized names).
-local CREATURE_BLOCK = {
-	mechanical = true,
-	elemental = true,
-	["mécanique"] = true,
-	["mecanique"] = true,
-	["élémentaire"] = true,
-	["elementaire"] = true,
-	mechanisch = true,
-	elementar = true,
-	mecánico = true,
-	mecanico = true,
-	elemental = true,
-	механизм = true,
-	элементаль = true,
-	机械 = true,
-	元素生物 = true,
-	機械 = true,
-	元素生物 = true,
-	mecânico = true,
-	mecanico = true,
-	elementale = true,
-	기계 = true,
-	정령 = true,
+-- Creature types → canonical EN keys (Forever locale aliases).
+local CREATURE_CANON = {
+	mechanical = "mechanical",
+	["mécanique"] = "mechanical",
+	mecanique = "mechanical",
+	mechanisch = "mechanical",
+	["mecánico"] = "mechanical",
+	mecanico = "mechanical",
+	machine = "mechanical",
+	meccanic = "mechanical",
+	["mecânico"] = "mechanical",
+	механизм = "mechanical",
+	기계 = "mechanical",
+	机械 = "mechanical",
+	機械 = "mechanical",
+	elemental = "elemental",
+	["élémentaire"] = "elemental",
+	elementaire = "elemental",
+	elementar = "elemental",
+	elementale = "elemental",
+	элементаль = "elemental",
+	정령 = "elemental",
+	元素生物 = "elemental",
+	undead = "undead",
+	["mort-vivant"] = "undead",
+	untoter = "undead",
+	no = "undead",
+	["non morto"] = "undead",
+	morto = "undead",
+	нежить = "undead",
+	언데드 = "undead",
+	亡灵 = "undead",
+	不死族 = "undead",
+	demon = "demon",
+	["dämon"] = "demon",
+	demonio = "demon",
+	["démon"] = "demon",
+	demone = "demon",
+	["demônio"] = "demon",
+	демон = "demon",
+	악마 = "demon",
+	恶魔 = "demon",
+	惡魔 = "demon",
 }
+
+local function creatureCanon(ctype)
+	if type(ctype) ~= "string" or ctype == "" then
+		return nil
+	end
+	local key = strlower(ctype)
+	return CREATURE_CANON[key] or key
+end
+
+local function targetCreatureCanon()
+	if not unitExists("target") then
+		return nil
+	end
+	local ok, ctype = pcall(UnitCreatureType, "target")
+	if not ok or type(ctype) ~= "string" or ctype == "" then
+		return nil
+	end
+	return creatureCanon(ctype)
+end
+
+local function creatureListHas(list, canon)
+	if not canon then
+		return false
+	end
+	if list == true then
+		return canon == "mechanical" or canon == "elemental"
+	end
+	if type(list) == "string" then
+		return canon == creatureCanon(list)
+	end
+	if type(list) == "table" then
+		for _, name in ipairs(list) do
+			if type(name) == "string" and canon == creatureCanon(name) then
+				return true
+			end
+		end
+	end
+	return false
+end
 
 function ns.API.CreatureBlocked(list)
 	if list == nil or list == false then
 		return false
 	end
+	return creatureListHas(list, targetCreatureCanon())
+end
+
+function ns.API.CreatureMatch(list)
+	if list == nil or list == false then
+		return true
+	end
+	local canon = targetCreatureCanon()
+	if not canon then
+		return false
+	end
+	return creatureListHas(list, canon)
+end
+
+function ns.API.IsRaidmob()
 	if not unitExists("target") then
 		return false
 	end
-	local ok, ctype = pcall(UnitCreatureType, "target")
-	if not ok or type(ctype) ~= "string" or ctype == "" then
-		return false
+	local okC, classification = pcall(UnitClassification, "target")
+	if okC and type(classification) == "string" then
+		if classification == "worldboss" or classification == "rareelite" or classification == "elite" then
+			return true
+		end
 	end
-	local key = strlower(ctype)
-	if list == true then
-		return CREATURE_BLOCK[key] == true
-	end
-	if type(list) == "string" then
-		local want = strlower(list)
-		return key == want or (CREATURE_BLOCK[want] == true and CREATURE_BLOCK[key] == true)
-	end
-	if type(list) == "table" then
-		for _, name in ipairs(list) do
-			if type(name) == "string" then
-				local want = strlower(name)
-				if key == want or (CREATURE_BLOCK[want] == true and CREATURE_BLOCK[key] == true) then
-					return true
-				end
-			end
+	local okT, tlvl = pcall(UnitLevel, "target")
+	local okP, plvl = pcall(UnitLevel, "player")
+	if okT and okP and type(tlvl) == "number" and type(plvl) == "number" then
+		if tlvl < 0 or tlvl > plvl + 2 then
+			return true
 		end
 	end
 	return false
+end
+
+function ns.API.TotemRemain(spellID)
+	if not spellID or not GetTotemInfo then
+		return 0
+	end
+	local wantName = ns.API.SpellName(ns.API.Resolve(spellID) or spellID) or ns.API.SpellName(spellID)
+	if type(wantName) ~= "string" or wantName == "" then
+		return 0
+	end
+	local wantKey = normName(wantName)
+	local wantFamily = wantKey:gsub("%s+totem$", ""):gsub("^totem%s+", "")
+	for i = 1, 4 do
+		local ok, haveTotem, totemName, startTime, duration = pcall(GetTotemInfo, i)
+		if ok and haveTotem and type(totemName) == "string" and totemName ~= "" then
+			local key = normName(totemName)
+			local family = key:gsub("%s+totem$", ""):gsub("^totem%s+", "")
+			if key == wantKey or family == wantFamily or key:find(wantFamily, 1, true) then
+				startTime = tonumber(startTime) or 0
+				duration = tonumber(duration) or 0
+				local remain = startTime + duration - GetTime()
+				if remain < 0 then
+					remain = 0
+				end
+				return remain
+			end
+		end
+	end
+	return 0
 end
 
 function ns.API.TargetInMelee()
