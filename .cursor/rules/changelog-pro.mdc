@@ -1,0 +1,59 @@
+---
+description: Changelogs CurseForge / VERSION.txt toujours ultra complets, Markdown, pro, anglais
+alwaysApply: true
+---
+
+# Changelogs pro (Markdown)
+
+Chaque bump de version exige un changelog **public**, **anglais**, **Markdown**, **ultra complet**. Même texte dans `VERSION.txt` (notes du jour) et en tête de `curseforge/CHANGELOG.md`.
+
+## Forme
+
+```markdown
+# x.y.z
+
+## Short title of the change
+
+Player-facing paragraph: what was wrong, what you see now, who it affects.
+
+### Details (when needed)
+- Concrete bullet: class / spell / situation
+- What still works the same (so testers know nothing else broke)
+- Forever-safe note if relevant (e.g. no combat log)
+```
+
+- Titres `#` / `##` / `###`, listes `-`, **gras** utile, pas de pavé brut.
+- Pas de français dans le changelog public. Pas de jargon interne (`ns.`, noms de fichiers) sauf si indispensable.
+- Ne pas nommer d’autres addons (sauf contrainte produit déjà établie, ex. Platynator sur Plates).
+
+## Contenu minimum (chaque version)
+
+1. **Problème joueur** en une phrase claire.
+2. **Comportement nouveau** avec exemples de sorts / classes si ça touche la rotation.
+3. **Portée** : toutes classes / races concernées, ou liste précise.
+4. **Non-régression** : ce qui ne change pas (ex. holds self Renew / SnD).
+5. **Limite Forever** si besoin (pas de CLEU, etc.).
+
+Une seule ligne du type « bug fix » ou « hold GUID » est **insuffisante**.
+
+## Exemples
+
+```markdown
+# BAD
+- fix hold
+- target guid
+
+# GOOD
+# 1.5.65
+
+## Per-target re-suggest delay for DoTs and marks
+
+After you applied Hunter's Mark or Serpent Sting, the addon kept hiding those
+spells for the full hold duration even on a **new** mob. Harmful aura holds
+(DoTs, marks, snares, …) are now tied to the current enemy GUID for **every**
+class and race. Tab to another target or leave a dead sticky target and the
+spell can be suggested again. Self holds (Renew, Slice and Dice, …) stay global.
+No combat log — Forever-safe.
+```
+
+Avant upload CurseForge : relire le preview Markdown (mode **Markdown**, pas WYSIWYG collé brut).

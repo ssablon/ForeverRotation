@@ -273,11 +273,13 @@ function ns.API.CursorSpell()
 	return nil
 end
 
-local enemyCountAt, enemyCountVal = 0, 0
+local enemyCountAt, enemyCountVal, enemyCountValKey = 0, 0, nil
 
-function ns.API.EnemyCount()
+function ns.API.EnemyCount(maxYards)
 	local now = GetTime()
-	if enemyCountAt > 0 and (now - enemyCountAt) < 0.3 then
+	maxYards = tonumber(maxYards)
+	local cacheKey = maxYards or 0
+	if enemyCountAt > 0 and (now - enemyCountAt) < 0.3 and enemyCountValKey == cacheKey then
 		return enemyCountVal
 	end
 	local count = 0
@@ -305,17 +307,58 @@ function ns.API.EnemyCount()
 		local okP, pcombat = pcall(UnitAffectingCombat, "player")
 		return not (okP and pcombat)
 	end
+	local function inYards(unit)
+		if not maxYards or maxYards <= 0 then
+			return true
+		end
+		local minY, maxY = ns.API.TargetRangeBand(unit)
+		if minY and minY > maxYards then
+			return false
+		end
+		if maxY and maxY <= maxYards then
+			return true
+		end
+		-- ~10 yd band via duel interact when yards <= 10.
+		if maxYards <= 10 then
+			local close
+			if CheckInteractDistance then
+				local ok, result = pcall(CheckInteractDistance, unit, 3)
+				if ok then
+					close = safe(result, nil)
+				end
+				if close == nil then
+					ok, result = pcall(CheckInteractDistance, unit, 2)
+					if ok then
+						close = safe(result, nil)
+					end
+				end
+			end
+			return close == true or close == 1
+		end
+		if maxYards <= 28 then
+			if CheckInteractDistance then
+				local ok, result = pcall(CheckInteractDistance, unit, 1)
+				if ok then
+					result = safe(result, nil)
+					return result == true or result == 1
+				end
+			end
+			return true
+		end
+		return true
+	end
 	for i = 1, 40 do
 		local unit = "nameplate" .. i
-		if hostile(unit) and inFight(unit) then
+		if hostile(unit) and inFight(unit) and inYards(unit) then
 			count = count + 1
 		end
 	end
-	if count < 1 and hostile("target") then
+	if count < 1 and hostile("target") and inYards("target") then
 		count = 1
 	end
 	enemyCountAt = now
 	enemyCountVal = count
+	enemyCountValKey = cacheKey
 	return count
 end
 
@@ -1409,31 +1452,62 @@ function ns.API.StepOk(spellID, opt, timeShift)
 	if gate < 0.2 then
 		gate = 0.2
 	end
-	-- Player/configurable reapply delay (Frostbolt chill, DoTs, HoTs…).
-	local holdLeft = ns.API.HoldRemain(spellID)
-	if holdLeft > gate then
+	if opt.hostile and not ns.API.Hostile() then
 		return false
 	end
-	if opt.hostile and not ns.API.Hostile() then
+	if opt.nocreature and ns.API.CreatureBlocked and ns.API.CreatureBlocked(opt.nocreature) then
 		return false
 	end
 	local helpful = ns.API.IsHelpful(spellID, opt)
 	local auraUnit = helpful and ns.API.HealUnit(opt) or "player"
+	-- Aura-first (ConROC-style): readable missing aura → allow; up with remain
+	-- above refresh → block. Hold is only a Forever fallback when auras lie.
 	if opt.nobuff then
 		local buffUnit = "player"
 		if opt.heal then
 			buffUnit = opt.unit or auraUnit
 		end
-		if ns.API.HasAura(spellID, buffUnit, "HELPFUL") then
+		local found, remain, unreadable = ns.API.FindAura(spellID, buffUnit, "HELPFUL")
+		if found then
+			local refreshAt = tonumber(opt.refresh) or 0
+			if remain >= 9000 or refreshAt <= 0 or remain > refreshAt then
+				return false
+			end
+		elseif not found and not unreadable then
+			-- readable absence: clear sticky self-hold so HoTs can re-suggest early
+			if ns.API.HoldRemain(spellID) > 0 then
+				clearHoldKeys(spellID)
+			end
+		end
+		if not found and unreadable and ns.API.HasAura(spellID, buffUnit, "HELPFUL") then
 			return false
 		end
 	end
 	if opt.nodebuff then
 		local debuff = opt.nodebuff == true and spellID or opt.nodebuff
 		local debuffUnit = opt.unit or (helpful and auraUnit or "target")
-		if ns.API.HasAura(debuff, debuffUnit, "HARMFUL") then
+		local found, remain, unreadable = ns.API.FindAura(debuff, debuffUnit, "HARMFUL")
+		if found then
+			-- Default refresh window 6s like ConROC sting/DoT reapply.
+			local refreshAt = tonumber(opt.refresh)
+			if refreshAt == nil then
+				refreshAt = 6
+			end
+			if remain >= 9000 or refreshAt <= 0 or remain > refreshAt then
+				return false
+			end
+			clearHoldKeys(spellID)
+		elseif not found and not unreadable then
+			clearHoldKeys(spellID)
+		elseif not found and unreadable and ns.API.HasAura(debuff, debuffUnit, "HARMFUL") then
 			return false
 		end
+	end
+	local holdLeft = ns.API.HoldRemain(spellID)
+	if holdLeft > gate then
+		-- Timer-only holds (chill, etc.) and unreadable-aura Forever fallback.
+		-- Readable missing auras already cleared the hold above.
+		return false
 	end
 	local needHp = opt.hp
 	if not needHp and (opt.heal or ns.API.IsHealSpell(spellID, opt)) then
@@ -2107,6 +2181,167 @@ function ns.API.Health(unit)
 		return 100
 	end
 	return (health / max) * 100
+end
+
+-- Block stings / DoTs on creature types ConROC also skips (localized names).
+local CREATURE_BLOCK = {
+	mechanical = true,
+	elemental = true,
+	["mécanique"] = true,
+	["mecanique"] = true,
+	["élémentaire"] = true,
+	["elementaire"] = true,
+	mechanisch = true,
+	elementar = true,
+	mecánico = true,
+	mecanico = true,
+	elemental = true,
+	механизм = true,
+	элементаль = true,
+	机械 = true,
+	元素生物 = true,
+	機械 = true,
+	元素生物 = true,
+	mecânico = true,
+	mecanico = true,
+	elementale = true,
+	기계 = true,
+	정령 = true,
+}
+
+function ns.API.CreatureBlocked(list)
+	if list == nil or list == false then
+		return false
+	end
+	if not unitExists("target") then
+		return false
+	end
+	local ok, ctype = pcall(UnitCreatureType, "target")
+	if not ok or type(ctype) ~= "string" or ctype == "" then
+		return false
+	end
+	local key = strlower(ctype)
+	if list == true then
+		return CREATURE_BLOCK[key] == true
+	end
+	if type(list) == "string" then
+		local want = strlower(list)
+		return key == want or (CREATURE_BLOCK[want] == true and CREATURE_BLOCK[key] == true)
+	end
+	if type(list) == "table" then
+		for _, name in ipairs(list) do
+			if type(name) == "string" then
+				local want = strlower(name)
+				if key == want or (CREATURE_BLOCK[want] == true and CREATURE_BLOCK[key] == true) then
+					return true
+				end
+			end
+		end
+	end
+	return false
+end
+
+function ns.API.TargetInMelee()
+	if not unitExists("target") or not ns.API.Hostile() then
+		return false
+	end
+	local token = ns.ClassToken and ns.ClassToken()
+	local probe
+	local S = ns.Spell
+	if token == "HUNTER" and S and S.Hunter then
+		probe = S.Hunter.RaptorStrike or S.Hunter.WingClip or S.Hunter.MongooseBite
+	elseif token == "SHAMAN" and S and S.Shaman then
+		probe = S.Shaman.Stormstrike or S.Shaman.LavaLash or S.Shaman.EarthShock
+	elseif token == "WARRIOR" and S and S.Warrior then
+		probe = S.Warrior.HeroicStrike or S.Warrior.Rend
+	elseif token == "ROGUE" and S and S.Rogue then
+		probe = S.Rogue.SinisterStrike
+	elseif token == "DRUID" and S and S.Druid then
+		probe = S.Druid.Claw or S.Druid.Mangle or S.Druid.Maul
+	elseif token == "PALADIN" and S and S.Paladin then
+		probe = S.Paladin.CrusaderStrike or S.Paladin.Judgement
+	end
+	if probe then
+		local state = ns.API.RangeState(probe, { hostile = true })
+		if state == "in" then
+			return true
+		end
+		if state == "out" then
+			return false
+		end
+	end
+	local minY = ns.API.TargetRangeBand("target")
+	if minY and minY <= 5 then
+		return true
+	end
+	local close = interactInRange("target", 3)
+	return close == true
+end
+
+function ns.API.CombatNotice()
+	local token = ns.ClassToken and ns.ClassToken()
+	if token ~= "HUNTER" and token ~= "WARLOCK" then
+		return nil
+	end
+	if not ns.API.InCombat() then
+		return nil
+	end
+	if not unitExists("pet") then
+		return "NOTICE_CALL_PET"
+	end
+	if not ns.API.Hostile() then
+		return nil
+	end
+	local okT, hasPetTarget = pcall(UnitExists, "pettarget")
+	if okT and not hasPetTarget then
+		return "NOTICE_PET_ASSIST"
+	end
+	local okC, petCombat = pcall(UnitAffectingCombat, "pet")
+	if okC and petCombat == false then
+		return "NOTICE_PET_ASSIST"
+	end
+	return nil
+end
+
+function ns.SyncAutoRole()
+	if not ns.db or ns.db.roleAuto == false then
+		return
+	end
+	local token = ns.ClassToken and ns.ClassToken()
+	if token ~= "HUNTER" and token ~= "SHAMAN" then
+		return
+	end
+	if not ns.API.Hostile() or not unitExists("target") then
+		return
+	end
+	local melee = ns.API.TargetInMelee()
+	local want
+	if token == "HUNTER" then
+		want = melee and "melee" or "range"
+	else
+		-- Shaman: only auto-switch between caster and melee, never heal.
+		local role = ns.db.role
+		if role == "heal" then
+			return
+		end
+		want = melee and "melee" or "caster"
+	end
+	if ns.db.role == want then
+		return
+	end
+	ns.db.role = want
+	if ns.FlushProfile then
+		ns.FlushProfile()
+	end
+	if ns.InvalidateAPLCache then
+		ns.InvalidateAPLCache()
+	end
+	if ns.UI and ns.UI.RefreshRoles then
+		ns.UI.RefreshRoles()
+	end
+	if ns.InvalidateTick then
+		ns.InvalidateTick()
+	end
 end
 
 function ns.API.InCombat()

@@ -871,9 +871,10 @@ local function ensureOptions()
 		end
 	end
 
-	local combatCard = makeCard(extra, "OPT_CARD_COMBAT", 8, -4, 318, 122)
+	local combatCard = makeCard(extra, "OPT_CARD_COMBAT", 8, -4, 318, 148)
 	frame.optHideIdle = addSwitch(combatCard, "hideIdle", ns.T("OPT_HIDE_IDLE"))
 	frame.optPhysics = addSwitch(combatCard, "showPhysics", ns.T("OPT_PHYSICS"))
+	frame.optRoleAuto = addSwitch(combatCard, "roleAuto", ns.T("OPT_ROLE_AUTO"))
 	frame.optBarOnly = addSwitch(combatCard, "barOnly", ns.T("OPT_BAR_ONLY"))
 
 	local autoCard = makeCard(extra, "OPT_CARD_AUTOMATION", 338, -4, 318, 96)
@@ -1378,6 +1379,9 @@ function ns.RefreshOptions()
 		end
 		if frame.optPhysics then
 			frame.optPhysics:SetChecked(ns.db.showPhysics ~= false)
+			if frame.optRoleAuto then
+				frame.optRoleAuto:SetChecked(ns.db.roleAuto ~= false)
+			end
 		end
 		if frame.optBarOnly then
 			frame.optBarOnly:SetChecked(ns.db.barOnly ~= false)

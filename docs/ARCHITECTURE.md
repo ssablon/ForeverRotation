@@ -124,8 +124,10 @@ Les listes viennent d'un noyau Era type ConROC Classic, niveaux 1–60. Pas de S
 | `hp` | Vie en pourcentage, strictement `>` pour refuser. Cible : `opt.unit`, sinon l'allié à soigner si le sort est utile, sinon le joueur. |
 | *(soin sans `hp`)* | Seuil implicite **99**. |
 | `unit` | Unité forcée pour `hp` (`"target"`, `"pet"`, …). |
-| `nobuff` | Refus si cette aura utile est déjà sur l'unité de soin, ou sur le joueur. L'aura est le sort lui-même. |
-| `nodebuff` | `true` = le sort ne doit pas déjà être un débuff sur la cible. Un ID = cet autre débuff ne doit pas être présent (`WeakenedSoul` du mot de pouvoir : Bouclier). |
+| `nobuff` | Aura-first : si l'aura utile est **lisible** et absente → OK (hold self nettoyé). Si présente et remain > `refresh` (défaut : pas de refresh forcé sauf `opt.refresh`) → refus. Si secrète, `HasAura` / hold. |
+| `nodebuff` | `true` = le sort ne doit pas déjà être un débuff sur la cible. Un ID = cet autre débuff. Aura-first : absence lisible → OK + clear hold ; remain ≤ `refresh` (défaut **6** s) → refresh autorisé ; aura secrète → hold GUID. |
+| `refresh` | Secondes restantes sous lesquelles un `nobuff` / `nodebuff` peut être reproposé. Défaut `nodebuff` = 6. |
+| `nocreature` | `true` = refuse sur Mechanical / Elemental (`UnitCreatureType`). Table / string = types ciblés. Stings Hunter. |
 | `anybuff` | Liste d'IDs. Si le joueur a **l'un** d'eux, le pas est refusé. Sert aux sceaux, auras, aspects, armures exclusifs. |
 | `form` | Exige l'aura de forme sur le joueur (`ns.API.Form`). |
 | `noform` | Refus si cette forme est active. |
@@ -141,7 +143,7 @@ Les listes viennent d'un noyau Era type ConROC Classic, niveaux 1–60. Pas de S
 | `usable` | Le client doit répondre que le sort est utilisable (Exorcisme, Colère divine, Attaque sournoise dans le dos). Si la réponse est masquée, le pas est sauté. |
 | `manaMax` | Refus si le pourcentage de mana du joueur est au-dessus de ce seuil (Connexion). |
 | `hpMin` | Refus si la vie (joueur, ou `unit`) est sous ce pourcentage. |
-| `hold` | Secondes après un cast réussi pendant lesquelles le sort n'est plus proposé (DoT, HoT, snare). Défauts Forever/Classic. Éditable à côté de chaque sort. `0` = pas de délai d'aura ; la file suit toujours l'ordre et les conditions (1 → 2 → 3), un même sort n'apparaît qu'une fois dans la file. Indépendant du vrai cooldown. Les holds nuisibles sont liés au GUID de la cible (nouveau mob / cible morte → re-proposer). Les holds utiles restent globaux. Pas de CLEU. |
+| `hold` | Secondes après un cast réussi pendant lesquelles le sort n'est plus proposé (DoT, HoT, snare). Défauts Forever/Classic. Éditable à côté de chaque sort. `0` = pas de délai d'aura. Holds nuisibles liés au GUID. Pour `nodebuff` / `nobuff`, l'aura lisible prime ; hold = secours Forever. Pas de CLEU. |
 | `anydebuff` | Liste d'IDs. Si la cible a **l'un** d'eux, le pas est refusé. Une seule piqûre, une seule malédiction. |
 
 `ns.API.Ready` : sort résolu, pas de cooldown propre en cours, pas de `noMana`. Le GCD (environ 1,5 s) ne retire pas le sort de la file : il reste le prochain bouton à presser. Un cooldown plus long (Jugement, Horion, Visée, Déflagration…) le retire jusqu'à la fin, et le pas suivant de la liste est testé. Ça vaut pour toutes les classes, les raciaux et la défense.
@@ -214,7 +216,9 @@ Modes de combat (`ns.COMBAT_MODES`) : `auto`, `single`, `aoe`, `burst`.
 - `ns.ResolveCombatMode()` : si `auto` et `EnemyCount() >= autoEnemies` (plancher 2), renvoie `aoe`, sinon `auto`.
 - `ns.SetCombatMode` mémorise le dernier mode manuel dans `lastManualMode` (jamais `auto`).
 - `ns.ToggleAuto` bascule entre `auto` et `lastManualMode`.
-- `EnemyCount` compte les nameplates hostiles. Hors combat joueur, tout nameplate hostile compte ; en combat, seulement ceux en combat. Sans nameplate, une cible hostile vaut 1. Les nameplates doivent être activés pour l'AoE auto.
+- `EnemyCount([maxYards])` compte les nameplates hostiles. Hors combat joueur, tout nameplate hostile compte ; en combat, seulement ceux en combat. Sans nameplate, une cible hostile vaut 1. `maxYards` optionnel (bandes 10 / 28 via `TargetRangeBand` / `CheckInteractDistance`). Les nameplates doivent être activés pour l'AoE auto.
+- `roleAuto` (défaut vrai) : Hunter/Shaman basculent mêlée/distance via `TargetInMelee` ; clic rôle HUD → `roleAuto = false`.
+- `CombatNotice` : Hunter/Warlock en combat → « call pet » / « pet not attacking » sous le HUD.
 
 `ns.CoerceChecked` n'accepte que `true`, `1`, `"1"`. `ns.IsStepEnabled` refuse `false`, `0`, `"0"`.
 

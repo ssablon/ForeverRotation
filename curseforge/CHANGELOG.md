@@ -1,3 +1,33 @@
+# 1.5.66
+
+## ConROC-parity helpers without combat log
+
+Forever still cannot read the combat log. This build closes the main rotation gaps using unit auras, range, and creature type only — so DoTs, marks, melee/ranged switching, pet reminders, stings, and execute windows behave closer to a Classic helper without secret CLEU APIs.
+
+### Aura-first DoTs and marks
+- When the target aura API is **readable**, missing Hunter's Mark, Serpent Sting, Corruption, Rend, and other DoT/mark spells are suggested again even if a hold timer was still running.
+- While the aura is up, the spell stays hidden until about **6 seconds** remain, then it can re-enter the queue (refresh).
+- When Forever **hides** target auras, the previous per-mob hold (GUID) still applies as a fallback.
+- Self holds (Renew, Slice and Dice, …) stay global and unchanged.
+
+### Auto melee / ranged role
+- Hunter and Shaman can auto-switch melee vs ranged/caster from target distance (Raptor Strike / Stormstrike range when known).
+- Extra option: **Auto melee / ranged role** (on by default). Clicking the HUD role button turns auto off until you enable it again.
+- Shaman heal role is never overwritten by auto.
+
+### Pet notices
+- In combat, Hunter and Warlock see a short gold notice under the HUD: call your pet, or that the pet is not attacking.
+
+### Creature type and execute
+- Hunter stings are not suggested on Mechanical / Elemental targets.
+- Drain Soul is available in the warlock list as an execute (&lt; 20% HP), off by default so existing lists are not forced.
+- Execute / Hammer of Wrath / Shadow Word: Death / Shadowburn were already gated by target HP.
+
+### Enemy range bands
+- Enemy counting can filter nameplates by yard bands (about 10 / 28) for tighter AoE checks. Auto AoE still uses the full hostile nameplate count.
+
+No combat log — Forever-safe. Custom list order is kept.
+
 # 1.5.65
 
 - Target DoT / mark / snare re-suggest delay (`hold`) is per-mob: switching target or a dead sticky target clears it so Hunter's Mark, Serpent Sting, Corruption, Rend, and other harmful aura spells can be suggested again on the next enemy. Self holds (Renew, Slice and Dice, …) stay global. No combat log (Forever-safe).

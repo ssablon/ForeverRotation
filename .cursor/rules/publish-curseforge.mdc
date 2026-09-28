@@ -10,10 +10,11 @@ Après une modification demandée (Lua, TOC, textes, zip), la tâche n’est pas
 1. Bumper **une seule source** : première ligne de `VERSION.txt` (semver `x.y.z`), puis les notes du jour en dessous.
 2. Recopier ce numéro dans les **deux** TOC (`## Version`) et `AGENTS.md`.
 3. Ajouter le bloc en anglais en tête de `curseforge/CHANGELOG.md` (même contenu que `VERSION.txt`).
+   Suivre `.cursor/rules/changelog-pro.mdc` : Markdown **ultra complet et pro** (problème joueur, comportement nouveau, portée classes/races, non-régression). Interdit : une seule ligne vague (`fix hold`).
 4. Recopier les fichiers vers AddOns (`D:\World of Warcraft\_classic_beta_\Interface\AddOns\WoWForeverRot`, sinon le chemin `Program Files (x86)`).
 5. `python curseforge/pack.py` puis upload projet **1708963** :
    `CF_TOKEN` + `CF_PROJECT_ID=1708963` + `python curseforge/upload.py`
-6. Changelog CurseForge = `CHANGELOG.md`. Display name = `Forever Rotation <version>`. Version jeu = **1.60.1** (id `17053`).
+6. Changelog CurseForge = `CHANGELOG.md` (mode **Markdown** sur Authors). Display name = `Forever Rotation <version>`. Version jeu = **1.60.1** (id `17053`).
 7. Discord (`secrets/discord.env`, jamais commit) :
    `python tools/discord_announce_version.py`
    → entrée dans `#changelog` **et** annonce « new version » dans `#announcements` avec

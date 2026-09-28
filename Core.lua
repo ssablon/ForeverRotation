@@ -111,6 +111,9 @@ local function defaults()
 	if ns.db.showPhysics == nil then
 		ns.db.showPhysics = true
 	end
+	if ns.db.roleAuto == nil then
+		ns.db.roleAuto = true
+	end
 	if ns.db.soundVolume == nil then
 		ns.db.soundVolume = 60
 	end
@@ -436,6 +439,8 @@ function ns.CycleRole()
 			break
 		end
 	end
+	-- Manual role pick disables auto melee/range switching until re-enabled in Extra.
+	ns.db.roleAuto = false
 	ns.SetRole(nextRole)
 end
 
@@ -572,6 +577,9 @@ function ns.Tick()
 	if not ns.UI or not ns.UI.root then
 		return
 	end
+	if ns.SyncAutoRole then
+		ns.SyncAutoRole()
+	end
 	local idle = ns.API.ShouldHideIdle and ns.API.ShouldHideIdle()
 	local queue = (ns.db.showRotation ~= false and not idle) and ns.BuildQueue() or {}
 	local defense = (ns.db.showDefense ~= false and not idle) and ns.BuildDefense() or nil
@@ -582,6 +590,8 @@ function ns.Tick()
 	if ns.db.showWeapon ~= false and not idle then
 		weapon, _, weaponNeed = ns.BuildWeapon()
 	end
+	local noticeKey = (not idle and ns.API.CombatNotice and ns.API.CombatNotice()) or nil
+	local notice = noticeKey and ns.T(noticeKey) or nil
 	if idle then
 		lastAlertKick, lastAlertCleanse, lastAlertWeapon = nil, nil, nil
 	else
@@ -602,10 +612,10 @@ function ns.Tick()
 			lastAlertWeapon = weapon
 		end
 	end
-	local sig = (queue[1] or 0) .. ":" .. (queue[2] or 0) .. ":" .. (queue[3] or 0) .. ":" .. (defense or 0) .. ":" .. (interrupt or 0) .. ":" .. (purge or 0) .. ":" .. (cleanse or 0) .. ":" .. (weapon or 0) .. ":" .. (weaponNeed and 1 or 0) .. ":" .. flagBit(ns.db.showRotation) .. flagBit(ns.db.showDefense) .. flagBit(ns.db.showInterrupt) .. flagBit(ns.db.showPurge) .. flagBit(ns.db.showCleanse) .. flagBit(ns.db.showWeapon) .. flagBit(ns.db.glow) .. flagBit(ns.db.showModes) .. flagBit(ns.db.showRange) .. (ns.db.locked == true and "1" or "0") .. flagBit(not idle)
+	local sig = (queue[1] or 0) .. ":" .. (queue[2] or 0) .. ":" .. (queue[3] or 0) .. ":" .. (defense or 0) .. ":" .. (interrupt or 0) .. ":" .. (purge or 0) .. ":" .. (cleanse or 0) .. ":" .. (weapon or 0) .. ":" .. (weaponNeed and 1 or 0) .. ":" .. (noticeKey or "") .. ":" .. flagBit(ns.db.showRotation) .. flagBit(ns.db.showDefense) .. flagBit(ns.db.showInterrupt) .. flagBit(ns.db.showPurge) .. flagBit(ns.db.showCleanse) .. flagBit(ns.db.showWeapon) .. flagBit(ns.db.glow) .. flagBit(ns.db.showModes) .. flagBit(ns.db.showRange) .. (ns.db.locked == true and "1" or "0") .. flagBit(not idle)
 	if sig ~= lastTickSig then
 		lastTickSig = sig
-		ns.UI.Update(queue, defense, interrupt, purge, cleanse, weapon, weaponNeed)
+		ns.UI.Update(queue, defense, interrupt, purge, cleanse, weapon, weaponNeed, notice)
 		if ns.GlowSpell then
 			ns.GlowSpell(ns.db.showRotation ~= false and queue[1] or nil)
 		end

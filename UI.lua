@@ -715,6 +715,13 @@ function ns.UI.Create()
 	end)
 	ns.UI.combo = combo
 
+	local notice = root:CreateFontString(nil, "OVERLAY", "GameFontHighlightSmall")
+	notice:SetPoint("TOP", root, "BOTTOM", 0, -4)
+	notice:SetTextColor(1, 0.82, 0.2)
+	notice:SetJustifyH("CENTER")
+	notice:Hide()
+	ns.UI.notice = notice
+
 	ns.UI.root = root
 	ns.UI.ApplyPosition()
 	ns.UI.ApplyScale()
@@ -1061,10 +1068,19 @@ local function paintSide(slot, spellID, idleR, idleG, idleB)
 	end
 end
 
-function ns.UI.Update(queue, defenseID, interruptID, purgeID, cleanseID, weaponID, weaponNeed)
+function ns.UI.Update(queue, defenseID, interruptID, purgeID, cleanseID, weaponID, weaponNeed, notice)
 	queue = queue or {}
 	for i = 1, 3 do
 		paint(ns.UI.slots[i], queue[i], i > 1)
+	end
+	if ns.UI.notice then
+		if type(notice) == "string" and notice ~= "" then
+			ns.UI.notice:SetText(notice)
+			ns.UI.notice:Show()
+		else
+			ns.UI.notice:SetText("")
+			ns.UI.notice:Hide()
+		end
 	end
 	if defenseID then
 		paint(ns.UI.defense, defenseID)

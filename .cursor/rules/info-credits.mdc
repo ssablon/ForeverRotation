@@ -1,0 +1,13 @@
+---
+description: Les crédits vont toujours dans l’onglet Info des options.
+alwaysApply: true
+---
+
+# Crédits = fiche Info
+
+Les crédits (auteur, site, Discord, CurseForge, commandes) vivent dans l’onglet **Info** des options.
+
+- Fiche **About** : texte, points, ligne or `INFO_CREDIT`, support.
+- Fiche **Commands** : slash.
+- Fiche **Links** : site, Discord, CurseForge.
+- Ne pas coller les crédits dans une carte de réglages, ni seulement dans le chat au chargement.
