@@ -782,39 +782,131 @@ function ns.API.HoldSeconds(spellID)
 	return 0
 end
 
+-- Target DoT / snare / mark holds bind to the mob GUID so a new target
+-- (or a dead one) can be marked again. Self HoTs / Slice and Dice stay global.
+local function holdTargetGuid()
+	local ok, guid = pcall(UnitGUID, "target")
+	if ok and readable(guid) and type(guid) == "string" then
+		return guid
+	end
+	return nil
+end
+
+local function holdBindsToTarget(spellID)
+	if ns.API.IsHelpful(spellID) and not ns.API.IsHarmful(spellID) then
+		return false
+	end
+	return ns.API.IsHarmful(spellID) == true
+end
+
+local function unitIsDead(unit)
+	if UnitIsDeadOrGhost then
+		local ok, dead = pcall(UnitIsDeadOrGhost, unit)
+		if ok and dead == true then
+			return true
+		end
+		if ok and dead == false then
+			return false
+		end
+	end
+	if UnitIsDead then
+		local ok, dead = pcall(UnitIsDead, unit)
+		if ok and dead == true then
+			return true
+		end
+	end
+	return false
+end
+
+local function writeHold(spellID, exp, guid)
+	local entry = { exp = exp, guid = guid }
+	holdUntil[cdKey(spellID)] = entry
+	holdUntil["id:" .. tostring(spellID)] = entry
+	local resolved = ns.API.Resolve(spellID)
+	if resolved and resolved ~= spellID then
+		holdUntil[cdKey(resolved)] = entry
+		holdUntil["id:" .. tostring(resolved)] = entry
+	end
+end
+
+local function clearHoldKeys(spellID)
+	holdUntil[cdKey(spellID)] = nil
+	holdUntil["id:" .. tostring(spellID)] = nil
+	local resolved = ns.API.Resolve(spellID)
+	if resolved and resolved ~= spellID then
+		holdUntil[cdKey(resolved)] = nil
+		holdUntil["id:" .. tostring(resolved)] = nil
+	end
+end
+
+local function clearTargetBoundHolds()
+	for key, entry in pairs(holdUntil) do
+		if type(entry) == "number" then
+			holdUntil[key] = nil
+		elseif type(entry) == "table" and entry.guid ~= "self" then
+			holdUntil[key] = nil
+		end
+	end
+end
+
 function ns.API.NoteSpellHold(spellID, seconds)
 	seconds = tonumber(seconds)
 	if not spellID or not seconds or seconds <= 0 then
 		return
 	end
 	local exp = GetTime() + seconds
-	holdUntil[cdKey(spellID)] = exp
-	holdUntil["id:" .. tostring(spellID)] = exp
-	local resolved = ns.API.Resolve(spellID)
-	if resolved and resolved ~= spellID then
-		holdUntil[cdKey(resolved)] = exp
-		holdUntil["id:" .. tostring(resolved)] = exp
+	local guid = "self"
+	if holdBindsToTarget(spellID) then
+		guid = holdTargetGuid() or false
 	end
+	writeHold(spellID, exp, guid)
 end
 
 function ns.API.HoldRemain(spellID)
 	if not spellID then
 		return 0
 	end
-	local exp = holdUntil[cdKey(spellID)] or holdUntil["id:" .. tostring(spellID)]
-	if not exp then
+	local entry = holdUntil[cdKey(spellID)] or holdUntil["id:" .. tostring(spellID)]
+	if not entry then
 		local resolved = ns.API.Resolve(spellID)
 		if resolved then
-			exp = holdUntil[cdKey(resolved)] or holdUntil["id:" .. tostring(resolved)]
+			entry = holdUntil[cdKey(resolved)] or holdUntil["id:" .. tostring(resolved)]
 		end
 	end
-	if not exp then
+	if not entry then
 		return 0
+	end
+	-- Legacy plain number = old global hold; keep time-only behaviour.
+	local exp, guid
+	if type(entry) == "number" then
+		exp = entry
+		guid = "self"
+	elseif type(entry) == "table" then
+		exp = entry.exp
+		guid = entry.guid
+	else
+		clearHoldKeys(spellID)
+		return 0
+	end
+	if not exp then
+		clearHoldKeys(spellID)
+		return 0
+	end
+	if guid ~= "self" then
+		-- Bound to a mob: new target, no target, or dead sticky target → re-suggest.
+		if guid == false or guid == nil then
+			clearHoldKeys(spellID)
+			return 0
+		end
+		local cur = holdTargetGuid()
+		if not cur or cur ~= guid or unitIsDead("target") then
+			clearHoldKeys(spellID)
+			return 0
+		end
 	end
 	local remain = exp - GetTime()
 	if remain <= 0 then
-		holdUntil[cdKey(spellID)] = nil
-		holdUntil["id:" .. tostring(spellID)] = nil
+		clearHoldKeys(spellID)
 		return 0
 	end
 	return remain
@@ -1651,6 +1743,7 @@ end
 function ns.API.ClearTargetDebuffs()
 	wipe(heldHarmful)
 	heldHarmfulGuid = nil
+	clearTargetBoundHolds()
 end
 
 function ns.API.NoteTargetDebuff(spellID)

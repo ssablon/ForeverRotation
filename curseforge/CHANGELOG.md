@@ -1,3 +1,7 @@
+# 1.5.65
+
+- Target DoT / mark / snare re-suggest delay (`hold`) is per-mob: switching target or a dead sticky target clears it so Hunter's Mark, Serpent Sting, Corruption, Rend, and other harmful aura spells can be suggested again on the next enemy. Self holds (Renew, Slice and Dice, …) stay global. No combat log (Forever-safe).
+
 # 1.5.64
 
 ## Rotation reliability (summary of 1.5.58 → 1.5.63)

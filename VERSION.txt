@@ -1,3 +1,8 @@
+1.5.65
+
+2026-09-28
+- Target DoT / mark / snare re-suggest delay (hold) is per-mob: switching target or a dead sticky target clears it so Hunter's Mark, Serpent Sting, Corruption, Rend, etc. can be suggested again. Self holds (Renew, Slice and Dice, …) unchanged. No combat log.
+
 1.5.64
 
 2026-09-27
