@@ -1,3 +1,17 @@
+# 1.5.68
+
+## Fix screen freeze on level-up / quest turn-in (Forever)
+
+On WoW Forever, learning a spell or turning in a quest could hitch the whole client for a second while the addon was enabled. Out of combat only — the addon was rescanning the spellbook and every action-bar tooltip in one frame.
+
+### What changed
+- Spell learn / level-up / `SPELLS_CHANGED` no longer wipe known spell resolves.
+- Spellbook name lookup is rebuilt **across frames** (no full synchronous book walk on the HUD thread).
+- Action-bar glow refresh is **chunked** and skips expensive tooltip reads when `GetActionInfo` already returned a spell id.
+- Events from a quest reward are coalesced (~1.5 s) so one storm does not re-scan repeatedly.
+
+New ranks and newly learned spells still appear without `/reload` — just a short deferred refresh after the reward window.
+
 # 1.5.67
 
 ## Max ConROC-parity without combat log

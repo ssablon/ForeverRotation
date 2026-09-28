@@ -708,7 +708,7 @@ local function stopTicker()
 end
 
 local tickQueued
-local spellsFullWipe
+local spellsFlushGen = 0
 local barFlushGen = 0
 local lastPlayerCastName
 
@@ -731,24 +731,35 @@ end
 
 local function flushSpells()
 	spellsPending = nil
-	if ns.API and ns.API.InvalidateSpells then
-		ns.API.InvalidateSpells(spellsFullWipe == true)
+	-- Forever: level-up / quest / learn storms must NOT wipe known resolves or
+	-- full-scan the spellbook on one frame. Soft-clear failed lookups, rebuild
+	-- the name index across frames, then tick — no /reload needed.
+	if ns.API and ns.API.InvalidateSpellBookIndex then
+		ns.API.InvalidateSpellBookIndex()
 	end
-	spellsFullWipe = nil
-	lastTickSig = nil
-	ns.Tick()
+	if ns.API and ns.API.InvalidateSpells then
+		ns.API.InvalidateSpells(false)
+	end
+	if ns.API and ns.API.RebuildSpellBookIndex then
+		ns.API.RebuildSpellBookIndex(false)
+	else
+		lastTickSig = nil
+		requestTick()
+	end
 end
 
-local function scheduleSpellFlush(full)
-	if full then
-		spellsFullWipe = true
-	end
-	if spellsPending then
-		return
-	end
+local function scheduleSpellFlush()
+	spellsFlushGen = spellsFlushGen + 1
+	local gen = spellsFlushGen
 	spellsPending = true
 	if C_Timer and C_Timer.After then
-		C_Timer.After(1.2, flushSpells)
+		-- Coalesce SPELLS_CHANGED spam (quest turn-in / level-up on Forever).
+		C_Timer.After(1.5, function()
+			if gen ~= spellsFlushGen then
+				return
+			end
+			flushSpells()
+		end)
 	else
 		flushSpells()
 	end
@@ -777,7 +788,7 @@ local function scheduleBarFlush()
 	barFlushGen = barFlushGen + 1
 	local gen = barFlushGen
 	if C_Timer and C_Timer.After then
-		C_Timer.After(1.0, function()
+		C_Timer.After(1.25, function()
 			if gen ~= barFlushGen then
 				return
 			end
@@ -816,11 +827,11 @@ frame:SetScript("OnEvent", function(_, event, unit, _, spellID)
 		return
 	end
 	if event == "LEARNED_SPELL_IN_TAB" or event == "PLAYER_TALENT_UPDATE" or event == "PLAYER_LEVEL_UP" or event == "SPELL_PUSHED_TO_ACTIONBAR" then
-		scheduleSpellFlush(true)
+		scheduleSpellFlush()
 		return
 	end
 	if event == "SPELLS_CHANGED" then
-		scheduleSpellFlush(false)
+		scheduleSpellFlush()
 		return
 	end
 	if event == "PLAYER_LOGIN" or event == "PLAYER_ENTERING_WORLD" then
@@ -829,6 +840,9 @@ frame:SetScript("OnEvent", function(_, event, unit, _, spellID)
 			booted = true
 			if ns.API and ns.API.InvalidateSpells then
 				ns.API.InvalidateSpells(true)
+			end
+			if ns.API and ns.API.RebuildSpellBookIndex then
+				ns.API.RebuildSpellBookIndex(false)
 			end
 			local okCreate, errCreate = pcall(ns.UI.Create)
 			if not okCreate then

@@ -157,39 +157,155 @@ local function normSpellName(name)
 	return name
 end
 
+local spellBookIndex
+local spellBookGen = 0
+local spellBookBuilding
+
+local function indexBookName(index, bookName, bookId)
+	if type(bookId) ~= "number" or junkSpellName(bookName) then
+		return
+	end
+	if type(bookName) == "string" and bookName ~= "" then
+		local key = normSpellName(bookName)
+		if key and not index[key] then
+			index[key] = bookId
+		end
+	end
+end
+
+function ns.API.InvalidateSpellBookIndex()
+	spellBookGen = spellBookGen + 1
+	spellBookIndex = nil
+	spellBookBuilding = false
+end
+
+function ns.API.RebuildSpellBookIndex(sync)
+	spellBookGen = spellBookGen + 1
+	local gen = spellBookGen
+	spellBookIndex = nil
+	spellBookBuilding = true
+	local index = {}
+	local banks = bookBanks()
+
+	local function finish()
+		if gen ~= spellBookGen then
+			return
+		end
+		spellBookIndex = index
+		spellBookBuilding = false
+		if ns.API.InvalidateSpells then
+			ns.API.InvalidateSpells(false)
+		end
+		if ns.InvalidateTick then
+			ns.InvalidateTick()
+		end
+		-- Defer HUD refresh one frame so Forever never stacks index finish + Tick
+		-- cost on the same quest-reward freeze window.
+		if C_Timer and C_Timer.After then
+			C_Timer.After(0, function()
+				if ns.Tick then
+					ns.Tick()
+				end
+			end)
+		elseif ns.Tick then
+			ns.Tick()
+		end
+	end
+
+	if C_SpellBook and C_SpellBook.GetNumSpellBookSkillLines then
+		local okNum, num = pcall(C_SpellBook.GetNumSpellBookSkillLines)
+		if okNum and type(num) == "number" and num > 0 then
+			local line = 1
+			local function pumpLine()
+				if gen ~= spellBookGen then
+					return
+				end
+				local budget = sync and 99 or 2
+				while line <= num and budget > 0 do
+					local okLine, lineInfo = pcall(C_SpellBook.GetSpellBookSkillLineInfo, line)
+					if okLine and type(lineInfo) == "table" then
+						local off = tonumber(lineInfo.itemIndexOffset) or 0
+						local count = tonumber(lineInfo.numSpellBookItems) or 0
+						for i = off + 1, off + count do
+							for _, bank in ipairs(banks) do
+								local bookName, bookId = readBookItem(i, bank)
+								indexBookName(index, bookName, bookId)
+							end
+						end
+					end
+					line = line + 1
+					budget = budget - 1
+				end
+				if line <= num then
+					if C_Timer and C_Timer.After then
+						C_Timer.After(0, pumpLine)
+					else
+						pumpLine()
+					end
+				else
+					finish()
+				end
+			end
+			if sync then
+				pumpLine()
+			elseif C_Timer and C_Timer.After then
+				C_Timer.After(0, pumpLine)
+			else
+				pumpLine()
+			end
+			return
+		end
+	end
+
+	local i = 1
+	local function pumpLegacy()
+		if gen ~= spellBookGen then
+			return
+		end
+		local budget = sync and 400 or 40
+		while i <= 400 and budget > 0 do
+			for _, bank in ipairs(banks) do
+				local bookName, bookId = readBookItem(i, bank)
+				indexBookName(index, bookName, bookId)
+			end
+			i = i + 1
+			budget = budget - 1
+		end
+		if i <= 400 then
+			if C_Timer and C_Timer.After then
+				C_Timer.After(0, pumpLegacy)
+			else
+				pumpLegacy()
+			end
+		else
+			finish()
+		end
+	end
+	if sync then
+		pumpLegacy()
+	elseif C_Timer and C_Timer.After then
+		C_Timer.After(0, pumpLegacy)
+	else
+		pumpLegacy()
+	end
+end
+
 local function findPlayerSpellByName(name)
 	name = safe(name, nil)
 	if type(name) ~= "string" or name == "" then
 		return nil
 	end
 	local want = normSpellName(name)
-	if C_SpellBook and C_SpellBook.GetNumSpellBookSkillLines then
-		local okNum, num = pcall(C_SpellBook.GetNumSpellBookSkillLines)
-		if okNum and type(num) == "number" then
-			for line = 1, num do
-				local okLine, lineInfo = pcall(C_SpellBook.GetSpellBookSkillLineInfo, line)
-				if okLine and type(lineInfo) == "table" then
-					local off = tonumber(lineInfo.itemIndexOffset) or 0
-					local count = tonumber(lineInfo.numSpellBookItems) or 0
-					for i = off + 1, off + count do
-						for _, bank in ipairs(bookBanks()) do
-							local bookName, bookId = readBookItem(i, bank)
-							if type(bookId) == "number" and not junkSpellName(bookName) and (bookName == name or normSpellName(bookName) == want) then
-								return bookId
-							end
-						end
-					end
-				end
-			end
-		end
+	if not want then
+		return nil
 	end
-	for i = 1, 400 do
-		for _, bank in ipairs(bookBanks()) do
-			local bookName, bookId = readBookItem(i, bank)
-			if type(bookId) == "number" and not junkSpellName(bookName) and (bookName == name or normSpellName(bookName) == want) then
-				return bookId
-			end
-		end
+	-- Forever: never full-scan the book on the HUD thread. Use the deferred
+	-- name index; return nil until ready (new spell appears a moment later).
+	if spellBookIndex then
+		return spellBookIndex[want]
+	end
+	if not spellBookBuilding then
+		ns.API.RebuildSpellBookIndex(false)
 	end
 	return nil
 end
@@ -484,6 +600,9 @@ end
 function ns.API.InvalidateSpells(full)
 	if full then
 		wipe(resolveCache)
+		if ns.API.InvalidateSpellBookIndex then
+			ns.API.InvalidateSpellBookIndex()
+		end
 	else
 		for id, resolved in pairs(resolveCache) do
 			if not resolved then

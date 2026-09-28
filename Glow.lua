@@ -30,6 +30,7 @@ local lastDefHeal
 local lastKick
 local lastPurge
 local lastFetch = 0
+local glowFetchGen = 0
 local addonCache = {}
 
 local function addonLoaded(name)
@@ -546,9 +547,14 @@ local function addStandard(button)
 	if slot then
 		buttonSlots[button] = slot
 		rangeButtons[button] = true
-		local tipName = actionSpellName(slot)
-		if tipName then
-			addSpellName(tipName, button)
+		-- Forever: C_TooltipInfo.GetAction per slot freezes the client when
+		-- many ACTIONBAR_SLOT_CHANGED fire (quest turn-in / level-up). Skip
+		-- the tooltip path when GetActionInfo already gave a spell id.
+		if not (actionType == "spell" and id) then
+			local tipName = actionSpellName(slot)
+			if tipName then
+				addSpellName(tipName, button)
+			end
 		end
 	end
 	if actionType == "spell" and id then
@@ -587,44 +593,76 @@ function ns.GlowFetch(force)
 	slotsOccupied = 0
 	slotsKnown = 0
 	lastFetch = GetTime()
+
+	local queue = {}
 	for _, bar in ipairs(BARS) do
 		for i = 1, 12 do
-			addStandard(_G[bar .. "Button" .. i])
+			queue[#queue + 1] = _G[bar .. "Button" .. i]
 		end
 	end
 	if GetNumShapeshiftForms then
 		local ok, count = pcall(GetNumShapeshiftForms)
 		if ok and count then
 			for i = 1, count do
-				local button = _G["StanceButton" .. i]
-				if button and GetShapeshiftFormInfo then
-					local okForm, _, _, _, spellID = pcall(function()
-						return GetShapeshiftFormInfo(i)
-					end)
-					if okForm then
-						addButton(spellID, button)
-					end
-				end
+				queue[#queue + 1] = { stance = i, button = _G["StanceButton" .. i] }
 			end
 		end
 	end
 	if addonLoaded("Dominos") then
 		for i = 1, 132 do
-			addStandard(_G["DominosActionButton" .. i])
+			queue[#queue + 1] = _G["DominosActionButton" .. i]
 		end
 	end
 	if addonLoaded("Bartender4") then
 		for i = 1, 180 do
-			addStandard(_G["BT4Button" .. i])
+			queue[#queue + 1] = _G["BT4Button" .. i]
 		end
 	end
 	if addonLoaded("ElvUI") then
 		for bar = 1, 10 do
 			for i = 1, 12 do
-				addStandard(_G["ElvUI_Bar" .. bar .. "Button" .. i])
+				queue[#queue + 1] = _G["ElvUI_Bar" .. bar .. "Button" .. i]
 			end
 		end
 	end
+
+	glowFetchGen = glowFetchGen + 1
+	local gen = glowFetchGen
+	local idx = 1
+	local function pump()
+		if gen ~= glowFetchGen then
+			return
+		end
+		local budget = 20
+		while idx <= #queue and budget > 0 do
+			local entry = queue[idx]
+			idx = idx + 1
+			budget = budget - 1
+			if type(entry) == "table" and entry.stance then
+				local button = entry.button
+				if button and GetShapeshiftFormInfo then
+					local okForm, _, _, _, spellID = pcall(function()
+						return GetShapeshiftFormInfo(entry.stance)
+					end)
+					if okForm then
+						addButton(spellID, button)
+					end
+				end
+			else
+				addStandard(entry)
+			end
+		end
+		if idx <= #queue then
+			if C_Timer and C_Timer.After then
+				C_Timer.After(0, pump)
+			else
+				pump()
+			end
+		elseif ns.InvalidateTick then
+			ns.InvalidateTick()
+		end
+	end
+	pump()
 end
 
 local function buttonsFor(spellID)
