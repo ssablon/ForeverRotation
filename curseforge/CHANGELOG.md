@@ -1,52 +1,77 @@
 # 1.5.70
 
-## Hotfix: addon failed to load (Lua syntax)
+## Forever Rotation 1.5.70 — release since 1.5.64
 
-A creature-type table used bare Unicode identifiers. WoW Lua rejects that, so **API.lua never loaded** — no rotation suggestions and a flood of follow-up errors (the “too many addon errors” popup).
+This CurseForge build includes every change from **1.5.65** through **1.5.70**. It is built for **WoW Forever** (Classic Era / camelot). The addon still never casts for you and still never reads the combat log.
 
-All locale keys are now quoted strings. Reload and the HUD should suggest spells again.
+### Stability (1.5.68 → 1.5.70)
+- **Load fix (1.5.70):** a creature-type table used bare Unicode identifiers that WoW Lua rejects, so the addon failed to load, suggested nothing, and flooded Lua errors. Locale keys are quoted — reload and the HUD works again.
+- **No freeze on level-up / quest turn-in / learning a spell (1.5.68–1.5.69):** Forever fires heavy spell/bar update storms on rewards. The addon no longer wipes known spell resolves or walks the whole spellbook/tooltips in one frame. Learn and level-up only soft-clear failed lookups and remap action bars after a short delay (about 0.5 s). **New ranks still appear without `/reload`.**
+
+### Per-target DoTs and marks (1.5.65 → 1.5.66)
+- Harmful re-suggest delays (**hold**) for DoTs, marks, and snares are tied to the **current enemy GUID** for every class and race. Tab to another mob (or leave a dead sticky target) and Hunter's Mark, Serpent Sting, Corruption, Rend, and similar spells can be suggested again.
+- When target auras are **readable**, missing DoTs/marks are suggested even if a hold timer was still running; while the aura is up they stay hidden until about **6 seconds** remain (refresh), then can re-enter the queue.
+- When Forever **hides** target auras, the per-mob hold fallback still applies.
+- **Self holds** (Renew, Slice and Dice, …) stay global and unchanged.
+
+### Smarter Classic helper logic without combat log (1.5.66 → 1.5.67)
+- **Auto melee / ranged role** for Hunter and Shaman from target distance (Extra option, on by default). Clicking the HUD role button turns auto off until you re-enable it. Shaman heal role is never overwritten.
+- **Pet notices** under the HUD for Hunter and Warlock in combat: call your pet, or that the pet is not attacking.
+- Hunter **stings** are not suggested on Mechanical / Elemental. **Viper Sting** only when the target has mana (still off by default).
+- **Sunder Armor** and **Lacerate** keep applying until **5 stacks**, then refresh. **Scorch** tracks Fire Vulnerability to 5 stacks. **Slice and Dice** / **Renew** can refresh when about 4 s remain.
+- **Paladin:** Seal of the Crusader first when Judgement of the Crusader is missing, then Judgement (requires a seal), then DPS seals. Heal seals pair with Judgement of Light / Wisdom. **Exorcism** only on Undead / Demon. **Consecration** when enough enemies are nearby.
+- **Shaman totems** (Strength of Earth, Mana Spring, Searing, optional Grace of Air / Windfury / Healing Stream) re-suggest when down or about to expire.
+- **Bleeds** (Rend, Rip, Rake, Rupture) skip Mechanical / Elemental / Undead. Many DoTs/marks skip dying trash (< 20% HP) or elites (< 5% HP). Sunder skips if Expose Armor is up. Whirlwind / Swipe respect nearby enemies.
+- **Drain Soul** execute window (< 20% HP), off by default so existing lists are not forced. Execute / Hammer of Wrath / Shadow Word: Death / Shadowburn were already gated.
+
+### What did not change
+- Your editable list order, profiles (Base / PvE / PvP / Custom), and Extra toggles.
+- Physics swing / auto-shot helpers, interrupt / purge / cleanse / weapon windows.
+- No combat log on Forever. Custom list version is unchanged.
+
+---
 
 # 1.5.69
 
-## Zero freeze on level-up / quest (ConROC-style, Forever)
+## Zero freeze on level-up / quest (Forever)
 
-ConROC does **not** listen to `SPELLS_CHANGED` and does **not** walk the spellbook by name. On learn / level-up it only refreshes rank IDs via cheap `IsSpellKnown` checks and debounces action-bar remapping (~0.5 s). Forever was still hitching because quest rewards spam `SPELLS_CHANGED` and we rebuilt a full name index + bar tooltips.
+Quest turn-in and level-up no longer hitch the client. Forever was firing large spell and action-bar update storms; the addon now soft-clears failed spell lookups only, debounces bar remapping (~0.5 s), and never rebuilds the full spellbook on those events.
 
-### Aligned with ConROC on Forever
-- Stopped registering `SPELLS_CHANGED` (main freeze source on camelot quest turn-in).
-- Learn / level-up / talent: soft-clear failed resolves only + 0.5 s bar refresh (like ConROC `ButtonFetch`). No spellbook wipe, no index rebuild on those events.
-- `SPELL_PUSHED_TO_ACTIONBAR`: bars only.
-- Glow mapping never uses `C_TooltipInfo.GetAction` (GetActionInfo only), chunked across frames.
-- Spellbook name index warms once at login (async) or lazily if a Forever remap needs it — throttled, never on quest storms.
+### Details
+- Stopped reacting to the noisy spell-change storm that Forever fires on rewards.
+- Learn / level-up / talent: soft-clear failed resolves + short bar refresh.
+- Action bar pushed: bars only.
+- Glow mapping uses action info only (no action tooltips), chunked across frames.
+- Spellbook name index warms at login or lazily for Forever remaps — throttled, not on quest storms.
 
 New ranks still appear without `/reload`.
 
 # 1.5.68
 
-## Fix screen freeze on level-up / quest turn-in (Forever)
+## Deferred spellbook and bar scans (Forever)
 
-On WoW Forever, learning a spell or turning in a quest could hitch the whole client for a second while the addon was enabled. Out of combat only — the addon was rescanning the spellbook and every action-bar tooltip in one frame.
+Learning a spell or turning in a quest could hitch the whole client for about a second with the addon enabled (out of combat). The addon was rescanning the spellbook and action-bar tooltips in one frame.
 
 ### What changed
-- Spell learn / level-up / `SPELLS_CHANGED` no longer wipe known spell resolves.
-- Spellbook name lookup is rebuilt **across frames** (no full synchronous book walk on the HUD thread).
-- Action-bar glow refresh is **chunked** and skips expensive tooltip reads when `GetActionInfo` already returned a spell id.
-- Events from a quest reward are coalesced (~1.5 s) so one storm does not re-scan repeatedly.
+- Spell learn / level-up no longer wipe known spell resolves.
+- Spellbook name lookup is rebuilt across frames when needed.
+- Action-bar glow refresh is chunked and skips expensive tooltip reads when the action already has a spell id.
+- Reward-window events are coalesced so one storm does not re-scan repeatedly.
 
-New ranks and newly learned spells still appear without `/reload` — just a short deferred refresh after the reward window.
+New ranks still appear without `/reload`.
 
 # 1.5.67
 
-## Max ConROC-parity without combat log
+## Deeper Classic helper logic without combat log
 
-Forever still cannot read the combat log. This build adds the remaining high-value Classic helper logic that unit auras, totems, creature type, and range can support — stacks, Seal→Judgement, totem upkeep, bleed filters, and low-HP DoT skips.
+Forever cannot read the combat log. This build adds the remaining high-value Classic helper behaviour that unit auras, totems, creature type, and range can support.
 
 ### Stacks and refresh
 - **Sunder Armor** and **Lacerate** keep applying until **5 stacks**, then refresh in the usual ~6 s window.
 - **Scorch** tracks **Fire Vulnerability** to 5 stacks (Improved Scorch), then refreshes near expiry.
 - **Slice and Dice** / **Renew** can refresh when about **4 s** remain (not only when missing).
 
-### Paladin Seal → Judgement
+### Paladin Seal to Judgement
 - Damage: Seal of the Crusader first when Judgement of the Crusader is missing, then Judgement (requires any seal), then DPS seals.
 - Heal: Seal of Light / Wisdom tied to their judgement debuffs.
 - **Exorcism** only on Undead / Demon. **Consecration** when enough nearby enemies.
@@ -56,7 +81,7 @@ Forever still cannot read the combat log. This build adds the remaining high-val
 
 ### Creature filters and low-HP skips
 - Rend, Rip, Rake, Rupture skip Mechanical / Elemental / Undead.
-- DoTs and marks skip dying trash (&lt; 20% HP) or elites (&lt; 5% HP).
+- DoTs and marks skip dying trash (< 20% HP) or elites (< 5% HP).
 - Sunder skips if Expose Armor is already up. Whirlwind / Swipe need nearby enemies.
 
 ### Hunter / other
@@ -67,9 +92,9 @@ No combat log — Forever-safe. Custom list order kept.
 
 # 1.5.66
 
-## ConROC-parity helpers without combat log
+## Aura-first DoTs, auto role, and pet notices
 
-Forever still cannot read the combat log. This build closes the main rotation gaps using unit auras, range, and creature type only — so DoTs, marks, melee/ranged switching, pet reminders, stings, and execute windows behave closer to a Classic helper without secret CLEU APIs.
+Forever still cannot read the combat log. This build closes the main rotation gaps using unit auras, range, and creature type only.
 
 ### Aura-first DoTs and marks
 - When the target aura API is **readable**, missing Hunter's Mark, Serpent Sting, Corruption, Rend, and other DoT/mark spells are suggested again even if a hold timer was still running.
@@ -87,7 +112,7 @@ Forever still cannot read the combat log. This build closes the main rotation ga
 
 ### Creature type and execute
 - Hunter stings are not suggested on Mechanical / Elemental targets.
-- Drain Soul is available in the warlock list as an execute (&lt; 20% HP), off by default so existing lists are not forced.
+- Drain Soul is available in the warlock list as an execute (< 20% HP), off by default so existing lists are not forced.
 - Execute / Hammer of Wrath / Shadow Word: Death / Shadowburn were already gated by target HP.
 
 ### Enemy range bands
@@ -97,7 +122,10 @@ No combat log — Forever-safe. Custom list order is kept.
 
 # 1.5.65
 
-- Target DoT / mark / snare re-suggest delay (`hold`) is per-mob: switching target or a dead sticky target clears it so Hunter's Mark, Serpent Sting, Corruption, Rend, and other harmful aura spells can be suggested again on the next enemy. Self holds (Renew, Slice and Dice, …) stay global. No combat log (Forever-safe).
+## Per-target re-suggest delay for DoTs and marks
+
+After you applied Hunter's Mark or Serpent Sting, the addon kept hiding those spells for the full hold duration even on a **new** mob. Harmful aura holds (DoTs, marks, snares, …) are now tied to the current enemy GUID for **every** class and race. Tab to another target or leave a dead sticky target and the spell can be suggested again. Self holds (Renew, Slice and Dice, …) stay global. No combat log — Forever-safe.
+
 
 # 1.5.64
 
@@ -178,7 +206,7 @@ No combat log — Forever-safe. Custom list order is kept.
 
 # 1.5.51
 
-- HUD queue now works like ConROC: after the first spell, the next two assume it was pressed (DoT up, shock on cooldown). Learned shocks and DoTs show again instead of only the filler.
+- HUD queue lookahead: after the first spell, the next two assume it was pressed (DoT up, shock on cooldown). Learned shocks and DoTs show again instead of only the filler.
 - New trainer spells are picked up without /reload. Target DoTs stay known when the client hides auras.
 
 # 1.5.50
@@ -381,7 +409,7 @@ No combat log — Forever-safe. Custom list order is kept.
 
 # 1.5.7
 
-- 0.2s ticker like ConROC (no per-frame OnUpdate).
+- 0.2s ticker (no per-frame OnUpdate).
 - Range check only on already glowing buttons.
 - No tick on every spellcast event.
 - Addon-list logo.

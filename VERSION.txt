@@ -1,26 +1,56 @@
 1.5.70
 
-# 1.5.70
-
-## Hotfix: addon failed to load (Lua syntax)
-
-A creature-type table used bare Unicode identifiers (`механизм = …`). WoW Lua rejects that, so **API.lua never loaded** — no rotation suggestions and a flood of follow-up errors (the “too many addon errors” popup).
-
-All locale keys are now quoted strings. Reload and the HUD should suggest spells again.
+- Hotfix: addon loads again (Unicode table keys) — rotation HUD works, no Lua error spam.
+- No client freeze on level-up / quest turn-in / learning spells (Forever-safe event path).
+- New ranks still appear without /reload.
+- Per-target DoT/mark holds (GUID): tab to a new mob and Hunter's Mark, Serpent Sting, Corruption, Rend… can be suggested again.
+- Aura-first DoTs/marks with ~6s refresh when auras are readable; hold remains the Forever fallback when auras are hidden.
+- Auto melee/ranged role for Hunter and Shaman (Extra option; manual HUD click disables auto).
+- Pet notices for Hunter/Warlock: call your pet / pet is not attacking.
+- Hunter stings skip Mechanical / Elemental; Viper only when the target has mana (optional).
+- Sunder and Lacerate stack to 5; Scorch tracks Fire Vulnerability to 5; Slice and Dice / Renew refresh near expiry.
+- Paladin Seal of the Crusader → Judgement → DPS seals; Exorcism Undead/Demon only.
+- Shaman totem upkeep (Strength of Earth, Mana Spring, Searing…).
+- Bleeds skip Mechanical / Elemental / Undead; DoTs/marks skip dying trash/elites.
+- Drain Soul execute window (off by default); Whirlwind / Swipe / Consecration respect nearby enemies.
+- No combat log — Forever-safe. Self holds (Renew, Slice and Dice…) unchanged.
 
 1.5.69
 
 # 1.5.69
 
-## Zero freeze on level-up / quest (ConROC-style, Forever)
+## Zero freeze on level-up / quest (Forever)
 
-ConROC does **not** listen to `SPELLS_CHANGED` and does **not** walk the spellbook by name. On learn / level-up it only refreshes rank IDs via cheap `IsSpellKnown` checks and debounces action-bar remapping (~0.5 s). Forever was still hitching because quest rewards spam `SPELLS_CHANGED` and we rebuilt a full name index + bar tooltips.
+Quest turn-in and level-up no longer hitch the client. Learn events only soft-refresh failed spell lookups and remaps action bars after a short delay. New ranks still appear without /reload.
 
-### Aligned with ConROC on Forever
-- Stopped registering `SPELLS_CHANGED` (main freeze source on camelot quest turn-in).
-- Learn / level-up / talent: soft-clear failed resolves only + 0.5 s bar refresh (like ConROC `ButtonFetch`). No spellbook wipe, no index rebuild on those events.
-- `SPELL_PUSHED_TO_ACTIONBAR`: bars only.
-- Glow mapping never uses `C_TooltipInfo.GetAction` (GetActionInfo only), chunked across frames.
-- Spellbook name index warms once at login (async) or lazily if a Forever remap needs it — throttled, never on quest storms.
+1.5.68
 
-New ranks still appear without `/reload`.
+# 1.5.68
+
+## Deferred spellbook and bar scans (Forever)
+
+Spellbook and action-bar glow work are split across frames so a reward window cannot freeze the client in one tick.
+
+1.5.67
+
+# 1.5.67
+
+## Classic helper depth without combat log
+
+Stacks, Seal→Judgement, totems, bleed creature filters, and low-HP DoT skips.
+
+1.5.66
+
+# 1.5.66
+
+## Aura-first DoTs, auto role, pet notices
+
+Readable auras drive DoT/mark refresh; Hunter/Shaman auto melee-range; pet call/assist notices.
+
+1.5.65
+
+# 1.5.65
+
+## Per-target hold for DoTs and marks
+
+Harmful aura holds are bound to the current enemy GUID so a new target can be marked/dotted again.
