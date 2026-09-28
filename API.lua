@@ -2396,7 +2396,9 @@ function ns.API.Health(unit)
 	return (health / max) * 100
 end
 
--- Creature types → canonical EN keys (Forever locale aliases).
+-- Creature types -> canonical EN keys (Forever locale aliases).
+-- All non-ASCII keys MUST be quoted; bare Unicode identifiers crash WoW Lua
+-- and prevent the whole API.lua from loading (no rotation + error spam).
 local CREATURE_CANON = {
 	mechanical = "mechanical",
 	["mécanique"] = "mechanical",
@@ -2407,38 +2409,39 @@ local CREATURE_CANON = {
 	machine = "mechanical",
 	meccanic = "mechanical",
 	["mecânico"] = "mechanical",
-	механизм = "mechanical",
-	기계 = "mechanical",
-	机械 = "mechanical",
-	機械 = "mechanical",
+	["механизм"] = "mechanical",
+	["기계"] = "mechanical",
+	["机械"] = "mechanical",
+	["機械"] = "mechanical",
 	elemental = "elemental",
 	["élémentaire"] = "elemental",
 	elementaire = "elemental",
 	elementar = "elemental",
 	elementale = "elemental",
-	элементаль = "elemental",
-	정령 = "elemental",
-	元素生物 = "elemental",
+	["элементаль"] = "elemental",
+	["정령"] = "elemental",
+	["元素生物"] = "elemental",
 	undead = "undead",
 	["mort-vivant"] = "undead",
 	untoter = "undead",
 	no = "undead",
+	["no-muerto"] = "undead",
 	["non morto"] = "undead",
 	morto = "undead",
-	нежить = "undead",
-	언데드 = "undead",
-	亡灵 = "undead",
-	不死族 = "undead",
+	["нежить"] = "undead",
+	["언데드"] = "undead",
+	["亡灵"] = "undead",
+	["不死族"] = "undead",
 	demon = "demon",
 	["dämon"] = "demon",
 	demonio = "demon",
 	["démon"] = "demon",
 	demone = "demon",
 	["demônio"] = "demon",
-	демон = "demon",
-	악마 = "demon",
-	恶魔 = "demon",
-	惡魔 = "demon",
+	["демон"] = "demon",
+	["악마"] = "demon",
+	["恶魔"] = "demon",
+	["惡魔"] = "demon",
 }
 
 local function creatureCanon(ctype)

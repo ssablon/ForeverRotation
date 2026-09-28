@@ -660,14 +660,14 @@ pcall(frame.RegisterEvent, frame, "WEAPON_ENCHANT_CHANGED")
 pcall(frame.RegisterEvent, frame, "UNIT_AURA")
 pcall(frame.RegisterEvent, frame, "UNIT_INVENTORY_CHANGED")
 pcall(frame.RegisterEvent, frame, "UNIT_SPELLCAST_START")
-	pcall(frame.RegisterEvent, frame, "LEARNED_SPELL_IN_TAB")
-	pcall(frame.RegisterEvent, frame, "LEARNED_SPELL_IN_SKILL_LINE")
-	-- Do NOT register SPELLS_CHANGED: Forever fires it in storms on quest
-	-- turn-in / level-up and it is what froze the client. ConROC core also
-	-- ignores SPELLS_CHANGED and only reacts to learn / level-up.
-	pcall(frame.RegisterEvent, frame, "SPELL_PUSHED_TO_ACTIONBAR")
-	pcall(frame.RegisterEvent, frame, "PLAYER_TALENT_UPDATE")
-	pcall(frame.RegisterEvent, frame, "PLAYER_LEVEL_UP")
+pcall(frame.RegisterEvent, frame, "LEARNED_SPELL_IN_TAB")
+pcall(frame.RegisterEvent, frame, "LEARNED_SPELL_IN_SKILL_LINE")
+-- Do NOT register SPELLS_CHANGED: Forever fires it in storms on quest
+-- turn-in / level-up and it is what froze the client. ConROC core also
+-- ignores SPELLS_CHANGED and only reacts to learn / level-up.
+pcall(frame.RegisterEvent, frame, "SPELL_PUSHED_TO_ACTIONBAR")
+pcall(frame.RegisterEvent, frame, "PLAYER_TALENT_UPDATE")
+pcall(frame.RegisterEvent, frame, "PLAYER_LEVEL_UP")
 pcall(frame.RegisterEvent, frame, "PLAYER_LOGOUT")
 pcall(frame.RegisterEvent, frame, "PLAYER_DEAD")
 pcall(frame.RegisterEvent, frame, "PLAYER_ALIVE")
@@ -732,37 +732,6 @@ local function requestTick()
 	end
 end
 
-local function flushSpells()
-	spellsPending = nil
-	-- ConROC-style (Forever-safe): on learn / level-up, only clear *failed*
-	-- Resolve entries so newly learned ranks can resolve. Do NOT wipe known
-	-- hits and do NOT rebuild the spellbook index (that is what froze Forever
-	-- on quest turn-in). Pulse/Tick picks up new ranks via IsPlayerSpell.
-	if ns.API and ns.API.InvalidateSpells then
-		ns.API.InvalidateSpells(false)
-	end
-	lastTickSig = nil
-	requestTick()
-	scheduleBarFlush()
-end
-
-local function scheduleSpellFlush()
-	spellsFlushGen = spellsFlushGen + 1
-	local gen = spellsFlushGen
-	spellsPending = true
-	if C_Timer and C_Timer.After then
-		-- Same idea as ConROC ButtonFetch(0.5): coalesce learn spam.
-		C_Timer.After(0.5, function()
-			if gen ~= spellsFlushGen then
-				return
-			end
-			flushSpells()
-		end)
-	else
-		flushSpells()
-	end
-end
-
 local function forceTick()
 	if ns.API and ns.API.WipeAuraScans then
 		ns.API.WipeAuraScans()
@@ -795,6 +764,37 @@ local function scheduleBarFlush()
 		end)
 	else
 		flushBars()
+	end
+end
+
+local function flushSpells()
+	spellsPending = nil
+	-- ConROC-style (Forever-safe): on learn / level-up, only clear *failed*
+	-- Resolve entries so newly learned ranks can resolve. Do NOT wipe known
+	-- hits and do NOT rebuild the spellbook index (that is what froze Forever
+	-- on quest turn-in). Pulse/Tick picks up new ranks via IsPlayerSpell.
+	if ns.API and ns.API.InvalidateSpells then
+		ns.API.InvalidateSpells(false)
+	end
+	lastTickSig = nil
+	requestTick()
+	scheduleBarFlush()
+end
+
+local function scheduleSpellFlush()
+	spellsFlushGen = spellsFlushGen + 1
+	local gen = spellsFlushGen
+	spellsPending = true
+	if C_Timer and C_Timer.After then
+		-- Same idea as ConROC ButtonFetch(0.5): coalesce learn spam.
+		C_Timer.After(0.5, function()
+			if gen ~= spellsFlushGen then
+				return
+			end
+			flushSpells()
+		end)
+	else
+		flushSpells()
 	end
 end
 

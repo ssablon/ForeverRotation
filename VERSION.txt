@@ -1,3 +1,13 @@
+1.5.70
+
+# 1.5.70
+
+## Hotfix: addon failed to load (Lua syntax)
+
+A creature-type table used bare Unicode identifiers (`механизм = …`). WoW Lua rejects that, so **API.lua never loaded** — no rotation suggestions and a flood of follow-up errors (the “too many addon errors” popup).
+
+All locale keys are now quoted strings. Reload and the HUD should suggest spells again.
+
 1.5.69
 
 # 1.5.69
@@ -14,19 +24,3 @@ ConROC does **not** listen to `SPELLS_CHANGED` and does **not** walk the spellbo
 - Spellbook name index warms once at login (async) or lazily if a Forever remap needs it — throttled, never on quest storms.
 
 New ranks still appear without `/reload`.
-
-1.5.68
-
-# 1.5.68
-
-## Fix screen freeze on level-up / quest turn-in (Forever)
-
-On WoW Forever, learning a spell or turning in a quest could hitch the whole client for a second while the addon was enabled. Out of combat only — the addon was rescanning the spellbook and every action-bar tooltip in one frame.
-
-### What changed
-- Spell learn / level-up / `SPELLS_CHANGED` no longer wipe known spell resolves.
-- Spellbook name lookup is rebuilt **across frames** (no full synchronous book walk on the HUD thread).
-- Action-bar glow refresh is **chunked** and skips expensive tooltip reads when `GetActionInfo` already returned a spell id.
-- Events from a quest reward are coalesced (~1.5 s) so one storm does not re-scan repeatedly.
-
-New ranks and newly learned spells still appear without `/reload` — just a short deferred refresh after the reward window.

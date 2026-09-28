@@ -1,3 +1,11 @@
+# 1.5.70
+
+## Hotfix: addon failed to load (Lua syntax)
+
+A creature-type table used bare Unicode identifiers. WoW Lua rejects that, so **API.lua never loaded** — no rotation suggestions and a flood of follow-up errors (the “too many addon errors” popup).
+
+All locale keys are now quoted strings. Reload and the HUD should suggest spells again.
+
 # 1.5.69
 
 ## Zero freeze on level-up / quest (ConROC-style, Forever)
