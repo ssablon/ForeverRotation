@@ -160,6 +160,7 @@ end
 local spellBookIndex
 local spellBookGen = 0
 local spellBookBuilding
+local lastBookBuildAt = 0
 
 local function indexBookName(index, bookName, bookId)
 	if type(bookId) ~= "number" or junkSpellName(bookName) then
@@ -180,12 +181,21 @@ function ns.API.InvalidateSpellBookIndex()
 end
 
 function ns.API.RebuildSpellBookIndex(sync)
+	if spellBookBuilding and not sync then
+		return
+	end
+	-- Never rebuild more than once every few seconds outside login sync —
+	-- Forever quest rewards must not queue index jobs.
+	if not sync and spellBookIndex and lastBookBuildAt and (GetTime() - lastBookBuildAt) < 5 then
+		return
+	end
 	spellBookGen = spellBookGen + 1
 	local gen = spellBookGen
 	spellBookIndex = nil
 	spellBookBuilding = true
 	local index = {}
 	local banks = bookBanks()
+	lastBookBuildAt = GetTime()
 
 	local function finish()
 		if gen ~= spellBookGen then
@@ -299,10 +309,15 @@ local function findPlayerSpellByName(name)
 	if not want then
 		return nil
 	end
-	-- Forever: never full-scan the book on the HUD thread. Use the deferred
-	-- name index; return nil until ready (new spell appears a moment later).
 	if spellBookIndex then
 		return spellBookIndex[want]
+	end
+	-- ConROC never walks the whole book: it uses IsSpellKnown on rank IDs.
+	-- Forever remaps: try cheap name→ID APIs first; warm the index lazily
+	-- only when still missing (login / rare remap), never on SPELLS_CHANGED.
+	local fromApi = spellIdFromName(name)
+	if type(fromApi) == "number" then
+		return fromApi
 	end
 	if not spellBookBuilding then
 		ns.API.RebuildSpellBookIndex(false)

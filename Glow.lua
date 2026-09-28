@@ -547,15 +547,9 @@ local function addStandard(button)
 	if slot then
 		buttonSlots[button] = slot
 		rangeButtons[button] = true
-		-- Forever: C_TooltipInfo.GetAction per slot freezes the client when
-		-- many ACTIONBAR_SLOT_CHANGED fire (quest turn-in / level-up). Skip
-		-- the tooltip path when GetActionInfo already gave a spell id.
-		if not (actionType == "spell" and id) then
-			local tipName = actionSpellName(slot)
-			if tipName then
-				addSpellName(tipName, button)
-			end
-		end
+		-- Forever: never call C_TooltipInfo.GetAction here. ConROC maps bars
+		-- with GetActionInfo / GetSpellInfo only — tooltips freeze camelot when
+		-- many slots update after a quest turn-in.
 	end
 	if actionType == "spell" and id then
 		local info = API.SpellInfo(id)

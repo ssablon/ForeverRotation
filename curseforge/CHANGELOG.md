@@ -1,3 +1,18 @@
+# 1.5.69
+
+## Zero freeze on level-up / quest (ConROC-style, Forever)
+
+ConROC does **not** listen to `SPELLS_CHANGED` and does **not** walk the spellbook by name. On learn / level-up it only refreshes rank IDs via cheap `IsSpellKnown` checks and debounces action-bar remapping (~0.5 s). Forever was still hitching because quest rewards spam `SPELLS_CHANGED` and we rebuilt a full name index + bar tooltips.
+
+### Aligned with ConROC on Forever
+- Stopped registering `SPELLS_CHANGED` (main freeze source on camelot quest turn-in).
+- Learn / level-up / talent: soft-clear failed resolves only + 0.5 s bar refresh (like ConROC `ButtonFetch`). No spellbook wipe, no index rebuild on those events.
+- `SPELL_PUSHED_TO_ACTIONBAR`: bars only.
+- Glow mapping never uses `C_TooltipInfo.GetAction` (GetActionInfo only), chunked across frames.
+- Spellbook name index warms once at login (async) or lazily if a Forever remap needs it — throttled, never on quest storms.
+
+New ranks still appear without `/reload`.
+
 # 1.5.68
 
 ## Fix screen freeze on level-up / quest turn-in (Forever)

@@ -660,11 +660,14 @@ pcall(frame.RegisterEvent, frame, "WEAPON_ENCHANT_CHANGED")
 pcall(frame.RegisterEvent, frame, "UNIT_AURA")
 pcall(frame.RegisterEvent, frame, "UNIT_INVENTORY_CHANGED")
 pcall(frame.RegisterEvent, frame, "UNIT_SPELLCAST_START")
-pcall(frame.RegisterEvent, frame, "LEARNED_SPELL_IN_TAB")
-pcall(frame.RegisterEvent, frame, "SPELLS_CHANGED")
-pcall(frame.RegisterEvent, frame, "SPELL_PUSHED_TO_ACTIONBAR")
-pcall(frame.RegisterEvent, frame, "PLAYER_TALENT_UPDATE")
-pcall(frame.RegisterEvent, frame, "PLAYER_LEVEL_UP")
+	pcall(frame.RegisterEvent, frame, "LEARNED_SPELL_IN_TAB")
+	pcall(frame.RegisterEvent, frame, "LEARNED_SPELL_IN_SKILL_LINE")
+	-- Do NOT register SPELLS_CHANGED: Forever fires it in storms on quest
+	-- turn-in / level-up and it is what froze the client. ConROC core also
+	-- ignores SPELLS_CHANGED and only reacts to learn / level-up.
+	pcall(frame.RegisterEvent, frame, "SPELL_PUSHED_TO_ACTIONBAR")
+	pcall(frame.RegisterEvent, frame, "PLAYER_TALENT_UPDATE")
+	pcall(frame.RegisterEvent, frame, "PLAYER_LEVEL_UP")
 pcall(frame.RegisterEvent, frame, "PLAYER_LOGOUT")
 pcall(frame.RegisterEvent, frame, "PLAYER_DEAD")
 pcall(frame.RegisterEvent, frame, "PLAYER_ALIVE")
@@ -731,21 +734,16 @@ end
 
 local function flushSpells()
 	spellsPending = nil
-	-- Forever: level-up / quest / learn storms must NOT wipe known resolves or
-	-- full-scan the spellbook on one frame. Soft-clear failed lookups, rebuild
-	-- the name index across frames, then tick — no /reload needed.
-	if ns.API and ns.API.InvalidateSpellBookIndex then
-		ns.API.InvalidateSpellBookIndex()
-	end
+	-- ConROC-style (Forever-safe): on learn / level-up, only clear *failed*
+	-- Resolve entries so newly learned ranks can resolve. Do NOT wipe known
+	-- hits and do NOT rebuild the spellbook index (that is what froze Forever
+	-- on quest turn-in). Pulse/Tick picks up new ranks via IsPlayerSpell.
 	if ns.API and ns.API.InvalidateSpells then
 		ns.API.InvalidateSpells(false)
 	end
-	if ns.API and ns.API.RebuildSpellBookIndex then
-		ns.API.RebuildSpellBookIndex(false)
-	else
-		lastTickSig = nil
-		requestTick()
-	end
+	lastTickSig = nil
+	requestTick()
+	scheduleBarFlush()
 end
 
 local function scheduleSpellFlush()
@@ -753,8 +751,8 @@ local function scheduleSpellFlush()
 	local gen = spellsFlushGen
 	spellsPending = true
 	if C_Timer and C_Timer.After then
-		-- Coalesce SPELLS_CHANGED spam (quest turn-in / level-up on Forever).
-		C_Timer.After(1.5, function()
+		-- Same idea as ConROC ButtonFetch(0.5): coalesce learn spam.
+		C_Timer.After(0.5, function()
 			if gen ~= spellsFlushGen then
 				return
 			end
@@ -784,11 +782,12 @@ local function flushBars()
 end
 
 local function scheduleBarFlush()
-	barsPending = true
+	-- ConROC: CancelTimer + ScheduleTimer('Fetch', 0.5)
 	barFlushGen = barFlushGen + 1
 	local gen = barFlushGen
+	barsPending = true
 	if C_Timer and C_Timer.After then
-		C_Timer.After(1.25, function()
+		C_Timer.After(0.5, function()
 			if gen ~= barFlushGen then
 				return
 			end
@@ -826,12 +825,13 @@ frame:SetScript("OnEvent", function(_, event, unit, _, spellID)
 		end
 		return
 	end
-	if event == "LEARNED_SPELL_IN_TAB" or event == "PLAYER_TALENT_UPDATE" or event == "PLAYER_LEVEL_UP" or event == "SPELL_PUSHED_TO_ACTIONBAR" then
+	if event == "LEARNED_SPELL_IN_TAB" or event == "LEARNED_SPELL_IN_SKILL_LINE" or event == "PLAYER_TALENT_UPDATE" or event == "PLAYER_LEVEL_UP" then
 		scheduleSpellFlush()
 		return
 	end
-	if event == "SPELLS_CHANGED" then
-		scheduleSpellFlush()
+	if event == "SPELL_PUSHED_TO_ACTIONBAR" then
+		-- ConROC: bar map only — no spellbook walk.
+		scheduleBarFlush()
 		return
 	end
 	if event == "PLAYER_LOGIN" or event == "PLAYER_ENTERING_WORLD" then

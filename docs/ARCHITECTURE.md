@@ -227,7 +227,7 @@ Modes de combat (`ns.COMBAT_MODES`) : `auto`, `single`, `aoe`, `burst`.
 - `EnemyCount([maxYards])` compte les nameplates hostiles. Hors combat joueur, tout nameplate hostile compte ; en combat, seulement ceux en combat. Sans nameplate, une cible hostile vaut 1. `maxYards` optionnel (bandes 10 / 28 via `TargetRangeBand` / `CheckInteractDistance`). Les nameplates doivent être activés pour l'AoE auto.
 - `roleAuto` (défaut vrai) : Hunter/Shaman basculent mêlée/distance via `TargetInMelee` ; clic rôle HUD → `roleAuto = false`.
 - `CombatNotice` : Hunter/Warlock en combat → « call pet » / « pet not attacking » sous le HUD.
-- Index grimoire différé (`RebuildSpellBookIndex`) : `SPELLS_CHANGED` / level-up / learn ne wipe plus les resolves connus et ne scanne plus le livre en un seul frame (freeze Forever). GlowFetch découpé + pas de tooltip si `GetActionInfo` a déjà l'ID.
+- Index grimoire différé (`RebuildSpellBookIndex`) : chauffé au login / lazy remap seulement. **Pas** de `SPELLS_CHANGED` (ConROC non plus) — learn / level-up = soft Invalidate + `ButtonFetch` 0,5 s. Glow sans tooltip action.
 
 `ns.CoerceChecked` n'accepte que `true`, `1`, `"1"`. `ns.IsStepEnabled` refuse `false`, `0`, `"0"`.
 
