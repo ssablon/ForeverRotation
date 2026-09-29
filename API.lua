@@ -1390,6 +1390,8 @@ end
 
 -- "none" = no check, "in" / "out" / "unknown".
 -- Unknown is never treated as in-range for the first HUD slot.
+-- Yard band can override a wrong/secret IsSpellInRange so melee spells
+-- stay out at distance and long-range spells can still win slot 1 (all classes).
 function ns.API.RangeState(spellID, opt)
 	opt = opt or {}
 	local id = ns.API.Resolve(spellID) or spellID
@@ -1398,6 +1400,18 @@ function ns.API.RangeState(spellID, opt)
 	end
 	local unit = rangeUnitFor(id, opt)
 	if not unitExists(unit) then
+		return "out"
+	end
+	local maxR = ns.API.SpellMaxRange(id)
+	if maxR == 0 and ns.API.IsHarmful(id) then
+		maxR = 5
+	end
+	local minY, maxY = ns.API.TargetRangeBand(unit)
+	-- Melee-range spell vs clearly far target: always out (every class).
+	if minY and maxR and maxR <= 5 and minY > 8 then
+		return "out"
+	end
+	if minY and maxR and minY >= maxR then
 		return "out"
 	end
 	local slot = ns.SpellBarSlot and ns.SpellBarSlot(id)
@@ -1409,14 +1423,11 @@ function ns.API.RangeState(spellID, opt)
 		return "in"
 	end
 	if flag == false then
-		return "out"
-	end
-	local maxR = ns.API.SpellMaxRange(id)
-	if maxR == 0 and ns.API.IsHarmful(id) then
-		maxR = 5
-	end
-	local minY, maxY = ns.API.TargetRangeBand(unit)
-	if minY and maxR and minY >= maxR then
+		-- Band says the target is inside max range: prefer in when Forever
+		-- reports false/secret for long-range shots (Hunter/mage/etc.).
+		if maxY and maxR and maxR > 5 and maxY <= maxR then
+			return "in"
+		end
 		return "out"
 	end
 	if maxY and maxR and maxY <= maxR then
@@ -2554,6 +2565,14 @@ function ns.API.TargetInMelee()
 	if not unitExists("target") or not ns.API.Hostile() then
 		return false
 	end
+	-- Distance band first: never treat a far target as melee (role auto + queue).
+	local minY, maxY = ns.API.TargetRangeBand("target")
+	if minY and minY > 8 then
+		return false
+	end
+	if maxY and maxY <= 5 then
+		return true
+	end
 	local token = ns.ClassToken and ns.ClassToken()
 	local probe
 	local S = ns.Spell
@@ -2579,7 +2598,6 @@ function ns.API.TargetInMelee()
 			return false
 		end
 	end
-	local minY = ns.API.TargetRangeBand("target")
 	if minY and minY <= 5 then
 		return true
 	end
@@ -2638,10 +2656,8 @@ function ns.SyncAutoRole()
 	if ns.db.role == want then
 		return
 	end
+	-- In-memory only while fighting: FlushProfile mid-combat feels like lag.
 	ns.db.role = want
-	if ns.FlushProfile then
-		ns.FlushProfile()
-	end
 	if ns.InvalidateAPLCache then
 		ns.InvalidateAPLCache()
 	end

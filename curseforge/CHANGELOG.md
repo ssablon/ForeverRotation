@@ -1,3 +1,13 @@
+# 1.5.71
+
+## Range-aware suggestions + smoother feel (all classes)
+
+Slot 1 prefers spells you can actually reach: melee abilities stay out of the press slot when the target is clearly far, and long-range shots can still win when Forever’s range flag is wrong or hidden. Hunter and Shaman auto melee/ranged role uses the same distance band first, so at range you get the ranged list (Aimed / Multi / Arcane…), not stuck melee. Clicking the HUD role button still turns auto off — chat tells you, and Extra turns it back on.
+
+Aura storms no longer force a full rotation rebuild every tick (player/target/focus/mouseover wipe only; the 0.2 s ticker rebuilds). Auto role no longer writes SavedVariables mid-fight. Action-bar range tint and physics/cast gauges refresh a bit less often. Holds, profiles, and list order are unchanged. No combat log — Forever-safe.
+
+---
+
 # 1.5.70
 
 ## Forever Rotation 1.5.70 — release since 1.5.64

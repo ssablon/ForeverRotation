@@ -440,7 +440,12 @@ function ns.CycleRole()
 		end
 	end
 	-- Manual role pick disables auto melee/range switching until re-enabled in Extra.
-	ns.db.roleAuto = false
+	if ns.db.roleAuto ~= false then
+		ns.db.roleAuto = false
+		if ns.Print and ns.T then
+			ns.Print(ns.T("MSG_ROLE_AUTO_OFF"))
+		end
+	end
 	ns.SetRole(nextRole)
 end
 
@@ -637,7 +642,7 @@ function ns.Tick()
 	end
 	local now = GetTime()
 	if ns.db.showRange ~= false then
-		if now - lastRangeAt >= 0.25 and ns.RangeUpdate then
+		if now - lastRangeAt >= 0.4 and ns.RangeUpdate then
 			lastRangeAt = now
 			ns.RangeUpdate()
 		end
@@ -810,11 +815,12 @@ local function weaponItemId(slot)
 end
 
 local function liveAuraUnit(unit)
+	-- Player + current targets only. Party auras were wiping caches constantly
+	-- in groups and forcing extra work that felt like input lag.
 	return unit == "player"
 		or unit == "target"
 		or unit == "focus"
 		or unit == "mouseover"
-		or (type(unit) == "string" and strsub(unit, 1, 5) == "party")
 end
 
 frame:SetScript("OnEvent", function(_, event, unit, _, spellID)
@@ -896,8 +902,8 @@ frame:SetScript("OnEvent", function(_, event, unit, _, spellID)
 			if ns.API and ns.API.WipeAuraScan then
 				ns.API.WipeAuraScan(unit)
 			end
-			lastTickSig = nil
-			requestTick()
+			-- Do not force Tick here: aura storms + full queue rebuild feel like
+			-- input lag. The 0.2s ticker rebuilds with a fresh aura scan.
 		end
 	elseif event == "UNIT_INVENTORY_CHANGED" then
 		if unit == "player" then

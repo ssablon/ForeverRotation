@@ -1,56 +1,9 @@
-1.5.70
+1.5.71
 
-- Hotfix: addon loads again (Unicode table keys) — rotation HUD works, no Lua error spam.
-- No client freeze on level-up / quest turn-in / learning spells (Forever-safe event path).
-- New ranks still appear without /reload.
-- Per-target DoT/mark holds (GUID): tab to a new mob and Hunter's Mark, Serpent Sting, Corruption, Rend… can be suggested again.
-- Aura-first DoTs/marks with ~6s refresh when auras are readable; hold remains the Forever fallback when auras are hidden.
-- Auto melee/ranged role for Hunter and Shaman (Extra option; manual HUD click disables auto).
-- Pet notices for Hunter/Warlock: call your pet / pet is not attacking.
-- Hunter stings skip Mechanical / Elemental; Viper only when the target has mana (optional).
-- Sunder and Lacerate stack to 5; Scorch tracks Fire Vulnerability to 5; Slice and Dice / Renew refresh near expiry.
-- Paladin Seal of the Crusader → Judgement → DPS seals; Exorcism Undead/Demon only.
-- Shaman totem upkeep (Strength of Earth, Mana Spring, Searing…).
-- Bleeds skip Mechanical / Elemental / Undead; DoTs/marks skip dying trash/elites.
-- Drain Soul execute window (off by default); Whirlwind / Swipe / Consecration respect nearby enemies.
-- No combat log — Forever-safe. Self holds (Renew, Slice and Dice…) unchanged.
+# 1.5.71
 
-1.5.69
+## Range-aware suggestions + smoother feel (all classes)
 
-# 1.5.69
+Slot 1 prefers spells you can actually reach: melee abilities stay out of the press slot when the target is clearly far, and long-range shots can still win when Forever’s range flag is wrong or hidden. Hunter and Shaman auto melee/ranged role uses the same distance band first, so at range you get the ranged list (Aimed / Multi / Arcane…), not stuck melee. Clicking the HUD role button still turns auto off — chat tells you, and Extra turns it back on.
 
-## Zero freeze on level-up / quest (Forever)
-
-Quest turn-in and level-up no longer hitch the client. Learn events only soft-refresh failed spell lookups and remaps action bars after a short delay. New ranks still appear without /reload.
-
-1.5.68
-
-# 1.5.68
-
-## Deferred spellbook and bar scans (Forever)
-
-Spellbook and action-bar glow work are split across frames so a reward window cannot freeze the client in one tick.
-
-1.5.67
-
-# 1.5.67
-
-## Classic helper depth without combat log
-
-Stacks, Seal→Judgement, totems, bleed creature filters, and low-HP DoT skips.
-
-1.5.66
-
-# 1.5.66
-
-## Aura-first DoTs, auto role, pet notices
-
-Readable auras drive DoT/mark refresh; Hunter/Shaman auto melee-range; pet call/assist notices.
-
-1.5.65
-
-# 1.5.65
-
-## Per-target hold for DoTs and marks
-
-Harmful aura holds are bound to the current enemy GUID so a new target can be marked/dotted again.
+Aura storms no longer force a full rotation rebuild every tick (player/target/focus/mouseover wipe only; the 0.2 s ticker rebuilds). Auto role no longer writes SavedVariables mid-fight. Action-bar range tint and physics/cast gauges refresh a bit less often. Holds, profiles, and list order are unchanged. No combat log — Forever-safe.

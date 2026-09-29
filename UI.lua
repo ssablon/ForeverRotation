@@ -360,7 +360,7 @@ function ns.UI.Create()
 
 	gauge:SetScript("OnUpdate", function(self, elapsed)
 		self._acc = (self._acc or 0) + elapsed
-		if self._acc < 0.05 then
+		if self._acc < 0.1 then
 			return
 		end
 		self._acc = 0
@@ -460,7 +460,7 @@ function ns.UI.Create()
 	kick.cast = cast
 	kick:SetScript("OnUpdate", function(self, elapsed)
 		self._castAcc = (self._castAcc or 0) + elapsed
-		if self._castAcc < 0.05 then
+		if self._castAcc < 0.1 then
 			return
 		end
 		self._castAcc = 0
