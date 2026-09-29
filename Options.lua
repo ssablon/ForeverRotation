@@ -4,6 +4,7 @@ local IMG = "Interface\\AddOns\\WoWForeverRot\\images\\"
 local SITE_URL = "https://wow-forever.fr"
 local DISCORD_URL = "https://discord.gg/qmb2uDu8Z3"
 local CURSE_URL = "https://www.curseforge.com/wow/addons/forever-rot"
+local GITHUB_URL = "https://github.com/ssablon/ForeverRotation"
 
 local editSpec
 local editMode
@@ -1035,7 +1036,7 @@ local function ensureOptions()
 	cmdList:SetTextColor(0.92, 0.92, 0.92)
 	frame.cmdList = cmdList
 
-	local linksCard = makeCard(info, "OPT_CARD_LINKS", 8, -420, 648, 122)
+	local linksCard = makeCard(info, "OPT_CARD_LINKS", 8, -420, 648, 150)
 	frame.siteRow = makeLinkRow(linksCard, "INFO_SITE", SITE_URL)
 	frame.siteRow:SetPoint("TOPLEFT", 12, -32)
 	frame.siteRow:SetPoint("RIGHT", -12, 0)
@@ -1045,6 +1046,9 @@ local function ensureOptions()
 	frame.curseRow = makeLinkRow(linksCard, "INFO_CURSE", CURSE_URL)
 	frame.curseRow:SetPoint("TOPLEFT", 12, -88)
 	frame.curseRow:SetPoint("RIGHT", -12, 0)
+	frame.githubRow = makeLinkRow(linksCard, "INFO_GITHUB", GITHUB_URL)
+	frame.githubRow:SetPoint("TOPLEFT", 12, -116)
+	frame.githubRow:SetPoint("RIGHT", -12, 0)
 
 	frame.navButtons = {}
 	local navDefs = {
@@ -1131,7 +1135,7 @@ local function ensureOptions()
 		if frame.cmdList then
 			frame.cmdList:SetText(ns.T("INFO_CMD_LIST"))
 		end
-		for _, row in ipairs({ frame.siteRow, frame.discordRow, frame.curseRow }) do
+		for _, row in ipairs({ frame.siteRow, frame.discordRow, frame.curseRow, frame.githubRow }) do
 			if row and row.label and row.labelKey then
 				row.label:SetText(ns.T(row.labelKey))
 			end

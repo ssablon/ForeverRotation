@@ -4,7 +4,9 @@ Rotation helper for **WoW Forever** (Classic Era combat on the camelot / Midnigh
 
 It shows the next three abilities on a small HUD, flashes a skull on the matching action-bar button, and also tracks heals, long defense buffs, interrupts, purges, cleanses, and weapon imbues. It does **not** cast spells for you.
 
-Author: [Vohnka](https://wow-forever.fr) · Current version: **1.5.49**
+Author: [Vohnka](https://wow-forever.fr) · Current version: **1.5.72**
+
+**Development status:** Active development by Vohnka has **stopped**. The project is **open source** (MIT). Source and forks: [github.com/ssablon/ForeverRotation](https://github.com/ssablon/ForeverRotation). Anyone may continue improving it.
 
 Player-facing text is translated for `enUS`, `frFR`, `deDE`, `esES`, `esMX`, `ruRU`, `zhCN`, `zhTW`, `ptBR`, `itIT`, and `koKR`. Missing strings fall back to English.
 
@@ -158,8 +160,10 @@ The git repository is the source of truth. The copy under `World of Warcraft\_cl
 
 Download: [https://www.curseforge.com/wow/addons/forever-rot](https://www.curseforge.com/wow/addons/forever-rot).
 
-Support is on Discord only, in English: [https://discord.gg/qmb2uDu8Z3](https://discord.gg/qmb2uDu8Z3) (`#support`, `#bugs`, `#suggestions`). Website: [https://wow-forever.fr](https://wow-forever.fr).
+Source (public): [https://github.com/ssablon/ForeverRotation](https://github.com/ssablon/ForeverRotation).
+
+Community chat on Discord (English): [https://discord.gg/qmb2uDu8Z3](https://discord.gg/qmb2uDu8Z3) (`#support`, `#bugs`, `#suggestions`). Website: [https://wow-forever.fr](https://wow-forever.fr).
 
 ## License
 
-Private repository. © Vohnka / [wow-forever.fr](https://wow-forever.fr). All rights reserved.
+[MIT](LICENSE) — free to use, modify, fork, and redistribute. © Vohnka / [wow-forever.fr](https://wow-forever.fr). Active development by the original author has stopped; contributions and forks are welcome.

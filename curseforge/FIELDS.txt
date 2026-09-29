@@ -1,26 +1,25 @@
-À coller dans le formulaire CurseForge (Create Project)
+À coller dans le formulaire CurseForge (Create Project / Edit)
 
 Game:                 World of Warcraft
 Project name:         Forever Rotation (Multi language)
 Slug (si demandé):    forever-rot
 Logo:                 curseforge/logo-512.png
-Summary (FR):         Forever Rotation (Multi language) — aide de rotation pour WoW Forever Classic. HUD des 3 prochains sorts, crâne sur le bon bouton, plus soins, défense, interrupts et enchant d'arme. Pas un bot. 11 langues.
-Summary (EN):         Forever Rotation (Multi language) — rotation helper for WoW Forever Classic. HUD of the next 3 spells, skull on the matching button, plus heals, defense, interrupts and weapon buffs. Not a bot. 11 languages.
+Summary (FR):         Forever Rotation — aide de rotation pour Forever Classic. Développement arrêté ; code open source sur GitHub (forks bienvenus). HUD 3 sorts, crâne, soins, défense. Pas un bot. 11 langues.
+Summary (EN):         Forever Rotation — rotation helper for Forever Classic. Development stopped; open source on GitHub (forks welcome). HUD of next 3 spells, skull flash, heals, defense. Not a bot. 11 languages.
 Class:                Addon
 Main category:        Combat
 Additional:           Buffs & Debuffs, Class
 Allow comments:       Oui
-Experimental:         Non (sauf si la modération refuse le client Forever)
-Description:          curseforge/DESCRIPTION.html  (mode WYSIWYG → coller le HTML)
-License:              Custom
-License text:         All Rights Reserved. © Vohnka — https://wow-forever.fr
+Experimental:         Non
+Description:          curseforge/DESCRIPTION.html
+License:              MIT
 Website:              https://wow-forever.fr
-Source:               dépôt privé GitHub (ne pas rendre public si tu veux le garder privé)
-Issues / Support:     https://discord.gg/qmb2uDu8Z3  (English only: #support, #bugs, #suggestions)
+Source:               https://github.com/ssablon/ForeverRotation  (public)
+Issues / Support:     https://discord.gg/qmb2uDu8Z3  (English: #support, #bugs, #suggestions)
+                      GitHub issues also welcome on the public repo.
 
 Fichier à uploader:   F:\Github\addons\wow\WoWForeverRot-<VERSION.txt>.zip
 Display name:         Forever Rotation <VERSION.txt>
 Release type:         Release
 Changelog:            curseforge/CHANGELOG.md
-Supported versions:   1.60.1  (API id 17053, type 88568)
-                      C’est la version Forever / camelot déjà listée par CurseForge.
+Supported versions:   1.60.1  (API id 17053)

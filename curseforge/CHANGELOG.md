@@ -1,3 +1,20 @@
+# 1.5.72
+
+## Open source — development by Vohnka has stopped
+
+Active development of Forever Rotation by the original author has ended. The GitHub repository is now **public** under the **MIT** license so anyone can fork it, fix bugs, and keep improving the addon for Forever.
+
+### What changed for players
+- Info → Links now includes **GitHub** next to Website, Discord, and CurseForge.
+- About / support text states that maintenance by Vohnka has stopped and that forks are welcome.
+- CurseForge description and project source point to https://github.com/ssablon/ForeverRotation.
+
+### What did not change
+- Rotation logic, holds, profiles, and HUD behaviour from **1.5.71** are unchanged in this build aside from the Info texts and links.
+- The addon still never casts for you and still never reads the combat log.
+
+---
+
 # 1.5.71
 
 ## Range-aware suggestions + smoother feel (all classes)
